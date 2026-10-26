@@ -22,14 +22,16 @@ Phase 1 complete: 8 unit + 74 integration assertions pass (8 test files, `pnpm t
 
 ## Phase 2 — Ticket inventory and printing
 
-- [ ] Ticket, TicketBatch, PrintBatch models with unique serial and token hash
-- [ ] Transactional batch generation (500 tickets, no partial success, idempotent, capacity safe)
-- [ ] Secure QR token generation, hash storage, never exposed in lists or exports
-- [ ] Inventory screen: search, filters, ticket detail, audit history
-- [ ] Ticket preview and print-ready PDF (210 x 59 mm, stub, QR, serial)
-- [ ] Sample print flow, reprint (permission plus audit, same token), revoke with reason
-- [ ] Inventory CSV export (no secrets, formula-injection safe)
-- [ ] Tests: uniqueness, capacity under concurrency, failed batch rollback, reprint identity
+- [x] Ticket, TicketBatch, PrintBatch models with unique serial and token hash
+- [x] Transactional batch generation (500 tickets, no partial success, idempotent, capacity safe)
+- [x] Secure QR token generation, hash storage, never exposed in lists or exports
+- [x] Inventory screen: search, filters, ticket detail, audit history
+- [x] Ticket preview and print-ready PDF (210 x 59 mm, stub, QR, serial)
+- [x] Sample print flow, reprint (permission plus audit, same token), revoke with reason
+- [x] Inventory CSV export (no secrets, formula-injection safe)
+- [x] Tests: uniqueness, capacity under concurrency, failed batch rollback, reprint identity
+
+Phase 2 complete: `pnpm test` runs 11 files / 103 tests, all green (Phase 1 regression + 7 new unit and 22 new integration tests); `pnpm typecheck`, `pnpm lint` clean; `next build` exits 0. Decisions taken during the phase: QR tokens are stored as SHA-256 hash for all lookups **plus an AES-256-GCM encrypted copy** (`tokenEnc`, key `TOKEN_ENCRYPTION_KEY` in `.env.example`) so reprints can reproduce the identical token (rule 8 vs rule 6 compromise, confirmed with the owner); print sheets are **5 tickets per A4 portrait** page (owner directive), each printed at ~94% of the 210 × 59 mm artwork so real print margins remain on every side; dashed cut guides included; serial format default `KSP-00001` with a per-batch configurable prefix; new permissions `inventory:read` / `inventory:export` are admin-only (sellers get inventory visibility through their sales in Phase 3). Deferred: physical paper scan test (Phase 5), Playwright e2e, individual auditing of the read-only QR preview endpoint, `HANGING_PROMISE_REJECTION` build warning now also appears on `/api/v1/tickets` and `/api/v1/tickets/export` (same benign class as Phase 1).
 
 ## Phase 3 — Sales and payment tracking
 
@@ -75,4 +77,6 @@ Phase 1 complete: 8 unit + 74 integration assertions pass (8 test files, `pnpm t
 
 ## Open decisions (keep configurable until confirmed)
 
-Event name and details · categories, prices, quantities · serial prefix and format · mandatory customer name/phone · discounts · partial payment for admission · print sheet arrangement · mobile-money integration · retention and refund policy · separate gate identifiers.
+Event name and details · categories, prices, quantities · serial prefix and format · mandatory customer name/phone · discounts · partial payment for admission · mobile-money integration · retention and refund policy · separate gate identifiers.
+
+(Print sheet arrangement is **confirmed**: 5 tickets per A4 portrait page at ~94% of the 210 × 59 mm artwork. Template dimensions stay configurable per PRD 5.6 in case a print supplier specifies a different stock.)

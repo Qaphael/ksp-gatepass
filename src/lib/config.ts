@@ -35,3 +35,29 @@ export function getLoginRateLimit(): LoginRateLimitConfig {
     lockoutMs: intFromEnv("LOGIN_LOCKOUT_MINUTES", 15) * 60 * 1000,
   };
 }
+
+/**
+ * 32-byte key for AES-256-GCM encryption of QR tokens at rest (business rule 8
+ * vs rule 6 compromise: hash for lookups, encrypted copy for reprinting).
+ *
+ * There is NO fallback: a missing or malformed key is a configuration error
+ * and must fail loudly rather than silently encrypting with a weak default.
+ * Generate with:
+ *   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+ */
+export function getTokenEncryptionKey(): Buffer {
+  const raw = process.env.TOKEN_ENCRYPTION_KEY;
+  if (!raw) {
+    throw new Error(
+      "TOKEN_ENCRYPTION_KEY is not set. Generate one with: " +
+        `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`,
+    );
+  }
+  const key = Buffer.from(raw, "base64url");
+  if (key.length !== 32) {
+    throw new Error(
+      "TOKEN_ENCRYPTION_KEY must be 32 bytes encoded as base64url (43 characters).",
+    );
+  }
+  return key;
+}

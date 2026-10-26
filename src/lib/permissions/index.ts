@@ -25,7 +25,9 @@ export const PERMISSIONS = [
   "user:read",
   "user:manage",
   // Ticket inventory (Phase 2)
+  "inventory:read",
   "inventory:generate",
+  "inventory:export",
   "ticket:print",
   "ticket:reprint",
   "ticket:revoke",

@@ -39,6 +39,8 @@ export default defineConfig({
       LOGIN_RATE_LIMIT_MAX: "3",
       LOGIN_RATE_LIMIT_WINDOW_MINUTES: "10",
       LOGIN_LOCKOUT_MINUTES: "10",
+      // Test-only key (43-char base64url = 32 bytes). Never use outside tests.
+      TOKEN_ENCRYPTION_KEY: "kw-7wZtKgVuv4hFCaQFfYt6Lh3bX3SLPwZuHC-zKjvo",
     },
     fileParallelism: false,
     testTimeout: 20_000,

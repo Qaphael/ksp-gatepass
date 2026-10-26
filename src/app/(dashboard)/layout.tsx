@@ -20,6 +20,9 @@ export default async function DashboardLayout({
   const navItems: NavItem[] = [
     { href: "/dashboard", label: "Overview" },
     ...(can(ctx.role, "event:read") ? [{ href: "/events", label: "Events" }] : []),
+    ...(can(ctx.role, "inventory:read")
+      ? [{ href: "/tickets", label: "Tickets" }]
+      : []),
     ...(can(ctx.role, "user:read") ? [{ href: "/team", label: "Team" }] : []),
   ];
 

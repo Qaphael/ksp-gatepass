@@ -1,5 +1,5 @@
-// KSP GatePass — Phase 1 core schema.
-// Money is integer UGX. Inventory/sale/check-in models arrive in later phases.
+// KSP GatePass — Phase 1+2 core schema.
+// Money is integer UGX. Sale/payment/check-in models arrive in later phases.
 // DB-level CHECK constraints (non-negative prices, positive capacity, window
 // ordering) are added in the migration SQL — Prisma 7 cannot express them in
 // the schema file yet.
@@ -36,6 +36,24 @@ enum AdmissionPolicy {
 enum TicketTypeStatus {
   ACTIVE
   INACTIVE
+}
+
+// Ticket INVENTORY state only (PRD 7.1). Sale state and admission state are
+// separate concepts and live in later-phase models.
+enum TicketStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+  CANCELLED
+  REVOKED
+}
+
+// Every PDF/CSV output is traceable (PRD 5.6 rule 6).
+enum PrintKind {
+  SAMPLE
+  PRODUCTION
+  REPRINT
+  EXPORT
 }
 
 enum AuditOutcome {
@@ -112,8 +130,11 @@ model Event {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
-  ticketTypes TicketType[]
-  auditLogs   AuditLog[]
+  ticketTypes    TicketType[]
+  auditLogs      AuditLog[]
+  tickets        Ticket[]
+  ticketBatches  TicketBatch[]
+  printBatches   PrintBatch[]
 
   @@index([status])
 }
@@ -139,6 +160,91 @@ model TicketType {
 
   @@unique([eventId, name])
   @@index([eventId])
+
+  tickets       Ticket[]
+  ticketBatches TicketBatch[]
+}
+
+// A generation run: unique serial range + secure QR tokens for `quantity`
+// tickets, committed atomically. `idempotencyKey` makes retries safe (rule 8).
+model TicketBatch {
+  id             String   @id @default(cuid())
+  // Human traceable reference, e.g. "BATCH-K7Q2X9".
+  batchRef       String   @unique
+  eventId        String
+  ticketTypeId   String
+  quantity       Int
+  serialPrefix   String
+  serialStart    Int
+  serialEnd      Int
+  label          String?
+  idempotencyKey String?  @unique
+  createdById    String?
+  createdAt      DateTime @default(now())
+
+  event        Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketType   TicketType   @relation(fields: [ticketTypeId], references: [id])
+  tickets      Ticket[]
+  printBatches PrintBatch[]
+
+  @@index([eventId, createdAt])
+  @@index([ticketTypeId])
+}
+
+// One generated ticket. `serial` and `tokenHash` are globally unique (PRD 7.5
+// rules 2-3). The raw QR token exists in two forms: `tokenHash` (SHA-256,
+// used for every verification lookup) and `tokenEnc` (AES-256-GCM under
+// TOKEN_ENCRYPTION_KEY, decrypted ONLY inside the print path so reprints can
+// reproduce the identical QR — business rule 8). Neither column is ever
+// returned by list/detail APIs, exports, logs or audit records.
+model Ticket {
+  id           String       @id @default(cuid())
+  eventId      String
+  ticketTypeId String
+  batchId      String?
+  serial       String       @unique
+  tokenHash    String       @unique
+  tokenEnc     String
+  status       TicketStatus @default(AVAILABLE)
+  // Set when status becomes REVOKED; reasons are mandatory at the API layer.
+  revokeReason String?
+  revokedById  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketType TicketType  @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  batch      TicketBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  printBatches PrintBatch[]
+
+  @@index([eventId, status])
+  @@index([ticketTypeId, status])
+  @@index([batchId])
+  @@index([serial])
+}
+
+// Traceability of every printed or exported output (PRD 5.6 rules 6-8).
+model PrintBatch {
+  id            String    @id @default(cuid())
+  kind          PrintKind
+  eventId       String
+  // Set when a whole generation batch was printed/sampled.
+  ticketBatchId String?
+  // Set when a single ticket was reprinted.
+  ticketId      String?
+  ticketCount   Int
+  metadata      Json?
+  actorId       String?
+  createdAt     DateTime  @default(now())
+
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketBatch TicketBatch? @relation(fields: [ticketBatchId], references: [id], onDelete: SetNull)
+  ticket      Ticket?      @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, createdAt])
+  @@index([ticketBatchId])
+  @@index([ticketId, createdAt])
 }
 
 // Append-only audit trail. Never store passwords, session tokens or raw QR

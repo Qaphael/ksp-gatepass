@@ -99,6 +99,43 @@ export async function readJson(req: NextRequest): Promise<unknown> {
   }
 }
 
+/** Sensitive binary output (print PDFs): never cached, never sniffed. */
+export function pdfResponse(pdf: Buffer, filename: string): NextResponse {
+  return new NextResponse(new Uint8Array(pdf), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Length": String(pdf.byteLength),
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+/** Authorised CSV export download (formula-injection safe upstream). */
+export function csvResponse(csv: string, filename: string): NextResponse {
+  return new NextResponse(csv, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+/** Query object without empty-string values (so Zod defaults apply cleanly). */
+export function requestQuery(req: NextRequest): Record<string, string> {
+  const entries = new URL(req.url).searchParams.entries();
+  const query: Record<string, string> = {};
+  for (const [key, value] of entries) {
+    if (value !== "") query[key] = value;
+  }
+  return query;
+}
+
 /** First hop of X-Forwarded-For (set by the reverse proxy in production). */
 export function clientIp(req: NextRequest): string | null {
   const forwarded = req.headers.get("x-forwarded-for");
