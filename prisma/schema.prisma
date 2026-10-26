@@ -1,0 +1,165 @@
+// KSP GatePass — Phase 1 core schema.
+// Money is integer UGX. Inventory/sale/check-in models arrive in later phases.
+// DB-level CHECK constraints (non-negative prices, positive capacity, window
+// ordering) are added in the migration SQL — Prisma 7 cannot express them in
+// the schema file yet.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  SELLER
+  VERIFIER
+  SUPERVISOR
+}
+
+enum EventStatus {
+  DRAFT
+  SCHEDULED
+  COMPLETED
+  ARCHIVED
+}
+
+// Admission policy stays configurable per event. FULL_PAYMENT is the default
+// and only supported policy until explicitly extended.
+enum AdmissionPolicy {
+  FULL_PAYMENT
+}
+
+enum TicketTypeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  displayName  String
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String
+  role         Role
+  active       Boolean  @default(true)
+  contactPhone String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions Session[]
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  // SHA-256 of the opaque session token; the raw token exists only in the cookie.
+  tokenHash  String    @unique
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastSeenAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Durable rate-limit/lockout counter keyed by "acct:<username>" or "ip:<addr>".
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+model Event {
+  id                String          @id @default(cuid())
+  name              String
+  description       String?
+  venue             String
+  address           String?
+  timezone          String          @default("Africa/Kampala")
+  // Calendar date of the event; wall-clock times are local to `timezone`.
+  eventDate         DateTime        @db.Date
+  startTime         String
+  endTime           String
+  capacity          Int
+  // Absolute instants (UTC) for sales/admission windows; null = not set.
+  salesOpensAt      DateTime?
+  salesClosesAt     DateTime?
+  admissionOpensAt  DateTime?
+  admissionClosesAt DateTime?
+  // Result of the open/close actions; windows alone do not open sales.
+  salesOpen         Boolean         @default(false)
+  admissionOpen     Boolean         @default(false)
+  status            EventStatus     @default(DRAFT)
+  admissionPolicy   AdmissionPolicy @default(FULL_PAYMENT)
+  accentColor       String?
+  ticketFooterText  String?
+  organiserContact  String?
+  createdById       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  ticketTypes TicketType[]
+  auditLogs   AuditLog[]
+
+  @@index([status])
+}
+
+model TicketType {
+  id               String           @id @default(cuid())
+  eventId          String
+  name             String
+  description      String?
+  // Integer UGX. A sold ticket snapshots its price at sale time (later phases).
+  priceUgx         Int
+  // Null = bounded only by remaining event capacity.
+  allocationLimit  Int?
+  salesOpensAt     DateTime?
+  salesClosesAt    DateTime?
+  permitsAdmission Boolean          @default(true)
+  status           TicketTypeStatus @default(ACTIVE)
+  printLabel       String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, name])
+  @@index([eventId])
+}
+
+// Append-only audit trail. Never store passwords, session tokens or raw QR
+// tokens in `summary`.
+model AuditLog {
+  id         String        @id @default(cuid())
+  actorId    String?
+  actorRole  Role?
+  // Stable dotted action code, e.g. "auth.login.success", "event.create".
+  action     String
+  targetType String?
+  targetId   String?
+  eventId    String?
+  outcome    AuditOutcome  @default(SUCCESS)
+  summary    Json?
+  createdAt  DateTime      @default(now())
+
+  event Event? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([eventId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action])
+}
