@@ -26,7 +26,7 @@ export default async function EventsPage() {
           </p>
         </div>
         {can(ctx.role, "event:create") ? (
-          <Button render={<Link href="/events/new" />}>
+          <Button nativeButton={false} render={<Link href="/events/new" />}>
             <Plus /> Create event
           </Button>
         ) : null}

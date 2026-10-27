@@ -27,7 +27,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div><Link href="/sales" className="text-sm text-muted-foreground underline-offset-2 hover:underline">← Sales</Link><h1 className="mt-1 text-2xl font-semibold tracking-tight">{sale.reference}</h1><p className="text-sm text-muted-foreground">{sale.eventName} · {new Date(sale.createdAt).toLocaleString("en-UG", { timeZone: "Africa/Kampala" })}</p></div>
-        <div className="flex flex-wrap gap-2"><span className="rounded-full bg-muted px-3 py-1 text-sm">{sale.status}</span><Button size="sm" variant="outline" render={<a href={`/api/v1/sales/${sale.id}/receipt.pdf`} />}>Print receipt</Button></div>
+        <div className="flex flex-wrap gap-2"><span className="rounded-full bg-muted px-3 py-1 text-sm">{sale.status}</span><Button nativeButton={false} size="sm" variant="outline" render={<a href={`/api/v1/sales/${sale.id}/receipt.pdf`} />}>Print receipt</Button></div>
       </div>
       <section className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
         <div><div className="text-xs text-muted-foreground">Seller</div><div>{sale.seller.displayName}</div></div>

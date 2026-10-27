@@ -70,6 +70,7 @@ export default async function BatchDetailPage({
         <Button
           size="sm"
           variant="outline"
+          nativeButton={false}
           render={<Link href={`/tickets?batchId=${batch.id}`} />}
         >
           <Tickets /> View tickets in this batch

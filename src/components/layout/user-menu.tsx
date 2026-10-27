@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -27,12 +28,32 @@ interface UserMenuProps {
 export function UserMenu({ user }: UserMenuProps) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   async function signOut() {
     setSigningOut(true);
-    await apiFetch("/api/v1/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    setSignOutError(null);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10_000);
+
+    try {
+      const result = await apiFetch("/api/v1/auth/logout", {
+        method: "POST",
+        signal: controller.signal,
+      });
+      if (!result.ok) {
+        setSignOutError(result.error.message);
+        return;
+      }
+
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      setSignOutError("Could not sign out. Check your connection and try again.");
+    } finally {
+      window.clearTimeout(timeout);
+      setSigningOut(false);
+    }
   }
 
   return (
@@ -49,13 +70,20 @@ export function UserMenu({ user }: UserMenuProps) {
         }
       />
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <p className="truncate font-medium">{user.displayName}</p>
-          <p className="text-xs font-normal text-muted-foreground">
-            {ROLE_LABELS[user.role]}
-          </p>
-        </DropdownMenuLabel>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            <p className="truncate font-medium">{user.displayName}</p>
+            <p className="text-xs font-normal text-muted-foreground">
+              {ROLE_LABELS[user.role]}
+            </p>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        {signOutError ? (
+          <p role="alert" className="px-2 py-1.5 text-xs text-destructive">
+            {signOutError}
+          </p>
+        ) : null}
         <DropdownMenuItem render={<Link href="/account" />}>
           <UserRound /> Account
         </DropdownMenuItem>

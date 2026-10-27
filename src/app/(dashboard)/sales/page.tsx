@@ -26,7 +26,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h1 className="text-2xl font-semibold tracking-tight">Sales</h1><p className="mt-1 text-sm text-muted-foreground">Recorded transactions, outstanding balances and payment history.</p></div>
-        {can(ctx.role, "sale:create") ? <Button size="sm" render={<Link href="/sales/new" />}><Plus /> New sale</Button> : null}
+        {can(ctx.role, "sale:create") ? <Button nativeButton={false} size="sm" render={<Link href="/sales/new" />}><Plus /> New sale</Button> : null}
       </div>
       <form className="flex flex-wrap gap-2 rounded-lg border border-border p-3">
         <select name="eventId" defaultValue={query.eventId ?? ""} className="rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="">All events</option>{events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select>

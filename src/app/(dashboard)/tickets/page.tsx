@@ -85,13 +85,14 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
             <Button
               size="sm"
               variant="outline"
+              nativeButton={false}
               render={<a href={exportHref(query)} />}
             >
               <FileDown /> Export CSV
             </Button>
           ) : null}
           {can(ctx.role, "inventory:generate") ? (
-            <Button size="sm" render={<Link href="/tickets/new" />}>
+            <Button nativeButton={false} size="sm" render={<Link href="/tickets/new" />}>
               <Plus /> Generate tickets
             </Button>
           ) : null}

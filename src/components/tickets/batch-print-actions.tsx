@@ -27,6 +27,7 @@ export function BatchPrintActions({
         {canPrint ? (
           <>
             <Button
+              nativeButton={false}
               size="sm"
               variant="outline"
               render={
@@ -38,6 +39,7 @@ export function BatchPrintActions({
               <Printer /> Print sample (1 ticket)
             </Button>
             <Button
+              nativeButton={false}
               size="sm"
               render={
                 <a href={`/api/v1/ticket-batches/${batchId}/print.pdf`} />
@@ -49,6 +51,7 @@ export function BatchPrintActions({
         ) : null}
         {canExport ? (
           <Button
+            nativeButton={false}
             size="sm"
             variant="ghost"
             render={

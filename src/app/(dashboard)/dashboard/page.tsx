@@ -43,7 +43,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         {can(ctx.role, "event:create") ? (
-          <Button render={<Link href="/events/new" />}>
+          <Button nativeButton={false} render={<Link href="/events/new" />}>
             Create event <ArrowRight />
           </Button>
         ) : null}
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
                   : "An administrator has not configured an event yet."}
               </p>
               {can(ctx.role, "event:create") ? (
-                <Button variant="outline" render={<Link href="/events/new" />}>
+                <Button nativeButton={false} variant="outline" render={<Link href="/events/new" />}>
                   Create event <ArrowRight />
                 </Button>
               ) : null}

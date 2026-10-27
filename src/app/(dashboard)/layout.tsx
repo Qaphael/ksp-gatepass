@@ -48,26 +48,38 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-2.5">
-          <div className="flex min-w-0 items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="font-semibold whitespace-nowrap tracking-tight"
-            >
-              KSP GatePass
-            </Link>
+    <div className="min-h-dvh md:flex">
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-border bg-background px-4 py-5 md:flex">
+        <Link
+          href="/dashboard"
+          className="mb-8 px-2 font-semibold tracking-tight"
+        >
+          KSP GatePass
+        </Link>
+        <NavLinks items={navItems} orientation="vertical" />
+        <div className="mt-auto border-t border-border pt-4">
+          <UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} />
+        </div>
+      </aside>
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur md:hidden">
+          <div className="flex flex-col gap-2 px-4 py-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <Link
+                href="/dashboard"
+                className="font-semibold whitespace-nowrap tracking-tight"
+              >
+                KSP GatePass
+              </Link>
+              <UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} />
+            </div>
             <NavLinks items={navItems} />
           </div>
-          <UserMenu
-            user={{ displayName: ctx.displayName, role: ctx.role }}
-          />
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
-        {children}
-      </main>
+        </header>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+          {children}
+        </main>
+      </div>
       <Toaster position="top-center" />
     </div>
   );
