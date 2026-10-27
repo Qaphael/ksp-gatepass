@@ -48,15 +48,17 @@ Phase 3 complete: `pnpm test` passes 12 files / 112 tests, `pnpm typecheck`, `pn
 
 ## Phase 4 — Admission and duplicate protection
 
-- [ ] CheckIn (unique ticketId) and ScanAttempt models
-- [ ] Shared eligibility service plus single transactional check-in function
-- [ ] `verify-qr`, `verify-serial` (read-only), `confirm` (rechecks everything)
-- [ ] Scanner screen (camera, permission states, flashlight, debounce, recent scans, connection indicator)
-- [ ] Manual serial screen with explicit confirm
-- [ ] All result states distinct, failures never green, offline state shown
-- [ ] Recent check-ins, attendance summary, correction flow (history preserved)
-- [ ] Tests: 10+ concurrent requests produce exactly 1 admission, unpaid/revoked/other-event/expired rejected, verify never admits, tokens not logged
+- [x] CheckIn (unique ticketId) and ScanAttempt models
+- [x] Shared eligibility service plus single transactional check-in function
+- [x] `verify-qr`, `verify-serial` (read-only), `confirm` (rechecks everything)
+- [x] Scanner screen (camera, permission states, flashlight where supported, debounce, recent scans, connection indicator)
+- [x] Manual serial screen with explicit confirm
+- [x] All result states distinct, failures never green, offline state shown
+- [x] Recent check-ins, attendance summary, correction flow (history preserved)
+- [x] Tests: 10+ concurrent requests produce exactly 1 admission, unpaid/revoked/other-event/expired rejected, verify never admits, tokens not logged
 - [ ] Real Android device test: camera, HTTPS, two phones scanning at once
+
+Phase 4 implementation complete: `pnpm typecheck` and `pnpm lint` pass; the full suite reports 13 files / 116 tests passing; the production build completed during test setup. Confirmation locks the event, ticket and sale rows in one transaction, and the unique ticket constraint prevents duplicate admission. Verification writes attempts only; QR token values are not stored in attempts. Android camera, deployed HTTPS and two-phone concurrency still require an on-device test.
 
 ## Phase 5 — Reporting, hardening and launch
 
@@ -71,10 +73,10 @@ Phase 3 complete: `pnpm test` passes 12 files / 112 tests, `pnpm typecheck`, `pn
 
 ## Release gate
 
-- [ ] Duplicate-check-in concurrency test passes
-- [ ] Payment-eligibility test passes
+- [x] Duplicate-check-in concurrency test passes
+- [x] Payment-eligibility test passes
 - [ ] Real-paper QR test passes
-- [ ] Permissions test passes
+- [x] Permissions test passes
 - [ ] Backup restoration test passes
 
 ## Open decisions (keep configurable until confirmed)

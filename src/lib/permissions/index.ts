@@ -44,6 +44,9 @@ export const PERMISSIONS = [
   "checkin:verify",
   "checkin:confirm",
   "checkin:override",
+  "checkin:read-recent",
+  "checkin:read-summary",
+  "checkin:read-attempts",
   // Reporting and audit (Phase 5)
   "report:view-summary",
   "report:export-own",
@@ -72,6 +75,7 @@ const VERIFIER: readonly Permission[] = [
   "event:read",
   "checkin:verify",
   "checkin:confirm",
+  "checkin:read-recent",
 ];
 
 const SUPERVISOR: readonly Permission[] = [
@@ -80,6 +84,9 @@ const SUPERVISOR: readonly Permission[] = [
   "ticket-type:read",
   "checkin:verify",
   "checkin:confirm",
+  "checkin:read-recent",
+  "checkin:read-summary",
+  "checkin:read-attempts",
   "report:view-summary",
 ];
 

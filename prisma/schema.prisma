@@ -76,6 +76,33 @@ enum PaymentAdjustmentType {
   REFUND
 }
 
+enum CheckInMethod {
+  QR
+  MANUAL
+}
+
+enum ScanMethod {
+  QR
+  SERIAL
+}
+
+enum ScanResultCode {
+  ELIGIBLE
+  ADMITTED
+  INVALID_QR
+  UNKNOWN_SERIAL
+  OTHER_EVENT
+  NOT_PAID
+  TICKET_CANCELLED
+  TICKET_REVOKED
+  ALREADY_USED
+  NOT_YET_VALID
+  EXPIRED
+  ADMISSION_CLOSED
+  TICKET_NOT_SOLD
+  CATEGORY_NOT_ADMISSIBLE
+}
+
 // Every PDF/CSV output is traceable (PRD 5.6 rule 6).
 enum PrintKind {
   SAMPLE
@@ -105,6 +132,9 @@ model User {
   sales    Sale[]
   paymentsRecorded Payment[]
   paymentAdjustmentsRecorded PaymentAdjustment[]
+  checkIns CheckIn[]
+  scanAttempts ScanAttempt[]
+  checkInCorrections CheckInCorrection[]
 }
 
 model Session {
@@ -169,6 +199,8 @@ model Event {
   ticketBatches  TicketBatch[]
   printBatches   PrintBatch[]
   sales          Sale[]
+  checkIns       CheckIn[]
+  scanAttempts   ScanAttempt[]
 
   @@index([status])
 }
@@ -253,6 +285,8 @@ model Ticket {
 
   printBatches PrintBatch[]
   saleTickets  SaleTicket[]
+  checkIn      CheckIn?
+  scanAttempts ScanAttempt[]
 
   @@index([eventId, status])
   @@index([ticketTypeId, status])
@@ -409,4 +443,64 @@ model PaymentAdjustment {
   recordedBy User @relation(fields: [recordedById], references: [id], onDelete: Restrict)
 
   @@index([paymentId, createdAt])
+}
+
+// Successful admissions are immutable; ticketId is the database duplicate guard.
+model CheckIn {
+  id             String       @id @default(cuid())
+  eventId        String
+  ticketId       String       @unique
+  verifierId     String
+  gate           String
+  method         CheckInMethod
+  checkedInAt    DateTime     @default(now())
+  idempotencyKey String       @unique
+  requestHash    String
+
+  event       Event              @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  ticket      Ticket             @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  verifier    User               @relation(fields: [verifierId], references: [id], onDelete: Restrict)
+  corrections CheckInCorrection[]
+
+  @@index([eventId, checkedInAt])
+  @@index([verifierId, checkedInAt])
+  @@index([eventId, gate, checkedInAt])
+}
+
+// Failed and successful verify/confirm outcomes; QR token material is never stored.
+model ScanAttempt {
+  id          String         @id @default(cuid())
+  eventId     String
+  actorId     String
+  ticketId    String?
+  method      ScanMethod
+  resultCode  ScanResultCode
+  gate        String?
+  serial      String?
+  attemptedAt DateTime       @default(now())
+
+  event  Event   @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  actor  User    @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, attemptedAt])
+  @@index([actorId, attemptedAt])
+  @@index([eventId, resultCode, attemptedAt])
+  @@index([ticketId, attemptedAt])
+}
+
+// Incident corrections explain an existing check-in without editing or deleting it.
+model CheckInCorrection {
+  id                     String   @id @default(cuid())
+  checkInId              String
+  actorId                String
+  confirmedTicketSerial  String
+  reason                 String
+  createdAt              DateTime @default(now())
+
+  checkIn CheckIn @relation(fields: [checkInId], references: [id], onDelete: Restrict)
+  actor   User    @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([checkInId, createdAt])
+  @@index([actorId, createdAt])
 }

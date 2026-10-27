@@ -26,6 +26,18 @@ export default async function DashboardLayout({
     ...(can(ctx.role, "sale:read-own") || can(ctx.role, "sale:read-all")
       ? [{ href: "/sales", label: "Sales" }]
       : []),
+    ...(can(ctx.role, "checkin:verify")
+      ? [
+          { href: "/scanner", label: "Scan QR" },
+          { href: "/check-in/manual", label: "Manual check-in" },
+        ]
+      : []),
+    ...(can(ctx.role, "checkin:read-recent")
+      ? [{ href: "/check-in/recent", label: "Attendance" }]
+      : []),
+    ...(can(ctx.role, "checkin:read-attempts")
+      ? [{ href: "/check-in/attempts", label: "Scan attempts" }]
+      : []),
     ...(can(ctx.role, "user:read") ? [{ href: "/team", label: "Team" }] : []),
   ];
 
