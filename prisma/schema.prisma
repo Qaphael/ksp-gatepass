@@ -48,6 +48,34 @@ enum TicketStatus {
   REVOKED
 }
 
+enum SaleStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  RECORDED
+  REVERSED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  MOBILE_MONEY
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+enum PaymentAdjustmentType {
+  REVERSAL
+  REFUND
+}
+
 // Every PDF/CSV output is traceable (PRD 5.6 rule 6).
 enum PrintKind {
   SAMPLE
@@ -74,6 +102,9 @@ model User {
   updatedAt    DateTime @updatedAt
 
   sessions Session[]
+  sales    Sale[]
+  paymentsRecorded Payment[]
+  paymentAdjustmentsRecorded PaymentAdjustment[]
 }
 
 model Session {
@@ -121,6 +152,8 @@ model Event {
   // Result of the open/close actions; windows alone do not open sales.
   salesOpen         Boolean         @default(false)
   admissionOpen     Boolean         @default(false)
+  // Irreversible marker: ordinary sale cancellation/refund stops once admission has ever opened.
+  admissionStartedAt DateTime?
   status            EventStatus     @default(DRAFT)
   admissionPolicy   AdmissionPolicy @default(FULL_PAYMENT)
   accentColor       String?
@@ -135,6 +168,7 @@ model Event {
   tickets        Ticket[]
   ticketBatches  TicketBatch[]
   printBatches   PrintBatch[]
+  sales          Sale[]
 
   @@index([status])
 }
@@ -163,6 +197,7 @@ model TicketType {
 
   tickets       Ticket[]
   ticketBatches TicketBatch[]
+  saleItems     SaleItem[]
 }
 
 // A generation run: unique serial range + secure QR tokens for `quantity`
@@ -217,6 +252,7 @@ model Ticket {
   batch      TicketBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
 
   printBatches PrintBatch[]
+  saleTickets  SaleTicket[]
 
   @@index([eventId, status])
   @@index([ticketTypeId, status])
@@ -268,4 +304,109 @@ model AuditLog {
   @@index([eventId, createdAt])
   @@index([actorId, createdAt])
   @@index([action])
+}
+
+// Confirmed sales retain server-calculated totals and an immutable actor.
+model Sale {
+  id                String     @id @default(cuid())
+  reference         String     @unique
+  eventId           String
+  sellerId          String
+  customerName      String?
+  customerPhone     String?
+  customerReference String?
+  notes             String?
+  subtotalUgx       Int
+  discountUgx       Int        @default(0)
+  discountReason    String?
+  discountedById    String?
+  totalUgx          Int
+  status            SaleStatus @default(PENDING_PAYMENT)
+  idempotencyKey    String?
+  requestHash       String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  event       Event       @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  seller      User        @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  items       SaleItem[]
+  tickets     SaleTicket[]
+  payments    Payment[]
+
+  @@unique([sellerId, idempotencyKey])
+  @@index([eventId, createdAt])
+  @@index([sellerId, createdAt])
+  @@index([eventId, status, createdAt])
+}
+
+model SaleItem {
+  id            String @id @default(cuid())
+  saleId        String
+  ticketTypeId  String
+  quantity      Int
+  unitPriceUgx  Int
+  discountUgx   Int    @default(0)
+  lineTotalUgx  Int
+
+  sale       Sale       @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  tickets    SaleTicket[]
+
+  @@unique([saleId, ticketTypeId])
+  @@index([ticketTypeId])
+}
+
+// ticketId is unique: one ticket can be allocated to at most one sale ever.
+model SaleTicket {
+  id         String @id @default(cuid())
+  saleId     String
+  saleItemId String
+  ticketId   String @unique
+
+  sale     Sale     @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  saleItem SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Restrict)
+  ticket   Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+  @@index([saleItemId])
+}
+
+// Payment rows are never updated/deleted by application workflows. Corrections
+// are represented by linked PaymentAdjustment rows.
+model Payment {
+  id             String        @id @default(cuid())
+  reference      String        @unique
+  saleId         String
+  amountUgx      Int
+  method         PaymentMethod
+  externalRef    String?
+  notes          String?
+  status         PaymentStatus @default(RECORDED)
+  recordedById   String
+  idempotencyKey String?       @unique
+  requestHash    String?
+  recordedAt     DateTime      @default(now())
+
+  sale        Sale               @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  recordedBy  User               @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+  adjustments PaymentAdjustment[]
+
+  @@index([saleId, recordedAt])
+}
+
+model PaymentAdjustment {
+  id             String               @id @default(cuid())
+  paymentId      String
+  type           PaymentAdjustmentType
+  amountUgx      Int
+  reason         String
+  recordedById   String
+  idempotencyKey String?              @unique
+  requestHash    String?
+  createdAt      DateTime             @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  recordedBy User @relation(fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([paymentId, createdAt])
 }

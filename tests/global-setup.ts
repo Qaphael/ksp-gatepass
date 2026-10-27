@@ -11,9 +11,10 @@
 import "./_safe-stack";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import os from "node:os";
+import { syncBuiltinESMExports } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import EmbeddedPostgres from "embedded-postgres";
 import { Client } from "pg";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -26,7 +27,7 @@ const baseUrl = process.env.TEST_BASE_URL ?? "http://127.0.0.1:3100";
 
 const adminUrl = `postgresql://postgres:postgres@localhost:${dbPort}/postgres`;
 
-let startedPostgres: EmbeddedPostgres | null = null;
+let startedPostgres: { stop(): Promise<void> } | null = null;
 let serverPid: number | null = null;
 
 async function canConnect(url: string): Promise<boolean> {
@@ -43,6 +44,25 @@ async function canConnect(url: string): Promise<boolean> {
 
 async function ensurePostgres(): Promise<void> {
   if (await canConnect(adminUrl)) return;
+
+  // embedded-postgres reads uid only to detect Unix root. Node can fail to
+  // resolve the Windows account in restricted desktop sandboxes; Windows has
+  // no Unix root user, so provide the non-root value the package needs.
+  if (process.platform === "win32") {
+    try {
+      os.userInfo();
+    } catch {
+      os.userInfo = (() => ({
+        uid: -1,
+        gid: -1,
+        username: process.env.USERNAME ?? "",
+        homedir: process.env.USERPROFILE ?? "",
+        shell: "",
+      })) as typeof os.userInfo;
+      syncBuiltinESMExports();
+    }
+  }
+  const { default: EmbeddedPostgres } = await import("embedded-postgres");
 
   const dataDir = path.join(root, ".data", "postgres");
   const pg = new EmbeddedPostgres({

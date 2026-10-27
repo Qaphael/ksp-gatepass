@@ -306,7 +306,9 @@ async function setWindowOpen(
 
   const updated = await prisma.event.update({
     where: { id },
-    data: window === "sales" ? { salesOpen: open } : { admissionOpen: open },
+    data: window === "sales"
+      ? { salesOpen: open }
+      : { admissionOpen: open, ...(open && !event.admissionStartedAt ? { admissionStartedAt: new Date() } : {}) },
   });
   await recordAudit({
     actorId: ctx.userId,

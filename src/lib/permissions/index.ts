@@ -35,6 +35,9 @@ export const PERMISSIONS = [
   "sale:create",
   "sale:read-own",
   "sale:read-all",
+  "sale:cancel",
+  "sale:refund",
+  "sale:discount",
   "payment:record",
   "payment:reverse",
   // Admission (Phase 4)

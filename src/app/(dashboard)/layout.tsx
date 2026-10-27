@@ -23,6 +23,9 @@ export default async function DashboardLayout({
     ...(can(ctx.role, "inventory:read")
       ? [{ href: "/tickets", label: "Tickets" }]
       : []),
+    ...(can(ctx.role, "sale:read-own") || can(ctx.role, "sale:read-all")
+      ? [{ href: "/sales", label: "Sales" }]
+      : []),
     ...(can(ctx.role, "user:read") ? [{ href: "/team", label: "Team" }] : []),
   ];
 

@@ -35,14 +35,16 @@ Phase 2 complete: `pnpm test` runs 11 files / 103 tests, all green (Phase 1 regr
 
 ## Phase 3 — Sales and payment tracking
 
-- [ ] Sale, SaleItem, SaleTicket, Payment, PaymentAdjustment models and constraints
-- [ ] Create sale (customer, categories, review, payment, confirm) with atomic allocation
-- [ ] Idempotency keys on sales and payments
-- [ ] Partial payments, status recalculation, overpayment blocked
-- [ ] Reversal, refund, cancel sale (blocked if tickets already admitted)
-- [ ] Receipt PDF, sale detail timeline
-- [ ] Discounts off by default, admin only with reason
-- [ ] Tests: no double allocation, server pricing, retries, append-only payments
+- [x] Sale, SaleItem, SaleTicket, Payment, PaymentAdjustment models and constraints
+- [x] Create sale (customer, categories, review, payment, confirm) with atomic allocation
+- [x] Idempotency keys required on sales, payments, reversals and refunds
+- [x] Partial payments, status recalculation, overpayment blocked
+- [x] Reversal, refund, cancel sale (blocked once event admission has ever opened)
+- [x] Receipt PDF, sale detail timeline
+- [x] Discounts default to zero; administrator-only discount with mandatory reason
+- [x] Tests: no double allocation, server pricing, retries, append-only payments
+
+Phase 3 complete: `pnpm test` passes 12 files / 112 tests, `pnpm typecheck`, `pnpm lint`, and `pnpm build` pass. Sales and payment mutations are transactional, audited and idempotent; sale prices come from ticket-type snapshots; allocation is protected by an event row lock and unique ticket-to-sale constraint. Payment adjustments preserve original payment rows. Discounts require the administrator permission and a stored reason. A durable `admissionStartedAt` marker prevents ordinary cancellation/refunds once admission has ever opened, including after the event is closed. Mobile-money provider verification remains out of scope; receipts explicitly describe staff-recorded payments.
 
 ## Phase 4 — Admission and duplicate protection
 
