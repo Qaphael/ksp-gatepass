@@ -62,14 +62,26 @@ Phase 4 implementation complete: `pnpm typecheck` and `pnpm lint` pass; the full
 
 ## Phase 5 — Reporting, hardening and launch
 
-- [ ] Reports (PRD 5.14) with CSV and PDF export, role-scoped
-- [ ] Audit log screen and search
-- [ ] Security headers, CSRF protection, dependency review
-- [ ] Load test (10+ clients, p95 under 1 s) and concurrency test in CI
-- [ ] HTTPS reverse proxy, backups on a schedule, restore rehearsal
+Implementation plan:
+
+1. Map PRD reports to existing sales, payment, ticket, print, scan-attempt, check-in and audit data; add role-scoped report queries and CSV/PDF exports with safe input/output handling.
+2. Add permission-checked audit search and a useful summary of critical changes, then add regression tests for report totals, access boundaries, export safety and audit visibility.
+3. Harden browser-facing API responses with security headers and same-origin CSRF protection; inspect production dependencies and address actionable findings without unrelated upgrades.
+4. Add a repeatable 10+ client admission load/concurrency check and document its environment and measured results. Complete HTTPS/reverse-proxy and scheduled backup/restore configuration using the existing deployment approach.
+5. Write the staff operating guide, environment-variable reference and launch checklist; run all locally possible checks and leave physical paper/device and deployed-host checks open until actually performed.
+
+- [x] Reports (PRD 5.14) with CSV and PDF export, role-scoped
+- [x] Audit log screen and search
+- [x] Security headers and same-origin CSRF protection
+- [ ] Production dependency advisory review succeeds (local registry access was denied; hosted CI check is configured)
+- [x] 10-client verification p95 test and duplicate-admission concurrency test are part of CI
+- [x] HTTPS reverse-proxy configuration and safe backup/restore scripts with scheduling instructions
+- [ ] HTTPS deployment, host backup schedule and scratch restore rehearsal verified on the target host
 - [ ] Printed ticket QR scanned from real paper
-- [ ] Staff operating guide, environment variable docs, list of incomplete features
-- [ ] Launch checklist (PRD 15) completed
+- [x] Staff operating guide, environment variable docs, list of incomplete features
+- [x] Launch checklist (PRD 15) document created; operational sign-off remains pending
+
+Phase 5 local implementation status: typecheck and lint pass; the full suite reports 14 files / 120 tests passing, including all 12 report types, role-scoped access, CSV/PDF export, audit search, CSRF/header checks, ten-client p95 and duplicate admission. The production build completed during test setup. Remaining release work is the hosted CI run, a successful registry advisory audit, target-host HTTPS/backup scheduling and restore rehearsal, and the real-paper Android scan. The local advisory audit could not reach the npm registry (EACCES); no clean audit result is claimed.
 
 ## Release gate
 

@@ -161,6 +161,9 @@ export function apiHandler<P extends RouteParams>(
     context: { params: Promise<P> },
   ): Promise<NextResponse> => {
     try {
+      if (isCrossSiteMutation(req)) {
+        return jsonError(403, ERROR_CODES.FORBIDDEN, "Cross-site request rejected.");
+      }
       const ctx = await getSessionContext();
       if (!ctx) {
         return jsonError(401, ERROR_CODES.UNAUTHENTICATED, "Please sign in.");
@@ -171,6 +174,22 @@ export function apiHandler<P extends RouteParams>(
       return errorToResponse(error);
     }
   };
+}
+
+/** Cookie-authenticated mutations accept same-origin browser requests only. */
+function isCrossSiteMutation(req: NextRequest): boolean {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method.toUpperCase())) return false;
+  if (req.headers.get("sec-fetch-site")?.toLowerCase() === "cross-site") return true;
+  const origin = req.headers.get("origin");
+  if (!origin) return false; // Non-browser clients may omit Origin; browsers send it for mutations.
+  try {
+    const supplied = new URL(origin);
+    const requestHost = (req.headers.get("host") ?? req.nextUrl.host).toLowerCase();
+    const forwardedProto = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+    const requestProtocol = forwardedProto ? `${forwardedProto}:` : req.nextUrl.protocol;
+    return !["http:", "https:"].includes(supplied.protocol) || supplied.host.toLowerCase() !== requestHost || supplied.protocol !== requestProtocol;
+  }
+  catch { return true; }
 }
 
 /** Same error mapping as apiHandler, without requiring a session. */

@@ -44,6 +44,23 @@ describe("admission and duplicate protection", () => {
     expect((await seller.post("/api/v1/check-in/verify-serial", { eventId: fixture.eventId, serial: fixture.serial })).status).toBe(403);
   });
 
+  it("keeps the 10-phone verification p95 below one second on the test host", async () => {
+    const fixture = await soldTicket();
+    const phones = await Promise.all(Array.from({ length: 10 }, () => loginAs("verifier")));
+    const started = performance.now();
+    const results = await Promise.all(phones.map(async (phone) => {
+      const requestStart = performance.now();
+      const response = await phone.post("/api/v1/check-in/verify-serial", { eventId: fixture.eventId, serial: fixture.serial });
+      return { elapsedMs: performance.now() - requestStart, status: response.status };
+    }));
+    const elapsedMs = performance.now() - started;
+    const ordered = results.map((item) => item.elapsedMs).sort((a, b) => a - b);
+    const p95 = ordered[Math.ceil(ordered.length * 0.95) - 1] ?? Infinity;
+    expect(results.every((item) => item.status === 200)).toBe(true);
+    expect(p95).toBeLessThan(1_000);
+    console.info(`[load] 10 concurrent serial verifications completed in ${elapsedMs.toFixed(1)} ms; p95=${p95.toFixed(1)} ms`);
+  });
+
   it("stores failed scan metadata without storing QR token values", async () => {
     const fixture = await soldTicket();
     const fake = `unknown-${fixture.token}`;

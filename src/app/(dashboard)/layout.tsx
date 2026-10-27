@@ -38,6 +38,12 @@ export default async function DashboardLayout({
     ...(can(ctx.role, "checkin:read-attempts")
       ? [{ href: "/check-in/attempts", label: "Scan attempts" }]
       : []),
+    ...(can(ctx.role, "report:view-summary") || can(ctx.role, "report:export-own") || can(ctx.role, "report:export-full")
+      ? [{ href: "/reports", label: "Reports" }]
+      : []),
+    ...(can(ctx.role, "audit:read")
+      ? [{ href: "/audit-logs", label: "Audit log" }]
+      : []),
     ...(can(ctx.role, "user:read") ? [{ href: "/team", label: "Team" }] : []),
   ];
 

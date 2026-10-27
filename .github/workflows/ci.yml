@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Enable the locked pnpm version
+        run: corepack enable && corepack prepare pnpm@12.15.0 --activate
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Validate operations scripts and Compose configuration
+        run: |
+          bash -n scripts/backup-postgres.sh scripts/restore-postgres-to-scratch.sh
+          cp .env.example .env
+          docker compose -f docker-compose.yml -f docker-compose.https.yml config --quiet
+      - name: Review production dependency advisories
+        run: pnpm audit --prod --audit-level high
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Lint
+        run: pnpm lint
+      - name: Unit and integration tests
+        run: pnpm test
