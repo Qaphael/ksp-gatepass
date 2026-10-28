@@ -27,6 +27,11 @@ enum EventStatus {
   ARCHIVED
 }
 
+enum EventBrandingKind {
+  POSTER
+  LOGO
+}
+
 // Admission policy stays configurable per event. FULL_PAYMENT is the default
 // and only supported policy until explicitly extended.
 enum AdmissionPolicy {
@@ -201,8 +206,28 @@ model Event {
   sales          Sale[]
   checkIns       CheckIn[]
   scanAttempts   ScanAttempt[]
+  brandingAssets EventBrandingAsset[]
 
   @@index([status])
+}
+
+model EventBrandingAsset {
+  id            String            @id @default(cuid())
+  eventId       String
+  kind          EventBrandingKind
+  storageKey    String            @unique
+  thumbnailKey  String            @unique
+  displayKey    String            @unique
+  altText       String
+  width         Int
+  height        Int
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, kind])
+  @@index([eventId])
 }
 
 model TicketType {

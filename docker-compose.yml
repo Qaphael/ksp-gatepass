@@ -33,10 +33,14 @@ services:
       # Required: AES-256-GCM key for QR tokens at rest. No default on purpose —
       # generate one and put it in your .env before starting the stack.
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
+      BRANDING_STORAGE_DIR: /var/lib/ksp-gatepass/branding
     ports:
       # Host-only development access. Production HTTPS is provided by the
       # optional Caddy profile; app:3000 remains reachable on the Compose network.
       - "127.0.0.1:${APP_PORT:-3000}:3000"
+    volumes:
+      - event_branding:/var/lib/ksp-gatepass/branding
 
 volumes:
   pg_data:
+  event_branding:

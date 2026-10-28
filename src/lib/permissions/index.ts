@@ -76,6 +76,8 @@ const VERIFIER: readonly Permission[] = [
   "checkin:verify",
   "checkin:confirm",
   "checkin:read-recent",
+  "checkin:read-summary",
+  "checkin:read-attempts",
 ];
 
 const SUPERVISOR: readonly Permission[] = [

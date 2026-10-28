@@ -33,8 +33,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   };
   const collect = (...items: Array<NavItem | null>) => items.filter((item): item is NavItem => Boolean(item));
   let navItems: NavItem[];
-  if (ctx.role === "VERIFIER") navItems = collect(all.scan, all.manual, all.recent);
-  else if (ctx.role === "SELLER") navItems = collect({ href: "/sales/new", label: "Sell", icon: NAV_ICONS.Sales }, all.sales, all.tickets);
+  if (ctx.role === "VERIFIER") navItems = collect(all.overview, all.scan, all.manual, all.recent);
+  else if (ctx.role === "SELLER") navItems = collect(all.overview, { href: "/sales/new", label: "Sell", icon: NAV_ICONS.Sales }, all.sales, all.tickets);
   else if (ctx.role === "SUPERVISOR") navItems = collect(all.overview, all.scan, all.attempts, all.reports);
   else navItems = collect(all.overview, all.sales, all.tickets, all.scan, all.events, all.team, all.audit, all.reports, all.settings);
   const landing = ctx.role === "VERIFIER" ? "/scanner" : ctx.role === "SELLER" ? "/sales/new" : "/dashboard";

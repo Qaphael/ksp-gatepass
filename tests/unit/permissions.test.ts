@@ -52,12 +52,15 @@ describe("permissions matrix (PRD 3.2)", () => {
     }
   });
 
-  it("verifiers can only verify and confirm check-ins", () => {
+  it("verifiers can scan, review recent attempts and see their daily total", () => {
     const allowed: Permission[] = [
       "dashboard:view",
       "event:read",
       "checkin:verify",
       "checkin:confirm",
+      "checkin:read-recent",
+      "checkin:read-summary",
+      "checkin:read-attempts",
     ];
     for (const permission of allowed) {
       expect(can("VERIFIER", permission), permission).toBe(true);

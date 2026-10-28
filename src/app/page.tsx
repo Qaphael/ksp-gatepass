@@ -6,5 +6,5 @@ export const instant = false;
 
 export default async function Home() {
   const ctx = await getSessionContext();
-  redirect(ctx ? "/dashboard" : "/login");
+  redirect(!ctx ? "/login" : ctx.role === "VERIFIER" ? "/scanner" : ctx.role === "SELLER" ? "/sales/new" : "/dashboard");
 }

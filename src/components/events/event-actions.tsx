@@ -108,7 +108,7 @@ export function EventActions({ event, permissions }: EventActionsProps) {
       {buttons.map((button) => (
         button.action === "complete" || button.action === "archive" ? <ConfirmSheet
           key={button.action}
-          trigger={<Button variant={button.variant ?? "outline"} size="sm" className="min-h-11 text-base" disabled={pending !== null}>{pending === button.action ? <Loader2 className="animate-spin" /> : null}{button.label}</Button>}
+          trigger={<Button variant={button.variant ?? "outline"} size="sm" className="min-h-12 text-base" disabled={pending !== null}>{pending === button.action ? <Loader2 className="animate-spin" /> : null}{button.label}</Button>}
           title={`${button.label} “${event.name}”?`}
           description={button.action === "complete" ? "Sales and admission will close, and the event cannot be reopened." : "The event will no longer accept sales, check-ins, or edits."}
           details={<p className="font-semibold">{event.name} · {event.venue}</p>}
@@ -119,7 +119,7 @@ export function EventActions({ event, permissions }: EventActionsProps) {
           key={button.action}
           variant={button.variant ?? "outline"}
           size="sm"
-          className="min-h-11 text-base"
+          className="min-h-12 text-base"
           disabled={pending !== null}
           onClick={() => void run(button.action, button.path)}
         >{pending === button.action ? <Loader2 className="animate-spin" /> : null}{button.label}</Button>

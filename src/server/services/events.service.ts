@@ -9,6 +9,7 @@ import {
   type UpdateEventInput,
 } from "@/lib/validation/events";
 import { conflict, notFound, requirePermission } from "./errors";
+import { listEventBranding, type EventBrandingAssetDto } from "./event-branding.service";
 
 export interface EventDto {
   id: string;
@@ -35,6 +36,7 @@ export interface EventDto {
   accentColor: string | null;
   ticketFooterText: string | null;
   organiserContact: string | null;
+  branding: { poster: EventBrandingAssetDto | null; logo: EventBrandingAssetDto | null };
   createdAt: string;
   updatedAt: string;
 }
@@ -48,9 +50,10 @@ async function allocatedCapacityOf(eventId: string): Promise<number> {
 }
 
 async function toEventDto(event: Event): Promise<EventDto> {
-  const [allocatedCapacity, ticketTypeCount] = await Promise.all([
+  const [allocatedCapacity, ticketTypeCount, branding] = await Promise.all([
     allocatedCapacityOf(event.id),
     prisma.ticketType.count({ where: { eventId: event.id } }),
+    listEventBranding(event.id),
   ]);
   return {
     id: event.id,
@@ -84,6 +87,7 @@ async function toEventDto(event: Event): Promise<EventDto> {
     accentColor: event.accentColor,
     ticketFooterText: event.ticketFooterText,
     organiserContact: event.organiserContact,
+    branding,
     createdAt: event.createdAt.toISOString(),
     updatedAt: event.updatedAt.toISOString(),
   };

@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { EventActions } from "@/components/events/event-actions";
+import { EventPoster } from "@/components/events/event-poster";
 import { EventForm } from "@/components/events/event-form";
 import { OpenBadge, StatusBadge } from "@/components/events/status-badges";
 import { TicketTypeManager } from "@/components/events/ticket-type-manager";
@@ -20,6 +21,7 @@ import {
   type EventDto,
 } from "@/server/services/events.service";
 import { listTicketTypes } from "@/server/services/ticket-types.service";
+import { getTicketTypeProgress } from "@/server/services/dashboard.service";
 import { ServiceError } from "@/lib/api";
 
 export const instant = false;
@@ -41,7 +43,10 @@ export default async function EventDetailPage({
     if (error instanceof ServiceError && error.status === 404) notFound();
     throw error;
   }
-  const ticketTypes = await listTicketTypes(ctx, id);
+  const [ticketTypes, ticketProgress] = await Promise.all([
+    listTicketTypes(ctx, id),
+    getTicketTypeProgress(ctx, id),
+  ]);
 
   const eventEditable = event.status !== "COMPLETED" && event.status !== "ARCHIVED";
 
@@ -54,7 +59,8 @@ export default async function EventDetailPage({
         <ArrowLeft className="size-4" /> Back to events
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className={`grid items-start gap-5 ${event.branding.poster ? "md:grid-cols-[minmax(0,1fr)_minmax(16rem,24rem)]" : ""}`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{event.name}</h1>
@@ -75,19 +81,54 @@ export default async function EventDetailPage({
             <Pencil /> Edit details below
           </Button>
         ) : null}
+        </div>
+        {event.branding.poster && <aside className="min-w-0">
+          <EventPoster poster={event.branding.poster} variant="display" />
+          <a href={`${event.branding.poster.displayUrl}&download=1`} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
+        </aside>}
       </div>
 
-      <EventActions
-        event={event}
-        permissions={{
+      <section aria-labelledby="event-controls-heading" className="rounded-xl border bg-card p-4 sm:p-5">
+        <h2 id="event-controls-heading" className="mb-3 text-base font-semibold">Sales and admission controls</h2>
+        <EventActions
+          event={event}
+          permissions={{
           openSales: can(ctx.role, "event:open-sales"),
           closeSales: can(ctx.role, "event:close-sales"),
           openAdmission: can(ctx.role, "event:open-admission"),
           closeAdmission: can(ctx.role, "event:close-admission"),
           complete: can(ctx.role, "event:complete"),
           archive: can(ctx.role, "event:archive"),
-        }}
-      />
+          }}
+        />
+      </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ticket availability</CardTitle>
+          <CardDescription>Tickets sold and remaining by category.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {ticketProgress.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No ticket categories are configured yet.</p>
+          ) : (
+            <ul className="grid gap-3 md:grid-cols-2">
+              {ticketProgress.map((type) => {
+                const total = Math.max(type.total, 1);
+                return (
+                  <li key={type.id} className="rounded-xl border p-3 sm:p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="truncate font-medium">{type.name}</h3>
+                      <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{type.sold} sold · {type.remaining} remaining</span>
+                    </div>
+                    <progress className="mt-3 h-2 w-full accent-brand-700" value={Math.min(type.sold, total)} max={total} aria-label={`${type.name}: ${type.sold} sold, ${type.remaining} remaining`} />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

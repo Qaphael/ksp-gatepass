@@ -26,6 +26,7 @@ import { FormAlert } from "@/components/layout/form-alert";
 import { FieldError } from "@/components/layout/field-error";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 import type { EventDto } from "@/server/services/events.service";
+import { BrandingManager } from "@/components/events/branding-manager";
 
 interface EventFormProps {
   mode: "create" | "edit";
@@ -372,6 +373,15 @@ export function EventForm({ mode, event }: EventFormProps) {
           </details>
         </CardContent>
       </Card>
+
+      {mode === "edit" && event ? (
+        <BrandingManager eventId={event.id} initialAssets={event.branding} />
+      ) : (
+        <Card>
+          <CardHeader><CardTitle>Event poster and logo</CardTitle><CardDescription>JPEG, PNG or WebP images up to 5 MB, with required alt text.</CardDescription></CardHeader>
+          <CardContent><p className="text-base text-muted-foreground">Save the event first. You can then upload its poster and optional logo from the event details page.</p></CardContent>
+        </Card>
+      )}
 
       <div className="sticky bottom-16 z-10 flex justify-end gap-2 rounded-xl border bg-background/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur md:bottom-0">
         <Button
