@@ -14,6 +14,8 @@ import {
 import type { TicketDto } from "@/server/services/tickets.service";
 import { formatTimestamp } from "./ticket-format";
 import { TicketStatusBadge } from "./ticket-status-badge";
+import { ResponsiveList } from "@/components/ui/responsive-list";
+import { Serial } from "@/components/ui/serial";
 
 interface TicketsTableProps {
   tickets: TicketDto[];
@@ -32,7 +34,14 @@ export function TicketsTable({ tickets, showEvent = true }: TicketsTableProps) {
     );
   }
 
-  return (
+  return <ResponsiveList
+    cards={tickets.map((ticket) => <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="block rounded-xl border border-border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <div className="flex items-start justify-between gap-3"><Serial className="text-base font-semibold">{ticket.serial}</Serial><TicketStatusBadge status={ticket.status} /></div>
+      <p className="mt-2 truncate text-base font-medium">{ticket.ticketTypeName}</p>
+      {showEvent ? <p className="truncate text-sm text-muted-foreground">{ticket.eventName}</p> : null}
+      <div className="mt-3 flex justify-between gap-2 text-sm text-muted-foreground"><span>{ticket.batchRef ?? "No batch"}</span><span>{formatTimestamp(ticket.createdAt)}</span></div>
+    </Link>)}
+    table={(
     <Card>
       <CardContent className="overflow-x-auto p-0">
         <Table>
@@ -49,12 +58,12 @@ export function TicketsTable({ tickets, showEvent = true }: TicketsTableProps) {
           <TableBody>
             {tickets.map((ticket) => (
               <TableRow key={ticket.id}>
-                <TableCell className="font-mono font-medium whitespace-nowrap">
+                <TableCell className="font-medium whitespace-nowrap">
                   <Link
                     href={`/tickets/${ticket.id}`}
                     className="hover:underline"
                   >
-                    {ticket.serial}
+                    <Serial>{ticket.serial}</Serial>
                   </Link>
                 </TableCell>
                 <TableCell>
@@ -88,5 +97,6 @@ export function TicketsTable({ tickets, showEvent = true }: TicketsTableProps) {
         </Table>
       </CardContent>
     </Card>
-  );
+    )}
+  />;
 }

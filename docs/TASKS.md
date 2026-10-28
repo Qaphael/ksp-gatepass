@@ -101,3 +101,4 @@ Event name and details · categories, prices, quantities · serial prefix and fo
 
 - [x] Prompt 1 — Design foundations (tokens, type, primitives, preview)
 - [x] Prompt 2 — App shell and role-aware navigation (mobile tabs, desktop sidebar, event switcher, Admin More sheet, role landing routes)
+- [x] Prompt 3 — Lists, tables and filters (responsive cards, mobile filter sheets, pagination, and shared loading/error states)

@@ -12,6 +12,11 @@ import { listSales } from "@/server/services/sales.service";
 import { saleListQuerySchema } from "@/lib/validation/sales";
 import { InventoryFilters } from "@/components/tickets/inventory-filters";
 import { TicketsTable } from "@/components/tickets/tickets-table";
+import { FilterSheet } from "@/components/ui/filter-sheet";
+import { Serial } from "@/components/ui/serial";
+import { TicketStatusBadge } from "@/components/tickets/ticket-status-badge";
+import { ResponsiveList } from "@/components/ui/responsive-list";
+import type { TicketStatus } from "@/generated/prisma/client";
 
 export const instant = false;
 
@@ -68,11 +73,8 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
     const pages = Math.max(1, Math.ceil(sales.total / sales.pageSize));
     return <div className="flex flex-col gap-4">
       <div><h1 className="text-2xl font-semibold tracking-tight">My tickets</h1><p className="mt-1 text-sm text-muted-foreground">Tickets issued through your sales. Open a sale for its receipt and payment history.</p></div>
-      {tickets.length ? <ul className="divide-y divide-border rounded-xl border border-border bg-card">{tickets.map((ticket) => <li key={ticket.id} className="flex min-w-0 items-center justify-between gap-3 p-4">
-        <div className="min-w-0"><p className="truncate font-mono text-base font-semibold tracking-wide">{ticket.serial}</p><p className="truncate text-sm text-muted-foreground">{ticket.category} · {ticket.eventName}</p></div>
-        <Link href={`/sales/${ticket.saleId}`} className="flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm font-medium underline underline-offset-4">{ticket.saleReference}</Link>
-      </li>)}</ul> : <div className="rounded-xl border border-dashed border-border p-8 text-center"><p className="font-medium">No tickets yet</p><p className="mt-1 text-sm text-muted-foreground">Tickets from your completed sales will appear here.</p><Link className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4" href="/sales/new">Create a sale</Link></div>}
-      <div className="flex items-center justify-between text-sm text-muted-foreground"><span>{sales.total} sales · page {sales.page} of {pages}</span><span className="flex gap-3">{sales.page > 1 ? <Link className="min-h-11 inline-flex items-center underline" href={`/tickets?page=${sales.page - 1}`}>Previous</Link> : null}{sales.page < pages ? <Link className="min-h-11 inline-flex items-center underline" href={`/tickets?page=${sales.page + 1}`}>Next</Link> : null}</span></div>
+      {tickets.length ? <ResponsiveList cards={tickets.map((ticket) => <Link key={ticket.id} href={`/sales/${ticket.saleId}`} className="block rounded-xl border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><div className="flex items-start justify-between gap-3"><Serial className="text-base font-semibold">{ticket.serial}</Serial><TicketStatusBadge status={ticket.status as TicketStatus} /></div><p className="mt-2 truncate text-base">{ticket.category} · {ticket.eventName}</p><p className="mt-2 text-sm text-muted-foreground">Sale {ticket.saleReference}</p></Link>)} table={<div className="overflow-x-auto rounded-lg border"><table className="w-full text-left text-base"><thead className="bg-muted/50"><tr>{["Serial", "Category", "Event", "Status", "Sale"].map((label) => <th className="px-3 py-2 font-medium" key={label}>{label}</th>)}</tr></thead><tbody>{tickets.map((ticket) => <tr className="border-t" key={ticket.id}><td className="px-3 py-2"><Serial>{ticket.serial}</Serial></td><td className="px-3 py-2">{ticket.category}</td><td className="px-3 py-2">{ticket.eventName}</td><td className="px-3 py-2"><TicketStatusBadge status={ticket.status as TicketStatus} /></td><td className="px-3 py-2"><Link className="underline" href={`/sales/${ticket.saleId}`}>{ticket.saleReference}</Link></td></tr>)}</tbody></table></div>} /> : <div className="rounded-xl border border-dashed border-border p-8 text-center"><p className="text-base font-medium">No tickets yet</p><p className="mt-1 text-base text-muted-foreground">Tickets from your completed sales will appear here.</p><Link className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4" href="/sales/new">Create a sale</Link></div>}
+      <div className="flex items-center justify-between text-base text-muted-foreground"><span>{sales.total} sales · page {sales.page} of {pages}</span><span className="flex gap-3">{sales.page > 1 ? <Link className="min-h-11 inline-flex items-center underline" href={`/tickets?page=${sales.page - 1}`}>Previous</Link> : null}{sales.page < pages ? <Link className="min-h-11 inline-flex items-center underline" href={`/tickets?page=${sales.page + 1}`}><span className="md:hidden">Load more</span><span className="hidden md:inline">Next</span></Link> : null}</span></div>
     </div>;
   }
   if (!can(ctx.role, "inventory:read")) redirect("/dashboard");
@@ -107,6 +109,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
           {can(ctx.role, "inventory:export") && query.eventId ? (
             <Button
               size="sm"
+              className="min-h-11 text-base"
               variant="outline"
               nativeButton={false}
               render={<a href={exportHref(query)} />}
@@ -115,25 +118,25 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
             </Button>
           ) : null}
           {can(ctx.role, "inventory:generate") ? (
-            <Button nativeButton={false} size="sm" render={<Link href="/tickets/new" />}>
+            <Button nativeButton={false} size="sm" className="min-h-11 text-base" render={<Link href="/tickets/new" />}>
               <Plus /> Generate tickets
             </Button>
           ) : null}
         </div>
       </div>
 
-      <InventoryFilters
+      <FilterSheet activeCount={[query.eventId, query.status, query.ticketTypeId, query.search].filter(Boolean).length}><InventoryFilters
         events={events.map((event) => ({ id: event.id, name: event.name }))}
         ticketTypes={ticketTypes.map((type) => ({
           id: type.id,
           name: type.name,
         }))}
         initial={query}
-      />
+      /></FilterSheet>
 
       <TicketsTable tickets={result.tickets} showEvent={!query.eventId} />
 
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
+      <div className="flex items-center justify-between text-base text-muted-foreground">
         <span>
           {result.total} {result.total === 1 ? "ticket" : "tickets"} · page{" "}
           {result.page} of {pages}
@@ -142,7 +145,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
           {result.page > 1 ? (
             <Link
               href={pageHref(query, result.page - 1)}
-              className="underline underline-offset-2 hover:text-foreground"
+              className="inline-flex min-h-11 items-center rounded-md border border-border px-3 underline underline-offset-2 hover:text-foreground"
             >
               Previous
             </Link>
@@ -150,9 +153,9 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
           {result.page < pages ? (
             <Link
               href={pageHref(query, result.page + 1)}
-              className="underline underline-offset-2 hover:text-foreground"
+              className="inline-flex min-h-11 items-center rounded-md border border-border px-3 underline underline-offset-2 hover:text-foreground"
             >
-              Next
+              <span className="md:hidden">Load more</span><span className="hidden md:inline">Next</span>
             </Link>
           ) : null}
         </span>

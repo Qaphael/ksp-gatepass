@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { ResponsiveList } from "@/components/ui/responsive-list";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -279,7 +280,14 @@ export function TeamManager({
         ) : null}
       </div>
 
-      <Card>
+      <ResponsiveList cards={users.length === 0 ? <Card><CardContent className="p-6 text-base text-muted-foreground">No team members yet. Add a member to get started.</CardContent></Card> : users.map((user) => {
+        const isSelf = user.id === currentUserId;
+        return <article key={user.id} className="rounded-xl border bg-card p-4">
+          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{user.displayName}{isSelf ? " (you)" : ""}</p><p className="truncate text-sm text-muted-foreground">@{user.username}</p>{user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}</div><Badge variant="outline" className={user.active ? "border-success/40 bg-success/10 text-success-foreground" : "border-border bg-muted text-muted-foreground"}>{user.active ? "✓ Active" : "○ Deactivated"}</Badge></div>
+          <div className="mt-3 flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Role</span>{canManage && !isSelf ? <Select value={user.role} onValueChange={(value) => void onChangeRole(user, value as Role)} disabled={busyUserId === user.id}><SelectTrigger className="min-h-11 w-40" aria-label={`Role for ${user.displayName}`}><SelectValue /></SelectTrigger><SelectContent>{ROLE_VALUES.map((role) => <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>)}</SelectContent></Select> : <span className="text-base">{ROLE_LABELS[user.role]}</span>}</div>
+          {canManage && user.active && !isSelf && <Button className="mt-3 min-h-11 w-full" variant="outline" disabled={busyUserId === user.id} onClick={() => void onDeactivate(user)}>{busyUserId === user.id ? <Loader2 className="animate-spin" /> : <UserMinus />}Deactivate</Button>}
+        </article>;
+      })} table={<Card>
         <CardContent className="overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead>
@@ -365,7 +373,7 @@ export function TeamManager({
             </tbody>
           </table>
         </CardContent>
-      </Card>
+      </Card>} />
     </div>
   );
 }

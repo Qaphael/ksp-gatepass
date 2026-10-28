@@ -101,7 +101,7 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
       noValidate
     >
       <div className="flex min-w-44 flex-1 flex-col gap-1">
-        <label htmlFor="ticket-search" className="text-xs text-muted-foreground">
+        <label htmlFor="ticket-search" className="text-base text-muted-foreground">
           Serial search
         </label>
         <Input
@@ -113,14 +113,14 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
       </div>
 
       <div className="flex min-w-40 flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Event</span>
+        <span className="text-base text-muted-foreground">Event</span>
         <Select
           value={eventId}
           onValueChange={(value) => {
             if (value) void onEventChange(value);
           }}
         >
-          <SelectTrigger aria-label="Filter by event" className="w-full">
+          <SelectTrigger aria-label="Filter by event" className="min-h-12 w-full text-base">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -135,12 +135,12 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
       </div>
 
       <div className="flex min-w-36 flex-col gap-1">
-        <span className="text-xs text-muted-foreground">Status</span>
+        <span className="text-base text-muted-foreground">Status</span>
         <Select
           value={status}
           onValueChange={(value) => setStatus(value ?? ALL)}
         >
-          <SelectTrigger aria-label="Filter by status" className="w-full">
+          <SelectTrigger aria-label="Filter by status" className="min-h-12 w-full text-base">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -156,13 +156,13 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
 
       {eventId !== ALL ? (
         <div className="flex min-w-36 flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Category</span>
+          <span className="text-base text-muted-foreground">Category</span>
           <Select
             value={ticketTypeId}
             onValueChange={(value) => setTicketTypeId(value ?? ALL)}
             disabled={loadingTypes}
           >
-            <SelectTrigger aria-label="Filter by category" className="w-full">
+            <SelectTrigger aria-label="Filter by category" className="min-h-12 w-full text-base">
               <SelectValue
                 placeholder={loadingTypes ? "Loading…" : "All categories"}
               />
@@ -179,11 +179,11 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
         </div>
       ) : null}
 
-      <Button type="submit" size="sm">
+      <Button type="submit" size="sm" className="min-h-12 text-base">
         {loadingTypes ? <Loader2 className="animate-spin" /> : <Search />}
         Apply
       </Button>
-      <Button type="button" variant="ghost" size="sm" onClick={clear}>
+      <Button type="button" variant="ghost" size="sm" className="min-h-12 text-base" onClick={clear}>
         Clear
       </Button>
     </form>
