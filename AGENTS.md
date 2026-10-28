@@ -7,6 +7,7 @@ Self-hosted ticket sales and gate verification for KSP Hotel Gulu (first event: 
 - Full spec: `docs/PRD.md` (authoritative). Do not load it all at once; read the section you need (use the section numbers below).
 - Short rules you must never break: `docs/business-rules.md` (always in context via `opencode.json`).
 - Task checklist and phase status: `docs/TASKS.md`. Update it when you finish work.
+- UI work: read `docs/DESIGN.md` before touching any component or page.
 
 PRD section map: 3 roles/permissions · 5 screens · 6 workflows · 7 lifecycle/business rules · 8 architecture · 9 data model · 10 API · 11 security · 12 performance · 13 tests · 14 phases · 15 launch checklist.
 
@@ -92,6 +93,14 @@ Release gate (PRD 13): no production launch until the duplicate-check-in concurr
 Phase 1 (foundation, auth, RBAC, event/ticket-type CRUD, dashboard shell), **Phase 2 (ticket inventory and printing)**, **Phase 3 (sales and payment tracking)** and **Phase 4 (admission and duplicate protection)** are implemented and tested. Phase 5 local implementation is in place: role-scoped reports with CSV/PDF exports, searchable audit history, browser security headers and same-origin mutation checks, a Caddy HTTPS Compose overlay, safe backup and scratch-restore scripts, CI checks and staff/operations/launch documentation. `pnpm typecheck` and `pnpm lint` pass; the full suite reports 14 files / 120 tests passing, including 10-client p95 and concurrent-admission checks; production build completed during test setup. Phase 2 added: Ticket/TicketBatch/PrintBatch schema with CHECK constraints, transactional 500-ticket batch generation (row-locked, idempotency keys, capacity safe), QR tokens (SHA-256 hash + AES-256-GCM encrypted copy under `TOKEN_ENCRYPTION_KEY`), inventory/detail/batch screens with search, filters and audit history, 210 × 59 mm ticket preview + imposed A4 5-up print PDF with sample/full/reprint flows, revoke with mandatory reason, formula-injection-safe CSV export. Phase 3 added: constrained sale/payment/adjustment records, transactional ticket allocation and payment flows, required idempotency keys, admin-only reasoned discounts, append-only reversals/refunds, cancellation guard after admission starts, sales and detail screens, and receipt PDF. Phase 4 adds unique check-ins and token-free scan attempts, shared eligibility checks, idempotent transactional admission, QR and manual scanning, attendance summaries, correction history, and scan-attempt reporting. Phase 5 verification is still open: registry advisory audit was blocked by local EACCES, hosted CI has not run, deployment/backup restore are untested on the target host, and real-paper Android QR scanning remains pending.
 
 Deferred items: logo upload, per-user explicit permission grants (supervisor exceptions), Playwright e2e, Docker Compose untested on this machine, production dependency audit pending registry access, real Android HTTPS/two-phone scanner test, real-paper QR scan test, target-host backup scheduling and restore rehearsal, actual cash-count entry, benign `HANGING_PROMISE_REJECTION` build warning during prerendering on auth, ticket, check-in, report and audit API routes. Cookie-authenticated mutations use same-origin Origin and Fetch Metadata checks; a separate double-submit token is not used.
+
+## Design
+
+- UI work follows `docs/DESIGN.md` (mobile first, tokens in `globals.css`, no hard-coded colours). Read it before touching any component or page.
+- Design at 360 x 800 first. Every screen needs loading, empty, error and success states.
+- Gold is never text on light backgrounds. Status is never colour alone.
+- Design tasks are run through `/design <n>` using `docs/DESIGN-PROMPTS.md`. Review with `/design-check`.
+- Do not change business logic, API contracts or permissions during design work. If a design needs one, stop and ask.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
