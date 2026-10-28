@@ -36,7 +36,7 @@ export function BatchPrintActions({
                 />
               }
             >
-              <Printer /> Print sample (1 ticket)
+              <Printer /> One-page print test sheet
             </Button>
             <Button
               nativeButton={false}
@@ -64,8 +64,9 @@ export function BatchPrintActions({
       </div>
       {canPrint ? (
         <p className="text-xs text-muted-foreground">
-          PDFs are A4 portrait with 5 tickets per page and dashed cut guides.
-          Print a sample first and check that the QR and serial are readable.
+          Sample is one ticket on A4. Print at 100% / Actual size (turn off
+          “Fit to page”), then measure the artwork and scan the paper QR before
+          printing the full sheet. Production PDFs use 5 tickets per A4 page.
         </p>
       ) : null}
     </div>

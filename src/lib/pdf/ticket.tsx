@@ -39,11 +39,11 @@ const STUB_WIDTH = TICKET_WIDTH - MAIN_WIDTH;
 const STACK_LEFT = Math.round((PAGE_WIDTH - TICKET_WIDTH) / 2);
 const STACK_TOP = Math.round((PAGE_HEIGHT - TICKET_HEIGHT * TICKETS_PER_PAGE) / 2);
 
-const GREEN = "#0B4D2C";
-const GOLD = "#D4AF37";
-const INK = "#1F2937";
-const GRAY = "#6B7280";
-const STUB_BG = "#F7F4EC";
+const GREEN = "#0F3D2E";
+const GOLD = "#C8A24A";
+const INK = "#14201B";
+const GRAY = "#46534D";
+const STUB_BG = "#EEF4F0";
 
 /**
  * Multiplies a point value of the full-size 210 × 59 mm artwork by the sheet
@@ -98,13 +98,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(6),
     paddingVertical: s(3),
   },
-  headerText: { color: "#FFFFFF", fontWeight: "bold", fontSize: s(13) },
+  headerText: { color: "#FFFFFF", fontWeight: "bold", fontSize: s(14) },
   goldRule: { height: s(2), backgroundColor: GOLD, marginTop: s(2) },
-  meta: { fontSize: s(8.5), color: INK, marginTop: s(3) },
-  category: { fontSize: s(10), fontWeight: "bold", color: GREEN },
-  serial: { fontSize: s(15), fontWeight: "bold", color: INK, marginTop: s(1) },
-  warning: { fontSize: s(5.5), color: GRAY },
-  contact: { fontSize: s(6), color: GRAY, marginTop: s(1) },
+  meta: { fontSize: s(9), color: INK, marginTop: s(3) },
+  category: { fontSize: s(11), fontWeight: "bold", color: GREEN },
+  serial: { fontSize: s(16), fontWeight: "bold", color: INK, marginTop: s(1) },
+  warning: { fontSize: s(6), color: GRAY },
+  contact: { fontSize: s(6.5), color: GRAY, marginTop: s(1) },
 
   qrBlock: { justifyContent: "center", alignItems: "center", width: s(126) },
   qr: { width: s(118), height: s(118) },
@@ -124,10 +124,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoText: { color: "#FFFFFF", fontWeight: "bold", fontSize: s(11), letterSpacing: s(1) },
-  stubLabel: { fontSize: s(6), color: GRAY, textAlign: "center" },
+  stubLabel: { fontSize: s(6.5), color: GRAY, textAlign: "center" },
   stubCategory: { fontSize: s(7.5), fontWeight: "bold", color: GREEN, textAlign: "center" },
   stubSerial: { fontSize: s(11), fontWeight: "bold", color: INK, textAlign: "center", marginTop: s(2) },
-  stubKeep: { fontSize: s(6), color: GRAY, textAlign: "center" },
+  stubKeep: { fontSize: s(6.5), color: GRAY, textAlign: "center" },
   stubDate: { fontSize: s(7), color: INK, textAlign: "center", marginTop: s(1) },
 });
 
@@ -216,7 +216,9 @@ export async function renderTicketsPdf(rows: TicketPrintRow[]): Promise<Buffer> 
     rows.map((row) =>
       QRCode.toBuffer(row.token, {
         type: "png",
-        margin: 0,
+        // A four-module white quiet zone keeps the unchanged QR footprint
+        // reliably scannable after printing and trimming.
+        margin: 4,
         width: 512,
         errorCorrectionLevel: "Q",
         color: { dark: "#000000", light: "#FFFFFF" },
