@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AlertCircle, Camera, CameraOff, Flashlight, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InstallHint } from "@/components/pwa/install-hint";
 import { ResultTakeover, type CheckInResult } from "@/components/check-in/result-takeover";
 import { GATE_EVENT, incrementSessionAdmissionCount, readGate, readSessionAdmissionCount, saveGate, SESSION_COUNT_EVENT, subscribeStorageEvents } from "@/components/check-in/session-storage";
 
-type Props = { eventId: string; eventName: string; events?: Array<{ id: string; name: string }>; mode?: "camera" | "manual" };
+type Props = { eventId: string; eventName: string; events?: Array<{ id: string; name: string }>; mode?: "camera" | "manual"; showInstallHint?: boolean };
 type CameraState = "idle" | "starting" | "active" | "denied" | "error" | "paused";
 
 async function post<T>(url: string, body: unknown, key?: string): Promise<T> {
@@ -16,7 +17,7 @@ async function post<T>(url: string, body: unknown, key?: string): Promise<T> {
   return data as T;
 }
 
-export function CheckInScanner({ eventId, eventName, events = [], mode = "camera" }: Props) {
+export function CheckInScanner({ eventId, eventName, events = [], mode = "camera", showInstallHint = false }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<{ stop: () => void; switchTorch?: (onOff: boolean) => Promise<void> } | null>(null);
   const tokenRef = useRef<string | null>(null);
@@ -138,6 +139,7 @@ export function CheckInScanner({ eventId, eventName, events = [], mode = "camera
         {serverOnline ? <Wifi className="size-4" aria-hidden="true" /> : <WifiOff className="size-4" aria-hidden="true" />}{serverOnline ? "Connected" : "Connecting…"}
       </div>
     </header>
+    {mode === "camera" && showInstallHint ? <InstallHint role="verifier" /> : null}
     {!serverOnline && <div role="alert" className="sticky top-0 z-20 flex min-h-12 items-center justify-center gap-2 bg-amber-300 px-3 text-center text-base font-black text-amber-950">OFFLINE — CHECK-IN UNAVAILABLE</div>}
     <div className="flex flex-wrap items-end gap-3 border-b border-white/15 px-4 py-3 sm:px-6">
       {events.length > 1 && <form className="grid min-w-0 flex-1 gap-1 text-sm font-semibold text-white/90" key={eventId}><label htmlFor="scan-event">Event</label><div className="flex gap-2"><select id="scan-event" name="eventId" defaultValue={eventId} className="min-h-12 min-w-0 flex-1 rounded-lg border border-white/30 bg-white px-3 text-base text-ink">{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><Button type="submit" size="lg" variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20">Open</Button></div></form>}

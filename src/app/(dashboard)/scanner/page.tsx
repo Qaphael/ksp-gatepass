@@ -10,5 +10,5 @@ export default async function ScannerPage({ searchParams }: { searchParams: Prom
   if (!can(ctx.role, "checkin:verify")) redirect("/dashboard");
   const [events, params] = await Promise.all([listEvents(ctx), searchParams]);
   const event = events.find((item) => item.id === params.eventId) ?? events[0];
-  return event ? <CheckInScanner key={event.id} eventId={event.id} eventName={event.name} events={events.map(({ id, name }) => ({ id, name }))} /> : <div className="rounded-xl border border-dashed p-8 text-center"><h1 className="text-xl font-semibold">No events available</h1><p className="mt-2 text-base text-muted-foreground">Create or open an event before scanning tickets.</p></div>;
+  return event ? <CheckInScanner key={event.id} eventId={event.id} eventName={event.name} events={events.map(({ id, name }) => ({ id, name }))} showInstallHint={ctx.role === "VERIFIER"} /> : <div className="rounded-xl border border-dashed p-8 text-center"><h1 className="text-xl font-semibold">No events available</h1><p className="mt-2 text-base text-muted-foreground">Create or open an event before scanning tickets.</p></div>;
 }

@@ -10,6 +10,7 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ROLE_LABELS } from "@/lib/role";
 import { ChangePasswordForm } from "@/components/account/change-password-form";
 import { SignOutButton } from "@/components/account/sign-out-button";
+import { InstallAppCard } from "@/components/pwa/install-app-card";
 
 export const instant = false;
 
@@ -86,6 +87,8 @@ export default async function AccountPage() {
           <SignOutButton />
         </CardContent>
       </Card>
+
+      <InstallAppCard />
     </div>
   );
 }
