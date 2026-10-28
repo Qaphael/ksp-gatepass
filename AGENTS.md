@@ -102,6 +102,10 @@ Deferred items: logo upload, per-user explicit permission grants (supervisor exc
 - Design tasks are run through `/design <n>` using `docs/DESIGN-PROMPTS.md`. Review with `/design-check`.
 - Do not change business logic, API contracts or permissions during design work. If a design needs one, stop and ask.
 
+## Tools
+
+This repo supports opencode and Codex. Both read this file and `docs/`. Workflow commands exist in both tools under the same names (`/phase` in opencode, `$phase` in Codex). See `docs/TOOLS.md`. Use one tool at a time on a working tree, and run the status command after switching.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
