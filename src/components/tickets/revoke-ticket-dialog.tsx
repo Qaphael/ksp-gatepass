@@ -62,12 +62,12 @@ export function RevokeTicketDialog({ ticketId, serial }: RevokeTicketDialogProps
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="destructive" size="sm">
+          <Button variant="destructive" size="sm" className="min-h-11 text-base">
             <Ban /> Revoke ticket
           </Button>
         }
       />
-      <DialogContent>
+      <DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-2rem)] md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl">
         <DialogHeader>
           <DialogTitle>Revoke {serial}?</DialogTitle>
           <DialogDescription>
@@ -78,7 +78,7 @@ export function RevokeTicketDialog({ ticketId, serial }: RevokeTicketDialogProps
         </DialogHeader>
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="revoke-reason" className="text-xs font-medium">
+          <label htmlFor="revoke-reason" className="text-base font-medium">
             Reason (required)
           </label>
           <Textarea
@@ -97,15 +97,16 @@ export function RevokeTicketDialog({ ticketId, serial }: RevokeTicketDialogProps
           ) : null}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="sticky bottom-0 gap-2 border-t bg-popover pt-3">
           <DialogClose
-            render={<Button variant="outline" size="sm" disabled={saving} />}
+            render={<Button variant="outline" size="sm" className="min-h-12" disabled={saving} />}
           >
             Cancel
           </DialogClose>
           <Button
             variant="destructive"
             size="sm"
+            className="min-h-12 text-base"
             disabled={!canSubmit}
             onClick={() => void revoke()}
           >

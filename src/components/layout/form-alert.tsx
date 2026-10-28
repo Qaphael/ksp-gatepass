@@ -6,7 +6,7 @@ export function FormAlert({ error }: { error: ApiFailure | null }) {
   return (
     <div
       role="alert"
-      className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+      className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-base text-destructive"
     >
       <p>{error.message}</p>
       {error.details && error.details.length > 0 ? (

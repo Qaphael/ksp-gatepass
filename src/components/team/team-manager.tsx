@@ -6,6 +6,7 @@ import { Loader2, Plus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { ResponsiveList } from "@/components/ui/responsive-list";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FormAlert } from "@/components/layout/form-alert";
+import { FieldError } from "@/components/layout/field-error";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 import { ROLE_LABELS } from "@/lib/role";
 import type { Role } from "@/generated/prisma/client";
@@ -51,6 +53,7 @@ interface CreateForm {
   password: string;
   contactPhone: string;
 }
+type PendingUserAction = { kind: "role"; user: UserDto; role: Role } | { kind: "deactivate"; user: UserDto };
 
 const EMPTY_FORM: CreateForm = {
   displayName: "",
@@ -72,6 +75,7 @@ export function TeamManager({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<ApiFailure | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [pendingUserAction, setPendingUserAction] = useState<PendingUserAction | null>(null);
 
   function set<K extends keyof CreateForm>(key: K, value: CreateForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -107,58 +111,33 @@ export function TeamManager({
 
   async function onChangeRole(user: UserDto, role: Role) {
     if (role === user.role) return;
-    if (
-      !window.confirm(
-        `Change ${user.displayName}'s role from ${ROLE_LABELS[user.role]} to ${ROLE_LABELS[role]}?`,
-      )
-    ) {
-      router.refresh(); // reset the select
-      return;
-    }
+    setPendingUserAction({ kind: "role", user, role });
+  }
+
+  async function confirmUserAction() {
+    if (!pendingUserAction) return;
+    const { user } = pendingUserAction;
     setBusyUserId(user.id);
     try {
-      const result = await apiFetch<{ user: UserDto }>(`/api/v1/users/${user.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ role }),
-      });
-      if (!result.ok) {
-        toast.error(result.error.message);
-        return;
-      }
-      toast.success("Role updated.");
+      const result = pendingUserAction.kind === "role"
+        ? await apiFetch<{ user: UserDto }>(`/api/v1/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ role: pendingUserAction.role }) })
+        : await apiFetch<{ user: UserDto }>(`/api/v1/users/${user.id}/deactivate`, { method: "POST" });
+      if (!result.ok) throw new Error(result.error.message);
+      toast.success(pendingUserAction.kind === "role" ? "Role updated." : "Account deactivated.");
       router.refresh();
+      return true;
     } finally {
       setBusyUserId(null);
     }
   }
 
   async function onDeactivate(user: UserDto) {
-    if (
-      !window.confirm(
-        `Deactivate ${user.displayName}? Their sessions end immediately and they will no longer be able to sign in.`,
-      )
-    ) {
-      return;
-    }
-    setBusyUserId(user.id);
-    try {
-      const result = await apiFetch<{ user: UserDto }>(
-        `/api/v1/users/${user.id}/deactivate`,
-        { method: "POST" },
-      );
-      if (!result.ok) {
-        toast.error(result.error.message);
-        return;
-      }
-      toast.success("Account deactivated.");
-      router.refresh();
-    } finally {
-      setBusyUserId(null);
-    }
+    setPendingUserAction({ kind: "deactivate", user });
   }
 
   return (
     <div className="flex flex-col gap-3">
+      {pendingUserAction ? <ConfirmSheet open onOpenChange={(next) => { if (!next) { if (pendingUserAction.kind === "role") router.refresh(); setPendingUserAction(null); } }} title={pendingUserAction.kind === "role" ? `Change ${pendingUserAction.user.displayName}'s role?` : `Deactivate ${pendingUserAction.user.displayName}?`} description={pendingUserAction.kind === "role" ? "This changes the account's access immediately." : "Their sessions end immediately and they will no longer be able to sign in."} details={pendingUserAction.kind === "role" ? <p>{ROLE_LABELS[pendingUserAction.user.role]} → {ROLE_LABELS[pendingUserAction.role]}</p> : <p className="font-semibold">@{pendingUserAction.user.username}</p>} confirmLabel={pendingUserAction.kind === "role" ? "Change role" : "Deactivate account"} destructive={pendingUserAction.kind === "deactivate"} onConfirm={confirmUserAction} /> : null}
       <div className="flex justify-end">
         {canManage ? (
           <Dialog open={open} onOpenChange={setOpen}>
@@ -174,46 +153,52 @@ export function TeamManager({
                 </Button>
               }
             />
-            <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
+            <DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-2rem)] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl">
               <DialogHeader>
                 <DialogTitle>Add team member</DialogTitle>
                 <DialogDescription>
                   They will sign in with the username and password you set here.
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={onCreate} className="flex flex-col gap-4" noValidate>
+              <form onSubmit={onCreate} className="flex flex-col gap-3" noValidate>
                 <FormAlert error={error} />
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="user-name">Full name</Label>
                   <Input
                     id="user-name"
                     required
+                    autoComplete="name"
                     value={form.displayName}
                     onChange={(e) => set("displayName", e.target.value)}
                     disabled={saving}
                   />
+                  <FieldError error={error} field="displayName" />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="user-username">Username</Label>
                   <Input
                     id="user-username"
                     required
+                    autoComplete="username"
                     autoCapitalize="none"
                     spellCheck={false}
                     value={form.username}
                     onChange={(e) => set("username", e.target.value)}
                     disabled={saving}
                   />
+                  <FieldError error={error} field="username" />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="user-email">Email (optional)</Label>
                   <Input
                     id="user-email"
                     type="email"
+                    autoComplete="email"
                     value={form.email}
                     onChange={(e) => set("email", e.target.value)}
                     disabled={saving}
                   />
+                  <FieldError error={error} field="email" />
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>Role</Label>
@@ -221,7 +206,7 @@ export function TeamManager({
                     value={form.role}
                     onValueChange={(value) => set("role", value as Role)}
                   >
-                    <SelectTrigger className="w-full" disabled={saving}>
+                    <SelectTrigger className="min-h-12 w-full text-base" disabled={saving}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -232,6 +217,7 @@ export function TeamManager({
                       ))}
                     </SelectContent>
                   </Select>
+                    <FieldError error={error} field="role" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-2">
@@ -246,21 +232,26 @@ export function TeamManager({
                       onChange={(e) => set("password", e.target.value)}
                       disabled={saving}
                     />
+                    <FieldError error={error} field="password" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="user-phone">Phone (optional)</Label>
                     <Input
                       id="user-phone"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
                       value={form.contactPhone}
                       onChange={(e) => set("contactPhone", e.target.value)}
                       disabled={saving}
                     />
+                    <FieldError error={error} field="contactPhone" />
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Minimum 12 characters. Ask them to change it after first sign-in.
                 </p>
-                <DialogFooter>
+                  <DialogFooter className="sticky bottom-0 gap-2 border-t bg-popover pt-3">
                   <Button
                     type="button"
                     variant="outline"

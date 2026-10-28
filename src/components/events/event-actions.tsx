@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 import { apiFetch } from "@/lib/api-client";
 import type { EventDto } from "@/server/services/events.service";
 
@@ -22,21 +23,11 @@ interface EventActionsProps {
   permissions: EventActionPermissions;
 }
 
-const CONFIRM_MESSAGES: Record<string, string> = {
-  complete:
-    "Complete this event? Sales and admission will be closed and the event can no longer be reopened.",
-  archive:
-    "Archive this event? It will no longer accept sales, check-ins or edits.",
-};
-
 export function EventActions({ event, permissions }: EventActionsProps) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
 
-  async function run(action: string, path: string) {
-    const confirmMessage = CONFIRM_MESSAGES[action];
-    if (confirmMessage && !window.confirm(confirmMessage)) return;
-
+  async function run(action: string, path: string): Promise<boolean> {
     setPending(action);
     try {
       const result = await apiFetch<{ event: EventDto }>(
@@ -45,10 +36,14 @@ export function EventActions({ event, permissions }: EventActionsProps) {
       );
       if (!result.ok) {
         toast.error(result.error.message);
-        return;
+        return false;
       }
       toast.success(actionTitle(action));
       router.refresh();
+      return true;
+    } catch {
+      toast.error("Could not reach the server. Try again.");
+      return false;
     } finally {
       setPending(null);
     }
@@ -111,18 +106,23 @@ export function EventActions({ event, permissions }: EventActionsProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {buttons.map((button) => (
-        <Button
+        button.action === "complete" || button.action === "archive" ? <ConfirmSheet
+          key={button.action}
+          trigger={<Button variant={button.variant ?? "outline"} size="sm" className="min-h-11 text-base" disabled={pending !== null}>{pending === button.action ? <Loader2 className="animate-spin" /> : null}{button.label}</Button>}
+          title={`${button.label} “${event.name}”?`}
+          description={button.action === "complete" ? "Sales and admission will close, and the event cannot be reopened." : "The event will no longer accept sales, check-ins, or edits."}
+          details={<p className="font-semibold">{event.name} · {event.venue}</p>}
+          confirmLabel={button.label}
+          destructive={button.action === "archive"}
+          onConfirm={() => run(button.action, button.path)}
+        /> : <Button
           key={button.action}
           variant={button.variant ?? "outline"}
           size="sm"
+          className="min-h-11 text-base"
           disabled={pending !== null}
           onClick={() => void run(button.action, button.path)}
-        >
-          {pending === button.action ? (
-            <Loader2 className="animate-spin" />
-          ) : null}
-          {button.label}
-        </Button>
+        >{pending === button.action ? <Loader2 className="animate-spin" /> : null}{button.label}</Button>
       ))}
     </div>
   );

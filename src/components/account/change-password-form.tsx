@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormAlert } from "@/components/layout/form-alert";
+import { FieldError } from "@/components/layout/field-error";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 
 interface FormState {
@@ -100,11 +101,12 @@ export function ChangePasswordForm() {
             onChange={(e) => set("confirmPassword", e.target.value)}
             disabled={saving}
           />
+          <FieldError error={error} field="confirmPassword" />
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">Minimum 12 characters.</p>
-      <div className="flex justify-end">
-        <Button type="submit" disabled={saving}>
+      <p className="text-base text-muted-foreground">Minimum 12 characters.</p>
+      <div className="sticky bottom-16 z-10 flex justify-end rounded-xl border bg-background/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur md:bottom-0">
+        <Button type="submit" className="min-h-14 w-full sm:w-auto" disabled={saving}>
           {saving ? <Loader2 className="animate-spin" /> : null}
           {saving ? "Saving…" : "Change password"}
         </Button>

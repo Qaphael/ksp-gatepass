@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FormAlert } from "@/components/layout/form-alert";
+import { FieldError } from "@/components/layout/field-error";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 import type { TicketTypeDto } from "@/server/services/ticket-types.service";
 
@@ -178,7 +179,7 @@ export function TicketTypeManager({
                   </Button>
                 }
               />
-              <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+              <DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-2rem)] md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl">
                 <DialogHeader>
                   <DialogTitle>
                     {editing === null ? "Add ticket category" : "Edit ticket category"}
@@ -189,8 +190,11 @@ export function TicketTypeManager({
                       : `Editing “${editing.name}”.`}
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+                <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
                   <FormAlert error={error} />
+                  <details open className="rounded-lg border p-3">
+                    <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Basics</summary>
+                    <div className="grid gap-3 pt-2">
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="tt-name">Name</Label>
                     <Input
@@ -200,6 +204,7 @@ export function TicketTypeManager({
                       onChange={(e) => set("name", e.target.value)}
                       disabled={saving}
                     />
+                    <FieldError error={error} field="name" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="tt-description">Description (optional)</Label>
@@ -210,13 +215,20 @@ export function TicketTypeManager({
                       onChange={(e) => set("description", e.target.value)}
                       disabled={saving}
                     />
+                    <FieldError error={error} field="description" />
                   </div>
+                    </div>
+                  </details>
                   <div className="grid gap-4 sm:grid-cols-2">
+                    <details open className="sm:col-span-2 rounded-lg border p-3">
+                      <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Pricing and quantity policy</summary>
+                      <div className="grid gap-3 pt-2 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="tt-price">Price (UGX)</Label>
                       <Input
                         id="tt-price"
                         type="number"
+                        inputMode="numeric"
                         min={0}
                         step={1}
                         required
@@ -224,12 +236,14 @@ export function TicketTypeManager({
                         onChange={(e) => set("priceUgx", e.target.value)}
                         disabled={saving}
                       />
+                      <FieldError error={error} field="priceUgx" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="tt-allocation">Quantity limit (optional)</Label>
                       <Input
                         id="tt-allocation"
                         type="number"
+                        inputMode="numeric"
                         min={1}
                         step={1}
                         placeholder="No limit"
@@ -237,7 +251,13 @@ export function TicketTypeManager({
                         onChange={(e) => set("allocationLimit", e.target.value)}
                         disabled={saving}
                       />
+                      <FieldError error={error} field="allocationLimit" />
                     </div>
+                      </div>
+                    </details>
+                    <details open className="sm:col-span-2 rounded-lg border p-3">
+                      <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Sales window</summary>
+                      <div className="grid gap-3 pt-2 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="tt-sales-opens">Sales start (optional)</Label>
                       <Input
@@ -247,6 +267,7 @@ export function TicketTypeManager({
                         onChange={(e) => set("salesOpensAtLocal", e.target.value)}
                         disabled={saving}
                       />
+                      <FieldError error={error} field="salesOpensAtLocal" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="tt-sales-closes">Sales end (optional)</Label>
@@ -257,7 +278,13 @@ export function TicketTypeManager({
                         onChange={(e) => set("salesClosesAtLocal", e.target.value)}
                         disabled={saving}
                       />
+                      <FieldError error={error} field="salesClosesAtLocal" />
                     </div>
+                      </div>
+                    </details>
+                    <details open className="sm:col-span-2 rounded-lg border p-3">
+                      <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Admission and ticket presentation</summary>
+                      <div className="grid gap-3 pt-2 sm:grid-cols-2">
                     <div className="flex flex-col gap-2">
                       <Label>Status</Label>
                       <Select
@@ -284,18 +311,14 @@ export function TicketTypeManager({
                         disabled={saving}
                       />
                     </div>
+                      </div>
+                      <label className="mt-3 flex min-h-11 items-center gap-3 text-base">
+                        <input type="checkbox" checked={form.permitsAdmission} onChange={(e) => set("permitsAdmission", e.target.checked)} disabled={saving} className="size-4" />
+                        This category permits admission
+                      </label>
+                    </details>
                   </div>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.permitsAdmission}
-                      onChange={(e) => set("permitsAdmission", e.target.checked)}
-                      disabled={saving}
-                      className="size-4"
-                    />
-                    This category permits admission
-                  </label>
-                  <DialogFooter>
+                  <DialogFooter className="sticky bottom-0 gap-2 border-t bg-popover pt-3">
                     <Button
                       type="button"
                       variant="outline"
@@ -304,7 +327,7 @@ export function TicketTypeManager({
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={saving}>
+                      <Button type="submit" className="min-h-12" disabled={saving}>
                       {saving ? <Loader2 className="animate-spin" /> : null}
                       {saving ? "Saving…" : editing === null ? "Add category" : "Save"}
                     </Button>

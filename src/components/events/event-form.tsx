@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FormAlert } from "@/components/layout/form-alert";
+import { FieldError } from "@/components/layout/field-error";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 import type { EventDto } from "@/server/services/events.service";
 
@@ -148,8 +149,11 @@ export function EventForm({ mode, event }: EventFormProps) {
           <CardTitle>Details</CardTitle>
           <CardDescription>Name, venue and schedule.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Event name" htmlFor="event-name" className="sm:col-span-2">
+        <CardContent className="grid gap-3">
+          <details open className="rounded-lg border border-border p-3">
+            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Basics</summary>
+            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+          <Field label="Event name" htmlFor="event-name" error={error} className="sm:col-span-2">
             <Input
               id="event-name"
               required
@@ -161,6 +165,7 @@ export function EventForm({ mode, event }: EventFormProps) {
           <Field
             label="Description (optional)"
             htmlFor="event-description"
+            error={error}
             className="sm:col-span-2"
           >
             <Textarea
@@ -171,7 +176,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Venue" htmlFor="event-venue">
+          <Field label="Venue" htmlFor="event-venue" error={error}>
             <Input
               id="event-venue"
               required
@@ -180,7 +185,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Address (optional)" htmlFor="event-address">
+          <Field label="Address (optional)" htmlFor="event-address" error={error}>
             <Input
               id="event-address"
               value={form.address}
@@ -188,7 +193,12 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Date" htmlFor="event-date">
+            </div>
+          </details>
+          <details open className="rounded-lg border border-border p-3">
+            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Dates, times and capacity</summary>
+            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+          <Field label="Date" htmlFor="event-date" error={error}>
             <Input
               id="event-date"
               type="date"
@@ -198,7 +208,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Timezone" htmlFor="event-timezone">
+          <Field label="Timezone" htmlFor="event-timezone" error={error}>
             <Input
               id="event-timezone"
               required
@@ -207,7 +217,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Start time (local)" htmlFor="event-start">
+          <Field label="Start time (local)" htmlFor="event-start" error={error}>
             <Input
               id="event-start"
               type="time"
@@ -217,7 +227,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="End time (local)" htmlFor="event-end">
+          <Field label="End time (local)" htmlFor="event-end" error={error}>
             <Input
               id="event-end"
               type="time"
@@ -227,10 +237,11 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Maximum capacity (tickets)" htmlFor="event-capacity">
+          <Field label="Maximum capacity (tickets)" htmlFor="event-capacity" error={error}>
             <Input
               id="event-capacity"
               type="number"
+              inputMode="numeric"
               min={1}
               step={1}
               required
@@ -240,7 +251,7 @@ export function EventForm({ mode, event }: EventFormProps) {
             />
           </Field>
           {mode === "edit" ? (
-            <Field label="Event status" htmlFor="event-status">
+            <Field label="Event status" htmlFor="event-status" error={error}>
               <Select
                 value={form.status}
                 onValueChange={(value) =>
@@ -257,6 +268,8 @@ export function EventForm({ mode, event }: EventFormProps) {
               </Select>
             </Field>
           ) : null}
+            </div>
+          </details>
         </CardContent>
       </Card>
 
@@ -268,8 +281,11 @@ export function EventForm({ mode, event }: EventFormProps) {
             window — sales and admission still require explicit opening.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Sales open" htmlFor="sales-opens">
+        <CardContent>
+          <details open className="rounded-lg border border-border p-3">
+            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Sales and admission windows</summary>
+            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+          <Field label="Sales open" htmlFor="sales-opens" error={error}>
             <Input
               id="sales-opens"
               type="datetime-local"
@@ -278,7 +294,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Sales close" htmlFor="sales-closes">
+          <Field label="Sales close" htmlFor="sales-closes" error={error}>
             <Input
               id="sales-closes"
               type="datetime-local"
@@ -287,7 +303,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Admission opens" htmlFor="admission-opens">
+          <Field label="Admission opens" htmlFor="admission-opens" error={error}>
             <Input
               id="admission-opens"
               type="datetime-local"
@@ -296,7 +312,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Admission closes" htmlFor="admission-closes">
+          <Field label="Admission closes" htmlFor="admission-closes" error={error}>
             <Input
               id="admission-closes"
               type="datetime-local"
@@ -305,6 +321,8 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
+            </div>
+          </details>
         </CardContent>
       </Card>
 
@@ -315,8 +333,11 @@ export function EventForm({ mode, event }: EventFormProps) {
             Shown on tickets and screens once printing is configured.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Accent colour (#rrggbb)" htmlFor="event-accent">
+        <CardContent>
+          <details className="rounded-lg border border-border p-3">
+            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Branding and organiser contact</summary>
+            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+          <Field label="Accent colour (#rrggbb)" htmlFor="event-accent" error={error}>
             <Input
               id="event-accent"
               placeholder="#16a34a"
@@ -325,7 +346,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <Field label="Organiser contact (optional)" htmlFor="event-contact">
+          <Field label="Organiser contact (optional)" htmlFor="event-contact" error={error}>
             <Input
               id="event-contact"
               value={form.organiserContact}
@@ -336,6 +357,7 @@ export function EventForm({ mode, event }: EventFormProps) {
           <Field
             label="Ticket footer text (optional)"
             htmlFor="event-footer"
+            error={error}
             className="sm:col-span-2"
           >
             <Textarea
@@ -346,10 +368,12 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
+            </div>
+          </details>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end gap-2">
+      <div className="sticky bottom-16 z-10 flex justify-end gap-2 rounded-xl border bg-background/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur md:bottom-0">
         <Button
           type="button"
           variant="outline"
@@ -376,16 +400,20 @@ function Field({
   htmlFor,
   children,
   className,
+  error,
 }: {
   label: string;
   htmlFor: string;
   children: React.ReactNode;
   className?: string;
+  error: ApiFailure | null;
 }) {
+  const errorFields: Record<string, string> = { "event-name": "name", "event-description": "description", "event-venue": "venue", "event-address": "address", "event-date": "eventDate", "event-timezone": "timezone", "event-start": "startTime", "event-end": "endTime", "event-capacity": "capacity", "event-status": "status", "sales-opens": "salesOpensAtLocal", "sales-closes": "salesClosesAtLocal", "admission-opens": "admissionOpensAtLocal", "admission-closes": "admissionClosesAtLocal", "event-accent": "accentColor", "event-contact": "organiserContact", "event-footer": "ticketFooterText" };
   return (
     <div className={`flex flex-col gap-2 ${className ?? ""}`}>
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
+      <FieldError error={error} field={errorFields[htmlFor] ?? htmlFor} />
     </div>
   );
 }

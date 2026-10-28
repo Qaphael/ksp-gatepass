@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FormAlert } from "@/components/layout/form-alert";
+import { FieldError } from "@/components/layout/field-error";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 import { SERIAL_PREFIX_DEFAULT } from "@/lib/serial";
 
@@ -164,21 +165,21 @@ export function BatchForm({ events }: BatchFormProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <dl className="grid gap-x-6 gap-y-3 text-base sm:grid-cols-2">
             <div>
-              <dt className="text-xs text-muted-foreground">Event</dt>
+              <dt className="text-base text-muted-foreground">Event</dt>
               <dd className="font-medium">{selectedEvent?.name}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Category</dt>
+              <dt className="text-base text-muted-foreground">Category</dt>
               <dd className="font-medium">{selectedType?.name}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Quantity</dt>
+              <dt className="text-base text-muted-foreground">Quantity</dt>
               <dd className="font-medium tabular-nums">{quantityNumber}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Serial range</dt>
+              <dt className="text-base text-muted-foreground">Serial range</dt>
               <dd className="font-mono font-medium">
                 {Number.isInteger(startNumber) && serialStart.trim() !== ""
                   ? `${padSerial(serialPrefix.trim().toUpperCase(), startNumber)} … ${padSerial(
@@ -190,7 +191,7 @@ export function BatchForm({ events }: BatchFormProps) {
             </div>
             {label.trim() !== "" ? (
               <div>
-                <dt className="text-xs text-muted-foreground">Label</dt>
+                <dt className="text-base text-muted-foreground">Label</dt>
                 <dd className="font-medium">{label.trim()}</dd>
               </div>
             ) : null}
@@ -198,10 +199,11 @@ export function BatchForm({ events }: BatchFormProps) {
 
           <FormAlert error={error} />
 
-          <div className="flex flex-wrap gap-2">
+          <div className="sticky bottom-0 flex flex-wrap gap-2 border-t bg-card pt-3">
             <Button
               variant="outline"
               size="sm"
+              className="min-h-12 text-base"
               disabled={saving}
               onClick={() => {
                 setStep("form");
@@ -210,7 +212,7 @@ export function BatchForm({ events }: BatchFormProps) {
             >
               <ArrowLeft /> Back to edit
             </Button>
-            <Button size="sm" disabled={saving} onClick={() => void confirm()}>
+            <Button size="sm" className="min-h-14 flex-1 text-base" disabled={saving} onClick={() => void confirm()}>
               {saving ? <Loader2 className="animate-spin" /> : <ArrowRight />}
               Generate {quantityNumber} tickets
             </Button>
@@ -234,14 +236,14 @@ export function BatchForm({ events }: BatchFormProps) {
           <FormAlert error={error} />
 
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Event</span>
+            <span className="text-base text-muted-foreground">Event</span>
             <Select
               value={eventId}
               onValueChange={(value) => {
                 if (value) void onEventChange(value);
               }}
             >
-              <SelectTrigger className="w-full" disabled={saving}>
+            <SelectTrigger className="min-h-12 w-full text-base" disabled={saving}>
                 <SelectValue placeholder="Choose an event" />
               </SelectTrigger>
               <SelectContent>
@@ -255,13 +257,13 @@ export function BatchForm({ events }: BatchFormProps) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Category</span>
+            <span className="text-base text-muted-foreground">Category</span>
             <Select
               value={ticketTypeId}
               onValueChange={(value) => setTicketTypeId(value ?? ALL)}
               disabled={saving || eventId === ALL || loadingTypes}
             >
-              <SelectTrigger className="w-full">
+            <SelectTrigger className="min-h-12 w-full text-base">
                 <SelectValue
                   placeholder={
                     eventId === ALL
@@ -290,12 +292,14 @@ export function BatchForm({ events }: BatchFormProps) {
               <Input
                 id="quantity"
                 type="number"
+                inputMode="numeric"
                 min={1}
                 max={10000}
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 disabled={saving}
               />
+              <FieldError error={error} field="quantity" />
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="serial-prefix">Serial prefix</Label>
@@ -306,12 +310,14 @@ export function BatchForm({ events }: BatchFormProps) {
                 maxLength={12}
                 disabled={saving}
               />
+              <FieldError error={error} field="serialPrefix" />
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="serial-start">Starting number</Label>
               <Input
                 id="serial-start"
                 type="number"
+                inputMode="numeric"
                 min={0}
                 placeholder="Automatic"
                 value={serialStart}
@@ -333,8 +339,8 @@ export function BatchForm({ events }: BatchFormProps) {
             />
           </div>
 
-          <div>
-            <Button type="submit" size="sm" disabled={saving}>
+          <div className="sticky bottom-16 z-10 -mx-4 rounded-xl border bg-background/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur md:bottom-0">
+            <Button type="submit" size="sm" className="min-h-14 w-full text-base" disabled={saving}>
               Review batch <ArrowRight />
             </Button>
           </div>
