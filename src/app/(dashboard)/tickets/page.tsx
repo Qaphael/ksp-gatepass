@@ -8,6 +8,8 @@ import { ticketListQuerySchema, type TicketListQuery } from "@/lib/validation/ti
 import { listEvents } from "@/server/services/events.service";
 import { listTicketTypes } from "@/server/services/ticket-types.service";
 import { listTickets } from "@/server/services/tickets.service";
+import { listSales } from "@/server/services/sales.service";
+import { saleListQuerySchema } from "@/lib/validation/sales";
 import { InventoryFilters } from "@/components/tickets/inventory-filters";
 import { TicketsTable } from "@/components/tickets/tickets-table";
 
@@ -52,6 +54,27 @@ function exportHref(query: TicketListQuery): string {
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   const ctx = await getSessionContext();
   if (!ctx) redirect("/login");
+  if (!can(ctx.role, "inventory:read") && can(ctx.role, "sale:read-own")) {
+    const params = await searchParams;
+    const page = typeof params.page === "string" ? params.page : "1";
+    const sales = await listSales(ctx, saleListQuerySchema.parse({ page, pageSize: 25 }));
+    const tickets = sales.sales.flatMap((sale) => sale.items.flatMap((item) => item.tickets.map((ticket) => ({
+      ...ticket,
+      saleId: sale.id,
+      saleReference: sale.reference,
+      eventName: sale.eventName,
+      category: item.ticketTypeName,
+    }))));
+    const pages = Math.max(1, Math.ceil(sales.total / sales.pageSize));
+    return <div className="flex flex-col gap-4">
+      <div><h1 className="text-2xl font-semibold tracking-tight">My tickets</h1><p className="mt-1 text-sm text-muted-foreground">Tickets issued through your sales. Open a sale for its receipt and payment history.</p></div>
+      {tickets.length ? <ul className="divide-y divide-border rounded-xl border border-border bg-card">{tickets.map((ticket) => <li key={ticket.id} className="flex min-w-0 items-center justify-between gap-3 p-4">
+        <div className="min-w-0"><p className="truncate font-mono text-base font-semibold tracking-wide">{ticket.serial}</p><p className="truncate text-sm text-muted-foreground">{ticket.category} · {ticket.eventName}</p></div>
+        <Link href={`/sales/${ticket.saleId}`} className="flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm font-medium underline underline-offset-4">{ticket.saleReference}</Link>
+      </li>)}</ul> : <div className="rounded-xl border border-dashed border-border p-8 text-center"><p className="font-medium">No tickets yet</p><p className="mt-1 text-sm text-muted-foreground">Tickets from your completed sales will appear here.</p><Link className="mt-4 inline-flex min-h-11 items-center underline underline-offset-4" href="/sales/new">Create a sale</Link></div>}
+      <div className="flex items-center justify-between text-sm text-muted-foreground"><span>{sales.total} sales · page {sales.page} of {pages}</span><span className="flex gap-3">{sales.page > 1 ? <Link className="min-h-11 inline-flex items-center underline" href={`/tickets?page=${sales.page - 1}`}>Previous</Link> : null}{sales.page < pages ? <Link className="min-h-11 inline-flex items-center underline" href={`/tickets?page=${sales.page + 1}`}>Next</Link> : null}</span></div>
+    </div>;
+  }
   if (!can(ctx.role, "inventory:read")) redirect("/dashboard");
 
   const parsed = ticketListQuerySchema.safeParse(flattenParams(await searchParams));

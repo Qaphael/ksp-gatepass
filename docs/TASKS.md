@@ -96,3 +96,8 @@ Phase 5 local implementation status: typecheck and lint pass; the full suite rep
 Event name and details · categories, prices, quantities · serial prefix and format · mandatory customer name/phone · discounts · partial payment for admission · mobile-money integration · retention and refund policy · separate gate identifiers.
 
 (Print sheet arrangement is **confirmed**: 5 tickets per A4 portrait page at ~94% of the 210 × 59 mm artwork. Template dimensions stay configurable per PRD 5.6 in case a print supplier specifies a different stock.)
+
+## Design prompts
+
+- [x] Prompt 1 — Design foundations (tokens, type, primitives, preview)
+- [x] Prompt 2 — App shell and role-aware navigation (mobile tabs, desktop sidebar, event switcher, Admin More sheet, role landing routes)

@@ -22,6 +22,8 @@ export const instant = false;
 export default async function DashboardPage() {
   const ctx = await getSessionContext();
   if (!ctx) redirect("/login");
+  if (ctx.role === "VERIFIER") redirect("/scanner");
+  if (ctx.role === "SELLER") redirect("/sales/new");
 
   const events = await listEvents(ctx);
   const isAdmin = can(ctx.role, "user:manage");

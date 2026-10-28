@@ -62,7 +62,7 @@ export function UserMenu({ user }: UserMenuProps) {
         render={
           <Button variant="ghost" disabled={signingOut}>
             <UserRound />
-            <span className="max-w-32 truncate sm:max-w-none">
+          <span className="hidden max-w-32 truncate sm:inline sm:max-w-none">
               {user.displayName}
             </span>
             <ChevronDown />
