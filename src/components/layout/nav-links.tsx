@@ -3,11 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Activity, ClipboardList, Ellipsis, FileBarChart, LayoutDashboard, ListChecks, ScanLine, Ticket, Users, X, CalendarDays, Settings } from "lucide-react";
+import { ClipboardList, Ellipsis, FileBarChart, History, LayoutDashboard, ListChecks, ScanLine, ScanSearch, ScrollText, Settings, ShoppingCart, Ticket, Users, X, CalendarDays } from "lucide-react";
 import { cn } from "cn";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-export interface NavItem { href: string; label: string; icon?: React.ComponentType<{ className?: string }>; }
+export type NavIconName = "Overview" | "Sell" | "Sales" | "Tickets" | "Check-in" | "Manual" | "Recent" | "Attempts" | "Reports" | "Events" | "Team" | "Audit log" | "Settings";
+export interface NavItem { href: string; label: string; icon?: NavIconName; }
+
+const NAV_ICONS: Record<NavIconName, React.ComponentType<{ className?: string }>> = {
+  Overview: LayoutDashboard,
+  Sell: ShoppingCart,
+  Sales: ClipboardList,
+  Tickets: Ticket,
+  "Check-in": ScanLine,
+  Manual: ListChecks,
+  Recent: History,
+  Attempts: ScanSearch,
+  Reports: FileBarChart,
+  Events: CalendarDays,
+  Team: Users,
+  "Audit log": ScrollText,
+  Settings,
+};
 
 export function NavLinks({ items, orientation = "horizontal" }: { items: NavItem[]; orientation?: "horizontal" | "vertical" }) {
   const pathname = usePathname();
@@ -24,15 +41,13 @@ export function NavLinks({ items, orientation = "horizontal" }: { items: NavItem
       <nav aria-label="More" className="grid gap-1">{moreItems.map((item) => <NavLink key={item.href} item={item} active={pathname === item.href || pathname.startsWith(item.href)} onNavigate={() => setMoreOpen(false)} compact={false}/>)}</nav>
     </DialogContent>
   </Dialog>;
-  if (orientation === "vertical") return <nav aria-label="Main" className="flex w-full flex-col gap-1">{items.map((item) => <NavLink key={item.href} item={item} active={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))}/>)}</nav>;
+  if (orientation === "vertical") return <nav aria-label="Main" className="flex w-full flex-col gap-1">{items.map((item) => <NavLink key={item.href} item={item} active={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))} compact={false}/>)}</nav>;
   return <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-2 pt-1 backdrop-blur lg:hidden" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}>
     <div className="mx-auto flex max-w-lg items-stretch justify-around">{mainItems.map((item) => <NavLink key={item.href} item={item} active={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))} compact/>)}{moreItems.length ? more : null}</div>
   </nav>;
 }
 
 function NavLink({ item, active, onNavigate, compact = true }: { item: NavItem; active: boolean; onNavigate?: () => void; compact?: boolean }) {
-  const Icon = item.icon ?? LayoutDashboard;
+  const Icon = item.icon ? NAV_ICONS[item.icon] : LayoutDashboard;
   return <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={cn(compact ? "flex min-h-11 min-w-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-base" : "flex min-h-12 items-center gap-3 rounded-lg px-3 text-base", "transition-colors", active ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}><Icon className="size-5 shrink-0"/><span>{item.label}</span></Link>;
 }
-
-export const NAV_ICONS = { Overview: LayoutDashboard, Sales: ClipboardList, Tickets: Ticket, "Check-in": ScanLine, "Scan QR": ScanLine, Manual: ListChecks, Recent: Activity, Attempts: Activity, Reports: FileBarChart, Events: CalendarDays, Team: Users, "Audit log": ClipboardList, Settings };

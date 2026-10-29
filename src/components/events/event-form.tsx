@@ -238,6 +238,9 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
+          <p className="text-sm text-muted-foreground sm:col-span-2">
+            If the end time is earlier than the start time, it is treated as the following day.
+          </p>
           <Field label="Maximum capacity (tickets)" htmlFor="event-capacity" error={error}>
             <Input
               id="event-capacity"

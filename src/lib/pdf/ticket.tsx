@@ -10,6 +10,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import QRCode from "qrcode";
+import { formatEventTimeRange } from "@/lib/time";
 
 /**
  * Print-ready ticket PDF (PRD 5.6).
@@ -148,7 +149,7 @@ function Ticket({ row, qr }: { row: TicketPrintRow; qr: Buffer }) {
             </View>
             <View style={styles.goldRule} />
             <Text style={styles.meta}>
-              {formatEventDate(row.event.eventDate)} · {row.event.startTime}–{row.event.endTime}
+              {formatEventDate(row.event.eventDate)} · {formatEventTimeRange(row.event.startTime, row.event.endTime)}
             </Text>
             <Text style={styles.meta}>{place}</Text>
           </View>

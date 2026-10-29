@@ -46,14 +46,14 @@ describe("event creation", () => {
   });
 
   it("rejects invalid input with 422 and field-level details", async () => {
-    const endBeforeStart = await admin.post(
+    const equalStartAndEnd = await admin.post(
       "/api/v1/events",
-      payload({ endTime: "17:00" }),
+      payload({ endTime: "18:00" }),
     );
-    expect(endBeforeStart.status).toBe(422);
-    expect(endBeforeStart.body.error.code).toBe("VALIDATION_ERROR");
+    expect(equalStartAndEnd.status).toBe(422);
+    expect(equalStartAndEnd.body.error.code).toBe("VALIDATION_ERROR");
     expect(
-      endBeforeStart.body.error.details.some(
+      equalStartAndEnd.body.error.details.some(
         (detail: { path: string }) => detail.path === "endTime",
       ),
     ).toBe(true);

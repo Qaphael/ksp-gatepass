@@ -65,10 +65,10 @@ function checkEventRules(data: EventRuleData, ctx: z.RefinementCtx): void {
     }
   }
   if (data.startTime !== undefined && data.endTime !== undefined) {
-    if (toMinutes(data.endTime) <= toMinutes(data.startTime)) {
+    if (toMinutes(data.endTime) === toMinutes(data.startTime)) {
       ctx.addIssue({
         code: "custom",
-        message: "End time must be after start time.",
+        message: "End time must be different from start time.",
         path: ["endTime"],
       });
     }

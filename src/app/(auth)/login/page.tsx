@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +17,6 @@ import { FormAlert } from "@/components/layout/form-alert";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -38,8 +36,10 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    // A full navigation makes the newly set HttpOnly session cookie authoritative
+    // before the protected dashboard is requested.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/dashboard");
   }
 
   return (

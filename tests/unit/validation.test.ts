@@ -147,8 +147,8 @@ describe("event validation (PRD 5.3)", () => {
     expect(updateEventSchema.safeParse({}).success).toBe(true);
   });
 
-  it("still enforces cross-field rules on partial updates", () => {
-    const result = updateEventSchema.safeParse({ startTime: "22:00", endTime: "20:00" });
+  it("rejects equal start and end times on partial updates", () => {
+    const result = updateEventSchema.safeParse({ startTime: "22:00", endTime: "22:00" });
     expect(result.success).toBe(false);
   });
 });

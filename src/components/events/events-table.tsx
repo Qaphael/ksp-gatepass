@@ -26,6 +26,7 @@ import type { EventDto } from "@/server/services/events.service";
 import { ResponsiveList } from "@/components/ui/responsive-list";
 import { FilterSheet } from "@/components/ui/filter-sheet";
 import { StatusBadge as SharedStatusBadge } from "@/components/ui/status-badge";
+import { formatEventTimeRange } from "@/lib/time";
 
 type FilterValue =
   | "all"
@@ -107,9 +108,9 @@ export function EventsTable({ events }: { events: EventDto[] }) {
         </span>
       </div></FilterSheet>
 
-      <ResponsiveList cards={filtered.map((event) => <Link key={event.id} href={`/events/${event.id}`} className="block rounded-xl border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <ResponsiveList cards={filtered.map((event) => <Link key={event.id} href={`/events/${event.id}`} className="block min-w-0 rounded-xl border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <div className="flex items-start justify-between gap-3"><p className="min-w-0 truncate text-base font-semibold">{event.name}</p><SharedStatusBadge domain="event" status={event.status} /></div>
-        <p className="mt-1 truncate text-sm text-muted-foreground">{event.venue}</p><p className="mt-3 text-sm">{event.eventDate} · {event.startTime}–{event.endTime}</p>
+        <p className="mt-1 truncate text-sm text-muted-foreground">{event.venue}</p><p className="mt-3 text-sm">{event.eventDate} · {formatEventTimeRange(event.startTime, event.endTime)}</p>
         <div className="mt-3 flex flex-wrap gap-2"><OpenBadge open={event.salesOpen} label="Sales" /><OpenBadge open={event.admissionOpen} label="Admission" /></div>
         <p className="mt-3 text-sm text-muted-foreground">Capacity <span className="font-medium text-foreground tabular-nums">{event.capacity}</span></p>
       </Link>)} table={<Card>
@@ -139,7 +140,7 @@ export function EventsTable({ events }: { events: EventDto[] }) {
                   <TableCell className="whitespace-nowrap">
                     {event.eventDate}
                     <p className="text-xs text-muted-foreground">
-                      {event.startTime}–{event.endTime}
+                    {formatEventTimeRange(event.startTime, event.endTime)}
                     </p>
                   </TableCell>
                   <TableCell>

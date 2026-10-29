@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/sonner";
-import { NavLinks, type NavItem, NAV_ICONS } from "@/components/layout/nav-links";
+import { NavLinks, type NavIconName, type NavItem } from "@/components/layout/nav-links";
 import { UserMenu } from "@/components/layout/user-menu";
 import { EventSwitcher } from "@/components/layout/event-switcher";
 import { getSessionContext } from "@/lib/auth/session";
@@ -15,26 +15,26 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!ctx) redirect("/login");
 
   const events = can(ctx.role, "event:read") ? await listEvents(ctx) : [];
-  const permitted = (href: string, label: keyof typeof NAV_ICONS, permission: Parameters<typeof can>[1]): NavItem | null =>
-    can(ctx.role, permission) ? { href, label, icon: NAV_ICONS[label] } : null;
+  const permitted = (href: string, label: NavIconName, permission: Parameters<typeof can>[1]): NavItem | null =>
+    can(ctx.role, permission) ? { href, label, icon: label } : null;
   const all = {
     overview: permitted("/dashboard", "Overview", "event:read"),
     sales: permitted("/sales", "Sales", "sale:read-own"),
-    tickets: can(ctx.role, "inventory:read") || can(ctx.role, "sale:read-own") ? { href: "/tickets", label: "Tickets", icon: NAV_ICONS.Tickets } : null,
+    tickets: can(ctx.role, "inventory:read") || can(ctx.role, "sale:read-own") ? { href: "/tickets", label: "Tickets", icon: "Tickets" as const } : null,
     scan: permitted("/scanner", "Check-in", "checkin:verify"),
     manual: permitted("/check-in/manual", "Manual", "checkin:verify"),
     recent: permitted("/check-in/recent", "Recent", "checkin:read-recent"),
     attempts: permitted("/check-in/attempts", "Attempts", "checkin:read-attempts"),
-    reports: (can(ctx.role, "report:view-summary") || can(ctx.role, "report:export-own") || can(ctx.role, "report:export-full")) ? { href: "/reports", label: "Reports", icon: NAV_ICONS.Reports } : null,
+    reports: (can(ctx.role, "report:view-summary") || can(ctx.role, "report:export-own") || can(ctx.role, "report:export-full")) ? { href: "/reports", label: "Reports", icon: "Reports" as const } : null,
     events: permitted("/events", "Events", "event:read"),
     team: permitted("/team", "Team", "user:read"),
     audit: permitted("/audit-logs", "Audit log", "audit:read"),
-    settings: { href: "/account", label: "Settings", icon: NAV_ICONS["Audit log"] },
+    settings: { href: "/account", label: "Settings", icon: "Settings" as const },
   };
   const collect = (...items: Array<NavItem | null>) => items.filter((item): item is NavItem => Boolean(item));
   let navItems: NavItem[];
   if (ctx.role === "VERIFIER") navItems = collect(all.overview, all.scan, all.manual, all.recent);
-  else if (ctx.role === "SELLER") navItems = collect(all.overview, { href: "/sales/new", label: "Sell", icon: NAV_ICONS.Sales }, all.sales, all.tickets);
+  else if (ctx.role === "SELLER") navItems = collect(all.overview, { href: "/sales/new", label: "Sell", icon: "Sell" }, all.sales, all.tickets);
   else if (ctx.role === "SUPERVISOR") navItems = collect(all.overview, all.scan, all.attempts, all.reports);
   else navItems = collect(all.overview, all.sales, all.tickets, all.scan, all.events, all.team, all.audit, all.reports, all.settings);
   const landing = ctx.role === "VERIFIER" ? "/scanner" : ctx.role === "SELLER" ? "/sales/new" : "/dashboard";

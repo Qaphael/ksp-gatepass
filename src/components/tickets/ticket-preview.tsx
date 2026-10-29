@@ -1,4 +1,5 @@
 import { formatCalendarDate } from "./ticket-format";
+import { formatEventTimeRange } from "@/lib/time";
 
 interface TicketPreviewProps {
   serial: string;
@@ -41,8 +42,7 @@ export function TicketPreview({ serial, categoryName, event, qrSrc }: TicketPrev
               </div>
               <div className="mt-0.5 h-0.5 bg-gold-500" />
               <p className="mt-1 truncate text-[clamp(5px,1.8vw,7px)] text-ink">
-                {formatCalendarDate(event.eventDate)} · {event.startTime}–
-                {event.endTime}
+                {formatCalendarDate(event.eventDate)} · {formatEventTimeRange(event.startTime, event.endTime)}
               </p>
               <p className="truncate text-[clamp(5px,1.8vw,7px)] text-ink">{place}</p>
             </div>

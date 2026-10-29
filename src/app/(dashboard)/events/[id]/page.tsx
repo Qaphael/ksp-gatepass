@@ -23,6 +23,7 @@ import {
 import { listTicketTypes } from "@/server/services/ticket-types.service";
 import { getTicketTypeProgress } from "@/server/services/dashboard.service";
 import { ServiceError } from "@/lib/api";
+import { formatEventTimeRange } from "@/lib/time";
 
 export const instant = false;
 
@@ -61,13 +62,21 @@ export default async function EventDetailPage({
 
       <div className={`grid items-start gap-5 ${event.branding.poster ? "md:grid-cols-[minmax(0,1fr)_minmax(16rem,24rem)]" : ""}`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{event.name}</h1>
             <StatusBadge status={event.status} />
           </div>
+          {event.status === "DRAFT" && can(ctx.role, "event:update") ? (
+            <div className="mt-3">
+              <EventActions
+                event={event}
+                permissions={{ publish: true, openSales: false, closeSales: false, openAdmission: false, closeAdmission: false, complete: false, archive: false }}
+              />
+            </div>
+          ) : null}
           <p className="mt-1 text-sm text-muted-foreground">
-            {event.eventDate} · {event.startTime}–{event.endTime} ·{" "}
+            {event.eventDate} · {formatEventTimeRange(event.startTime, event.endTime)} ·{" "}
             {event.venue}
             {event.address ? `, ${event.address}` : ""}
           </p>
@@ -83,7 +92,8 @@ export default async function EventDetailPage({
         ) : null}
         </div>
         {event.branding.poster && <aside className="min-w-0">
-          <EventPoster poster={event.branding.poster} variant="display" />
+          <EventPoster poster={event.branding.poster} variant="display" className="max-h-[70dvh] md:hidden" />
+          <EventPoster poster={event.branding.poster} variant="banner" className="hidden md:block" />
           <a href={`${event.branding.poster.displayUrl}&download=1`} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
         </aside>}
       </div>
@@ -93,6 +103,7 @@ export default async function EventDetailPage({
         <EventActions
           event={event}
           permissions={{
+          publish: false,
           openSales: can(ctx.role, "event:open-sales"),
           closeSales: can(ctx.role, "event:close-sales"),
           openAdmission: can(ctx.role, "event:open-admission"),

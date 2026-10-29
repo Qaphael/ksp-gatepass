@@ -29,6 +29,7 @@ export function UserMenu({ user }: UserMenuProps) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function signOut() {
     setSigningOut(true);
@@ -43,13 +44,15 @@ export function UserMenu({ user }: UserMenuProps) {
       });
       if (!result.ok) {
         setSignOutError(result.error.message);
+        setMenuOpen(true);
         return;
       }
 
-      router.replace("/login");
+      router.push("/login");
       router.refresh();
     } catch {
       setSignOutError("Could not sign out. Check your connection and try again.");
+      setMenuOpen(true);
     } finally {
       window.clearTimeout(timeout);
       setSigningOut(false);
@@ -57,10 +60,10 @@ export function UserMenu({ user }: UserMenuProps) {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" disabled={signingOut}>
+          <Button variant="ghost" aria-label="Account menu" disabled={signingOut}>
             <UserRound />
           <span className="hidden max-w-32 truncate sm:inline sm:max-w-none">
               {user.displayName}
@@ -87,13 +90,7 @@ export function UserMenu({ user }: UserMenuProps) {
         <DropdownMenuItem render={<Link href="/account" />}>
           <UserRound /> Account
         </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={signingOut}
-          onSelect={(event) => {
-            event.preventDefault();
-            void signOut();
-          }}
-        >
+        <DropdownMenuItem disabled={signingOut} onClick={() => void signOut()}>
           <LogOut /> {signingOut ? "Signing out…" : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -35,11 +35,12 @@ export function TicketsTable({ tickets, showEvent = true }: TicketsTableProps) {
   }
 
   return <ResponsiveList
-    cards={tickets.map((ticket) => <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="block rounded-xl border border-border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <div className="flex items-start justify-between gap-3"><Serial className="text-base font-semibold">{ticket.serial}</Serial><TicketStatusBadge status={ticket.status} /></div>
+    cardsUntil="lg"
+    cards={tickets.map((ticket) => <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="block min-w-0 rounded-xl border border-border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2"><Serial className="min-w-0 text-base font-semibold">{ticket.serial}</Serial><TicketStatusBadge status={ticket.status} /></div>
       <p className="mt-2 truncate text-base font-medium">{ticket.ticketTypeName}</p>
       {showEvent ? <p className="truncate text-sm text-muted-foreground">{ticket.eventName}</p> : null}
-      <div className="mt-3 flex justify-between gap-2 text-sm text-muted-foreground"><span>{ticket.batchRef ?? "No batch"}</span><span>{formatTimestamp(ticket.createdAt)}</span></div>
+      <div className="mt-3 flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-1 text-sm text-muted-foreground"><span className="min-w-0 break-all">{ticket.batchRef ?? "No batch"}</span><span className="shrink-0">{formatTimestamp(ticket.createdAt)}</span></div>
     </Link>)}
     table={(
     <Card>

@@ -10,6 +10,7 @@ import { apiFetch } from "@/lib/api-client";
 import type { EventDto } from "@/server/services/events.service";
 
 export interface EventActionPermissions {
+  publish: boolean;
   openSales: boolean;
   closeSales: boolean;
   openAdmission: boolean;
@@ -26,6 +27,26 @@ interface EventActionsProps {
 export function EventActions({ event, permissions }: EventActionsProps) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
+
+  async function publishEvent() {
+    setPending("publish");
+    try {
+      const result = await apiFetch<{ event: EventDto }>(`/api/v1/events/${event.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "SCHEDULED" }),
+      });
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+      toast.success("Event published. Sales and admission remain closed.");
+      router.refresh();
+    } catch {
+      toast.error("Could not reach the server. Try again.");
+    } finally {
+      setPending(null);
+    }
+  }
 
   async function run(action: string, path: string): Promise<boolean> {
     setPending(action);
@@ -100,11 +121,24 @@ export function EventActions({ event, permissions }: EventActionsProps) {
     },
   ];
   const buttons = allButtons.filter((button) => button.allowed);
+  const canPublish = permissions.publish && event.status === "DRAFT";
 
-  if (buttons.length === 0) return null;
+  if (buttons.length === 0 && !canPublish) return null;
 
   return (
     <div className="flex flex-wrap gap-2">
+      {canPublish ? (
+        <Button
+          variant="default"
+          size="sm"
+          className="min-h-12 text-base"
+          disabled={pending !== null}
+          onClick={() => void publishEvent()}
+        >
+          {pending === "publish" ? <Loader2 className="animate-spin" /> : null}
+          Publish event
+        </Button>
+      ) : null}
       {buttons.map((button) => (
         button.action === "complete" || button.action === "archive" ? <ConfirmSheet
           key={button.action}

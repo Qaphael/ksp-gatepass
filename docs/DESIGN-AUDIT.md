@@ -6,6 +6,16 @@ Prompt 0 (read-only). Audited 2026-10-27.
 
 **Method:** static code review against the six checklist dimensions in Prompt 0. No source files were changed; this file is the only output. Findings were produced by four read-only review passes and consolidated, then the highest-impact claims were re-verified against the source (button sizes, missing route states, missing tokens, `navigator.onLine`, `aria-live`, nav role sets, sales pagination).
 
+## Prompt 10 — Browser verification (2026-10-29)
+
+- Added a Playwright smoke harness with a dedicated `ksp_gatepass_design_test` database, seeded role users, and an isolated design event fixture. The suite checks admin, seller, verifier and supervisor views at 360 × 800, 390 × 844, 768 × 1024 and 1280 × 800; axe WCAG 2.1 A/AA; main role routes; keyboard focus; reduced motion; and scanner performance.
+- Fixed event-card overflow at 360 px by allowing the responsive card grid to shrink below its content's intrinsic width (`ResponsiveList` mobile grid and event card now use `min-w-0`).
+- Added a global reduced-motion rule that suppresses decorative animation and transitions.
+- Avoided an initial install-hint flash and associated scanner layout shift by rendering the hint only after client detection confirms the app is not installed.
+- Kept the post-login full navigation so the protected request observes the new HttpOnly cookie; this is covered by all four role login tests.
+- Latest full run: **10/10 Playwright tests passed**. Axe found no WCAG 2.1 A/AA violations on tested views, and no horizontal overflow was found. At 4× CPU and throttled cellular 3G, scanner document navigation was 1,037 ms, CLS was **0.0475**, no images lacked dimensions, and the ZXing library was not loaded on the scanner landing screen.
+- The physical Android checklist remains unrun: install/standalone launch, camera and flashlight, one-handed sale, scan result visibility in sunlight, poster upload from gallery, low battery and slow-network handling. Real-paper QR scanning also remains pending in the release checklist.
+
 **Severity:**
 - **Blocking** — stops a core task at 360 px, breaks spec §2 / §3 / §6 outright, or fails §10's definition of done at its root cause.
 - **Should fix** — clear spec violation that does not stop the task. Where the root cause is a shared primitive (tokens, button/input sizes), call-site symptoms are listed as Should fix and point at the Blocking root row.

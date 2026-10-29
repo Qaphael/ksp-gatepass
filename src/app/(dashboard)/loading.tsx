@@ -1,5 +1,5 @@
 export default function DashboardLoading() {
-  return <div aria-label="Loading page" aria-busy="true" className="flex motion-safe:animate-pulse flex-col gap-4">
+  return <div role="status" aria-label="Loading page" aria-busy="true" className="flex motion-safe:animate-pulse flex-col gap-4">
     <div className="h-8 w-48 rounded bg-muted" />
     <div className="h-4 w-72 max-w-full rounded bg-muted" />
     <div className="h-12 w-full rounded-lg bg-muted" />

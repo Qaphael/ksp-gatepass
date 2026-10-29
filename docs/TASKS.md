@@ -108,6 +108,9 @@ Event name and details · categories, prices, quantities · serial prefix and fo
 - [x] Prompt 7 — Role dashboards and event pages (server-backed admin, seller, verifier and supervisor summaries; category availability, date/status hierarchy and guarded event actions)
 - [x] Prompt 8 — Tickets, receipts and print artwork (brand-led 5-up ticket PDF with QR quiet zone, responsive preview, clearer receipt totals/status, and one-page print test guidance)
 - [x] Prompt 9 — PWA install (role-aware standalone launch, maskable icons, install guidance and viewport safe areas; no service worker)
+- [x] Prompt 10 — Responsive, accessibility, and mobile performance audit (Playwright/axe suite passes; physical Android checklist remains pending)
+
+Prompt 10 verification: Playwright reports 10/10 passing against its isolated design test database. All four roles passed responsive route, overflow and axe checks at 360 × 800, 390 × 844, 768 × 1024 and 1280 × 800; keyboard focus and reduced motion pass. Throttled scanner navigation measured 1,037 ms with CLS 0.0475, no unsized images and no eager ZXing load. Physical Android install/camera/flashlight/one-handed sale/sunlight/poster-gallery/low-battery/slow-network checks and the paper QR scan remain pending.
 
 Prompt 5 verification: `pnpm typecheck`, `pnpm lint`, and `pnpm test` pass; test suite reports 15 files / 135 tests. The test setup's production build completed and emitted the known `HANGING_PROMISE_REJECTION` warnings on authenticated API routes. Real Android HTTPS and paper QR scanning remain pending as listed in Phase 4.
 

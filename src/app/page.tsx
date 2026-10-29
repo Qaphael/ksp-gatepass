@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { getSessionContext } from "@/lib/auth/session";
 
@@ -5,6 +6,7 @@ import { getSessionContext } from "@/lib/auth/session";
 export const instant = false;
 
 export default async function Home() {
+  await connection();
   const ctx = await getSessionContext();
   redirect(!ctx ? "/login" : ctx.role === "VERIFIER" ? "/scanner" : ctx.role === "SELLER" ? "/sales/new" : "/dashboard");
 }

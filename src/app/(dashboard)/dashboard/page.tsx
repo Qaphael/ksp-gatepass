@@ -110,10 +110,16 @@ function EmptyDashboard({ role }: { role: "ADMIN" | "SELLER" | "VERIFIER" | "SUP
 function CalendarDaysIcon() { return <CalendarDays className="size-7" aria-hidden="true" />; }
 
 function DashboardHeading({ event, eyebrow = "Event overview" }: { event: EventDto; eyebrow?: string }) {
-  return <div className="flex min-w-0 items-center gap-3">
-    {event.branding.poster && <EventPoster poster={event.branding.poster} variant="thumbnail" className="hidden w-16 shrink-0 sm:block" />}
-    <div className="min-w-0"><p className="text-sm font-medium text-muted-foreground">{eyebrow}</p><h1 className="truncate text-2xl font-semibold tracking-tight">{event.name}</h1><p className="truncate text-sm text-muted-foreground">{event.eventDate} · {event.venue}</p></div>
-    <div className="ml-auto flex shrink-0 flex-col items-end gap-1"><StatusBadge status={event.status} /><OpenBadge open={event.admissionOpen} label="Admission" /></div>
+  return <div className="flex min-w-0 flex-col gap-2">
+    {event.branding.poster && <>
+      <EventPoster poster={event.branding.poster} variant="display" className="max-h-[60dvh] md:hidden" />
+      <EventPoster poster={event.branding.poster} variant="banner" className="hidden md:block" />
+      <a href={`${event.branding.poster.displayUrl}&download=1`} className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
+    </>}
+    <div className="flex min-w-0 items-center gap-3">
+      <div className="min-w-0"><p className="text-sm font-medium text-muted-foreground">{eyebrow}</p><h1 className="truncate text-2xl font-semibold tracking-tight">{event.name}</h1><p className="truncate text-sm text-muted-foreground">{event.eventDate} · {event.venue}</p></div>
+      <div className="ml-auto flex shrink-0 flex-col items-end gap-1"><StatusBadge status={event.status} /><OpenBadge open={event.admissionOpen} label="Admission" /></div>
+    </div>
   </div>;
 }
 

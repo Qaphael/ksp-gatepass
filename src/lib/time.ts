@@ -5,6 +5,11 @@
 
 const LOCAL_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
+/** Earlier end clock times mean the event finishes on the following day. */
+export function formatEventTimeRange(startTime: string, endTime: string): string {
+  return `${startTime}–${endTime}${endTime < startTime ? " (+1 day)" : ""}`;
+}
+
 export function isLocalDateTime(value: string): boolean {
   if (!LOCAL_DATETIME_RE.test(value)) return false;
   return !Number.isNaN(Date.parse(value));

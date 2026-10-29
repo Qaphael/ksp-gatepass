@@ -17,7 +17,7 @@ const InstallContext = createContext<InstallContextValue | null>(null);
 
 export function PwaInstallProvider({ children }: { children: React.ReactNode }) {
   const [promptEvent, setPromptEvent] = useState<InstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(true);
 
   useEffect(() => {
     const displayMode = window.matchMedia("(display-mode: standalone)");
