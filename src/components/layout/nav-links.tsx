@@ -33,8 +33,8 @@ export function NavLinks({ items, orientation = "horizontal" }: { items: NavItem
   const moreItems = items.filter((item) => !mainItems.includes(item));
   const isMoreActive = moreItems.some((item) => pathname === item.href || pathname.startsWith(item.href));
   const more = <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
-    <DialogTrigger className={cn("flex min-h-11 min-w-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground", isMoreActive && "bg-muted font-medium text-foreground")} aria-label="More navigation">
-      <Ellipsis className="size-5"/><span>More</span>
+    <DialogTrigger className={cn("flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-xs text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground", isMoreActive && "bg-muted font-medium text-foreground")} aria-label="More navigation">
+      <Ellipsis className="size-[1.125rem]"/><span>More</span>
     </DialogTrigger>
     <DialogContent showCloseButton={false} className="inset-x-0 bottom-0 top-auto left-0 max-h-[85dvh] w-full max-w-none translate-x-0 translate-y-0 gap-4 rounded-t-2xl rounded-b-none border p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:inset-x-1/2 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl">
       <div className="flex items-center justify-between"><DialogTitle>More areas</DialogTitle><button onClick={() => setMoreOpen(false)} className="grid size-11 place-items-center rounded-md hover:bg-muted" aria-label="Close menu"><X className="size-5"/></button></div>
@@ -49,5 +49,5 @@ export function NavLinks({ items, orientation = "horizontal" }: { items: NavItem
 
 function NavLink({ item, active, onNavigate, compact = true }: { item: NavItem; active: boolean; onNavigate?: () => void; compact?: boolean }) {
   const Icon = item.icon ? NAV_ICONS[item.icon] : LayoutDashboard;
-  return <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={cn(compact ? "flex min-h-11 min-w-14 flex-col items-center justify-center gap-1 rounded-lg px-2 text-base" : "flex min-h-12 items-center gap-3 rounded-lg px-3 text-base", "transition-colors", active ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}><Icon className="size-5 shrink-0"/><span>{item.label}</span></Link>;
+  return <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={cn(compact ? "flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-sm" : "flex min-h-12 items-center gap-3 rounded-lg px-3 text-base", "transition-colors", active ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}><Icon className={compact ? "size-[1.125rem] shrink-0" : "size-5 shrink-0"}/><span className={compact ? "truncate leading-tight" : undefined}>{item.label}</span></Link>;
 }

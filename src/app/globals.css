@@ -80,7 +80,6 @@
   --info: #dbeafe;
   --info-foreground: #1e3a8a;
 
-  --font-app: Arial, Helvetica, sans-serif;
   --font-serial: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --background: var(--ivory);
   --foreground: var(--ink);

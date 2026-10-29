@@ -1,7 +1,14 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, ChevronDown } from "lucide-react";
+import { CalendarDays } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function EventSwitcher({ events }: { events: Array<{ id: string; name: string }> }) {
   const router = useRouter();
@@ -9,13 +16,32 @@ export function EventSwitcher({ events }: { events: Array<{ id: string; name: st
   const searchParams = useSearchParams();
   const routeEventId = pathname.match(/^\/events\/([^/]+)$/)?.[1];
   const selectedEventId = searchParams.get("eventId") ?? (routeEventId ? decodeURIComponent(routeEventId) : "");
-  return <label className="relative inline-flex min-w-0 items-center">
-    <span className="sr-only">Choose event</span>
-    <CalendarDays className="pointer-events-none absolute left-3 size-4 text-primary" />
-    <select aria-label="Choose event" value={events.some((event) => event.id === selectedEventId) ? selectedEventId : ""} onChange={(event) => { if (event.target.value) router.push(pathname === "/dashboard" ? `/dashboard?eventId=${encodeURIComponent(event.target.value)}` : `/events/${encodeURIComponent(event.target.value)}`); }} className="h-11 max-w-[min(44vw,15rem)] appearance-none truncate rounded-full border border-border bg-background py-2 pl-9 pr-9 text-sm font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <option value="">Select event</option>
-      {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
-    </select>
-    <ChevronDown className="pointer-events-none absolute right-3 size-4 text-muted-foreground" />
-  </label>;
+  const value = events.some((event) => event.id === selectedEventId) ? selectedEventId : null;
+
+  return (
+    <Select
+      items={events.map((event) => ({ value: event.id, label: event.name }))}
+      value={value}
+      onValueChange={(eventId) => {
+        if (!eventId) return;
+        router.push(pathname === "/dashboard" ? `/dashboard?eventId=${encodeURIComponent(eventId)}` : `/events/${encodeURIComponent(eventId)}`);
+      }}
+    >
+      <SelectTrigger
+        aria-label="Choose event"
+        size="sm"
+        className="h-11 min-h-11 w-[min(44vw,15rem)] min-w-0 max-w-[15rem] justify-start gap-2 rounded-full px-3 text-sm font-medium"
+      >
+        <CalendarDays className="size-4 text-primary" aria-hidden="true" />
+        <SelectValue placeholder="Select event" className="truncate" />
+      </SelectTrigger>
+      <SelectContent align="start">
+        {events.map((event) => (
+          <SelectItem key={event.id} value={event.id}>
+            {event.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
 }
