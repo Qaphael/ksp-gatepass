@@ -71,6 +71,12 @@ The helper only accepts the generated branding filename pattern and extracts to 
 
 GitHub Actions runs frozen dependency installation, a production dependency advisory check, typecheck, lint and the complete integration suite. The check-in integration tests include ten concurrent confirmations and a ten-client verification latency p95 target below one second. CI evidence is still pending its first hosted run.
 
+### Automatic VPS deployment
+
+The `deploy` job in `.github/workflows/ci.yml` deploys only a successful `master` push, after the `verify` job passes. It transfers that exact commit to `/opt/ksp-gatepass` and runs `docker compose up -d --build`; the VPS `.env` and Docker volumes remain on the server. The existing host Nginx terminates HTTPS and proxies to the app's loopback-only port; do not start the optional Caddy overlay on this VPS.
+
+To enable the job, create a dedicated, unencrypted Ed25519 deploy key for GitHub Actions, add its public key to `/root/.ssh/authorized_keys`, and add the matching private key as the repository Actions secret `GATEPASS_VPS_SSH_PRIVATE_KEY`. Then set the repository Actions variable `GATEPASS_DEPLOY_ENABLED` to `true`. The workflow checks the VPS SSH host-key fingerprint before connecting. Keep the private key only in the Actions secret and rotate it if exposed. The initial administrator is still created interactively on the server with `docker compose exec app pnpm setup:admin`; CI never creates or logs an admin password.
+
 Local project commands: `pnpm install`, `pnpm dev`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm prisma:generate`, `pnpm prisma:migrate`, `pnpm prisma:deploy`, `pnpm setup:admin`.
 
 ## Known incomplete items

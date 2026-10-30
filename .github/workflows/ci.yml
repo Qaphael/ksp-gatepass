@@ -41,3 +41,44 @@ jobs:
         run: pnpm lint
       - name: Unit and integration tests
         run: pnpm test
+
+  deploy:
+    name: Deploy verified master to VPS
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.GATEPASS_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: gatepass-production-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Check out verified commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Configure pinned VPS SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.GATEPASS_VPS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY" || { echo "Missing GATEPASS_VPS_SSH_PRIVATE_KEY" >&2; exit 1; }
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/gatepass_deploy"
+          chmod 600 "$HOME/.ssh/gatepass_deploy"
+          ssh-keyscan -t ed25519 212.47.72.186 > "$HOME/.ssh/known_hosts" 2>/dev/null
+          fingerprint="$(ssh-keygen -lf "$HOME/.ssh/known_hosts" -E sha256 | awk 'NR == 1 {print $2}')"
+          test "$fingerprint" = "SHA256:0Wv+b7irBS/41NybPWrjHpU2fX8MgujT41DuTKlmtIk" || {
+            echo "VPS host key fingerprint did not match the verified key" >&2
+            exit 1
+          }
+          chmod 600 "$HOME/.ssh/known_hosts"
+      - name: Deploy and rebuild Docker Compose services
+        run: |
+          set -euo pipefail
+          git archive --format=tar "$GITHUB_SHA" |
+            ssh -i "$HOME/.ssh/gatepass_deploy" \
+              -o IdentitiesOnly=yes \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=yes \
+              root@212.47.72.186 \
+              "mkdir -p /opt/ksp-gatepass && tar -xf - -C /opt/ksp-gatepass && cd /opt/ksp-gatepass && docker compose up -d --build"

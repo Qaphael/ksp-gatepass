@@ -13,6 +13,10 @@ COPY prisma7.config.ts ./
 COPY prisma ./prisma
 RUN pnpm install --frozen-lockfile
 COPY . .
+# Next.js imports database-backed route modules during build-time analysis.
+# This placeholder is never used by the runtime image; Compose supplies the
+# real DATABASE_URL from the private server-side .env file.
+ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
 RUN pnpm build
 
 FROM base AS runner

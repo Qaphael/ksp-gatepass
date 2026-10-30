@@ -76,6 +76,8 @@ Implementation plan:
 - [ ] Production dependency advisory review succeeds (local registry access was denied; hosted CI check is configured)
 - [x] 10-client verification p95 test and duplicate-admission concurrency test are part of CI
 - [x] HTTPS reverse-proxy configuration and safe backup/restore scripts with scheduling instructions
+- [x] GitHub Actions deploy job waits for successful CI and updates Docker Compose from the verified `master` commit
+- [ ] Add the VPS deploy key to GitHub Actions and enable automatic deployment
 - [ ] HTTPS deployment, host backup schedule and scratch restore rehearsal verified on the target host
 - [ ] Printed ticket QR scanned from real paper
 - [x] Staff operating guide, environment variable docs, list of incomplete features
