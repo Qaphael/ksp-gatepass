@@ -82,5 +82,7 @@ jobs:
               -o IdentitiesOnly=yes \
               -o BatchMode=yes \
               -o StrictHostKeyChecking=yes \
+              -o ServerAliveInterval=30 \
+              -o ServerAliveCountMax=30 \
               root@212.47.72.186 \
               "mkdir -p /opt/ksp-gatepass && tar -xf - -C /opt/ksp-gatepass && cd /opt/ksp-gatepass && docker compose up -d --build"
