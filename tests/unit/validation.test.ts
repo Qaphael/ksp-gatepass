@@ -83,12 +83,19 @@ describe("event validation (PRD 5.3)", () => {
     expect(createEventSchema.safeParse(validEvent).success).toBe(true);
   });
 
-  it("rejects an end time not after the start time", () => {
+  it("rejects equal start and end times", () => {
     const result = createEventSchema.safeParse({ ...validEvent, endTime: "18:00" });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues.some((i) => i.path.includes("endTime"))).toBe(true);
     }
+  });
+
+  it("accepts an overnight event whose end time is on the following day", () => {
+    expect(
+      createEventSchema.safeParse({ ...validEvent, startTime: "18:00", endTime: "06:00" })
+        .success,
+    ).toBe(true);
   });
 
   it("rejects a non-positive capacity", () => {

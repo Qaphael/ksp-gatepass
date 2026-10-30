@@ -226,7 +226,7 @@ All figures must come from server queries. Do not calculate official totals from
 
 Validation rules:
 
-1. End time must follow start time.
+1. End time must differ from start time. If its clock time is earlier than the start time, it is on the following calendar day (for example, 18:00–06:00).
 2. Capacity must be a positive integer.
 3. Sales and admission windows must be valid.
 4. Published event details that affect ticket validity must be changed through an audited process.

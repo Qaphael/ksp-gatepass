@@ -45,6 +45,17 @@ describe("event creation", () => {
     expect(JSON.stringify(audit)).not.toMatch(/password|token/i);
   });
 
+  it("accepts an event ending the following morning", async () => {
+    const result = await admin.post(
+      "/api/v1/events",
+      payload({ startTime: "18:00", endTime: "06:00" }),
+    );
+
+    expect(result.status).toBe(201);
+    expect(result.body.event.startTime).toBe("18:00");
+    expect(result.body.event.endTime).toBe("06:00");
+  });
+
   it("rejects invalid input with 422 and field-level details", async () => {
     const equalStartAndEnd = await admin.post(
       "/api/v1/events",
