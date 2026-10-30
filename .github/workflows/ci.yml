@@ -40,7 +40,9 @@ jobs:
       - name: Lint
         run: pnpm lint
       - name: Unit and integration tests
-        run: pnpm test
+        run: |
+          export TOKEN_ENCRYPTION_KEY="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("base64url"))')"
+          pnpm test
 
   deploy:
     name: Deploy verified master to VPS
