@@ -83,7 +83,7 @@ Implementation plan:
 - [x] Staff operating guide, environment variable docs, list of incomplete features
 - [x] Launch checklist (PRD 15) document created; operational sign-off remains pending
 
-Phase 5 local implementation status: typecheck and lint pass; the full suite reports 14 files / 120 tests passing, including all 12 report types, role-scoped access, CSV/PDF export, audit search, CSRF/header checks, ten-client p95 and duplicate admission. The production build completed during test setup. Remaining release work is the hosted CI run, a successful registry advisory audit, target-host HTTPS/backup scheduling and restore rehearsal, and the real-paper Android scan. The local advisory audit could not reach the npm registry (EACCES); no clean audit result is claimed.
+Phase 5 local implementation status: typecheck and lint pass; the full suite reports 14 files / 120 tests passing, including all 12 report types, role-scoped access, CSV/PDF export, audit search, CSRF/header checks, ten-client p95 and duplicate admission. The production build completed during test setup. The latest hosted CI run (2026-10-30, commit `9e32b97`) failed typecheck because `LayoutProps` was not defined in a clean checkout; `RootLayout` now uses an explicit `ReactNode` prop and local `pnpm typecheck` passes. The target-host Compose stack now builds, applies all ten migrations and responds over loopback; public HTTPS, interactive admin creation, backup scheduling and restore rehearsal, and the real-paper Android scan remain pending. The local advisory audit could not reach the npm registry (EACCES); hosted audit found one low-severity advisory below its configured high threshold, so no clean audit result is claimed.
 
 ## Release gate
 

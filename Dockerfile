@@ -26,10 +26,18 @@ ENV PORT=3000
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma7.config.ts ./
 COPY next.config.ts ./
+COPY tsconfig.json ./
 COPY prisma ./prisma
 RUN pnpm install --prod --frozen-lockfile
 COPY --from=build /app/.next ./.next
 COPY public ./public
+# Include the one-time, interactive admin bootstrap and its minimal source
+# dependencies. `tsx` is a production dependency so this command works in the
+# production image without shipping the rest of the development toolchain.
+COPY scripts/setup-admin.ts ./scripts/setup-admin.ts
+COPY src/lib/auth/password.ts ./src/lib/auth/password.ts
+COPY src/lib/db/client.ts ./src/lib/db/client.ts
+COPY src/lib/validation/auth.ts ./src/lib/validation/auth.ts
 EXPOSE 3000
 # Apply pending migrations, then start the server.
 CMD ["sh", "-c", "pnpm prisma:deploy && pnpm start"]
