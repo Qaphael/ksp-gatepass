@@ -130,7 +130,7 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 ## Tickets v2 (PRD Addendum 1)
 
 - [x] Prompt T0 — Impact analysis (docs/TICKETS-IMPACT.md)
-- [ ] Prompt T1 — Template model, upload and zone configuration
+- [x] Prompt T1 — Template model, upload and zone configuration
 - [ ] Prompt T2 — Renderer and print outputs
 - [ ] Prompt T3 — Template admin UI
 - [ ] Prompt T4 — Scan-to-sell backend

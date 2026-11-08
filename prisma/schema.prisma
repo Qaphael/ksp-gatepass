@@ -116,6 +116,19 @@ enum PrintKind {
   EXPORT
 }
 
+enum TicketTemplateStatus {
+  DRAFT
+  ACTIVE
+  RETIRED
+}
+
+enum TicketTemplateOutputKind {
+  SHEET
+  SINGLE
+  DATA_LAYER
+  CALIBRATION
+}
+
 enum AuditOutcome {
   SUCCESS
   FAILURE
@@ -140,6 +153,8 @@ model User {
   checkIns CheckIn[]
   scanAttempts ScanAttempt[]
   checkInCorrections CheckInCorrection[]
+  confirmedTicketTemplates TicketTemplate[] @relation("TicketTemplateConfirmer")
+  ticketTemplateMutations TicketTemplateMutation[]
 }
 
 model Session {
@@ -207,6 +222,8 @@ model Event {
   checkIns       CheckIn[]
   scanAttempts   ScanAttempt[]
   brandingAssets EventBrandingAsset[]
+  ticketTemplates TicketTemplate[]
+  templateMutations TicketTemplateMutation[]
 
   @@index([status])
 }
@@ -255,6 +272,7 @@ model TicketType {
   tickets       Ticket[]
   ticketBatches TicketBatch[]
   saleItems     SaleItem[]
+  ticketTemplates TicketTemplate[]
 }
 
 // A generation run: unique serial range + secure QR tokens for `quantity`
@@ -330,16 +348,74 @@ model PrintBatch {
   ticketId      String?
   ticketCount   Int
   metadata      Json?
+  templateId    String?
+  templateVersion Int?
+  sheetLayoutSnapshot Json?
+  outputKind    TicketTemplateOutputKind?
   actorId       String?
   createdAt     DateTime  @default(now())
 
   event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
   ticketBatch TicketBatch? @relation(fields: [ticketBatchId], references: [id], onDelete: SetNull)
   ticket      Ticket?      @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  template    TicketTemplate? @relation(fields: [templateId], references: [id], onDelete: Restrict)
 
   @@index([eventId, createdAt])
   @@index([ticketBatchId])
   @@index([ticketId, createdAt])
+  @@index([templateId])
+}
+
+model TicketTemplate {
+  id                   String               @id @default(cuid())
+  seriesId             String
+  eventId              String
+  ticketTypeId         String?
+  name                 String
+  version              Int
+  assetStorageKey      String
+  assetChecksum        String
+  assetWidthPx         Int
+  assetHeightPx        Int
+  trim                 Json
+  bleedMm              Float
+  config               Json
+  status               TicketTemplateStatus @default(DRAFT)
+  zonesArePlaceholder  Boolean              @default(false)
+  confirmedById        String?
+  confirmedAt          DateTime?
+  calibrationPrintedAt DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketType  TicketType?  @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
+  confirmedBy User?        @relation("TicketTemplateConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
+  printBatches PrintBatch[]
+  mutations    TicketTemplateMutation[]
+
+  @@unique([seriesId, version])
+  @@index([eventId, status, createdAt])
+  @@index([assetStorageKey])
+  @@index([ticketTypeId])
+}
+
+model TicketTemplateMutation {
+  id             String   @id @default(cuid())
+  actorId        String
+  eventId        String
+  operation      String
+  idempotencyKey String
+  requestHash    String
+  templateId     String
+  createdAt      DateTime @default(now())
+
+  event    Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  actor    User           @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  template TicketTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([actorId, operation, idempotencyKey])
+  @@index([eventId, createdAt])
 }
 
 // Append-only audit trail. Never store passwords, session tokens or raw QR

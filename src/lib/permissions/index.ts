@@ -31,6 +31,7 @@ export const PERMISSIONS = [
   "ticket:print",
   "ticket:reprint",
   "ticket:revoke",
+  "template:manage",
   // Sales and payments (Phase 3)
   "sale:create",
   "sale:read-own",
