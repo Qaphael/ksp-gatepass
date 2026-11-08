@@ -41,3 +41,19 @@ Valid and admitted · invalid or unknown QR · other event · not fully paid · 
 ## Audit and privacy
 
 Audit every login, sale, payment, reversal, batch, reprint, revoke, check-in, rejected scan, role change, correction and export. Never store passwords, session secrets or raw QR tokens in logs or audit records. Customer phone numbers never appear on verifier-facing results.
+
+
+## Selling, stock and templates (Addendum 1)
+
+16. A ticket is sold only by scanning it (or a flagged manual sale, or the admin bulk path). The server finds it from the token hash, never from a client-supplied id.
+17. Lookup for sale never admits and never changes ticket state.
+18. With `requireStockIssue` on, a seller can sell only tickets issued to them.
+19. A ticket has at most one active holder (database-enforced).
+20. Buyer name and phone are required when `requireBuyerDetails` is on; phones are stored normalised (E.164).
+21. A template version is immutable once used for a production print; reprints use the recorded version.
+22. Printed QR size and module size must meet the minimums before a template is activated.
+23. Remittances are append-only; corrections are linked reversals.
+24. A seller can be closed only when every issued ticket is sold, returned or lost.
+25. Buyer details never appear on verifier screens; supervisor and admin views at the gate are audited.
+26. Two sellers scanning the same ticket at the same time produce exactly one sale.
+27. With `requireFullPaymentAtSale` on, a seller-created sale must be fully paid at confirmation. A physical ticket is never handed over unpaid.

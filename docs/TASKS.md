@@ -125,3 +125,25 @@ Prompt 7 verification: role dashboard metrics and per-category sold/remaining co
 Prompt 8 verification: direct ESLint on the four changed source files and `tsc --noEmit` pass. `pnpm` itself could not run because its dependency check attempted a non-interactive install (`ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`); existing local dependencies were used directly. Helvetica remains the safe built-in PDF font. The one-page sample PDF uses the existing audited sample-print route. Physical paper size and QR readability still require the owner to print at 100% / Actual size with “Fit to page” disabled, measure the 210 × 59 mm artwork and scan the printed QR.
 
 Prompt 9 verification: direct TypeScript, ESLint and the Next.js production build pass. The manifest, 192/512 px maskable icons and Apple touch icon are generated from `public/icons/ksp-gatepass-placeholder.svg`; replace that source with the approved square KSP logo and run `node scripts/generate-pwa-icons.mjs` to regenerate the icon files. `/` remains the manifest start URL and routes signed-in staff to the correct role landing screen. No service worker is registered, so APIs and admission remain network-only. Real Android HTTPS installation, standalone launch and camera permission still need physical-device confirmation. Build output includes the existing benign `HANGING_PROMISE_REJECTION` warnings on authenticated API routes.
+
+
+## Tickets v2 (PRD Addendum 1)
+
+- [x] Prompt T0 — Impact analysis (docs/TICKETS-IMPACT.md)
+- [ ] Prompt T1 — Template model, upload and zone configuration
+- [ ] Prompt T2 — Renderer and print outputs
+- [ ] Prompt T3 — Template admin UI
+- [ ] Prompt T4 — Scan-to-sell backend
+- [ ] Prompt T5 — Scan-to-sell UI
+- [ ] Prompt T6 — Seller stock backend
+- [ ] Prompt T7 — Stock and seller UI, slips and reports
+- [ ] Prompt T8 — Permissions, audit and privacy sweep
+- [ ] Prompt T9 — Real-world tests and release gate additions
+
+### Release gate additions
+- [ ] Measured template zones confirmed and template activated for production
+- [ ] Calibration sheet scanned from paper on two Android phones
+- [ ] Production sample printed at the chosen layout and scanned from paper
+- [ ] Two sellers racing for one ticket on real phones: exactly one sale
+- [ ] Issue, sell, return and close-out walk-through completed
+- [ ] Buyer details not visible to verifiers (checked at the gate)
