@@ -30,13 +30,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
     team: permitted("/team", "Team", "user:read"),
     audit: permitted("/audit-logs", "Audit log", "audit:read"),
     settings: { href: "/account", label: "Settings", icon: "Settings" as const },
+    stock: (can(ctx.role, "stock:read-own") || can(ctx.role, "stock:read-all")) ? { href: "/stock", label: "Stock", icon: "Stock" as const } : null,
   };
   const collect = (...items: Array<NavItem | null>) => items.filter((item): item is NavItem => Boolean(item));
   let navItems: NavItem[];
   if (ctx.role === "VERIFIER") navItems = collect(all.overview, all.scan, all.manual, all.recent);
-  else if (ctx.role === "SELLER") navItems = collect(all.overview, { href: "/sales/new", label: "Sell", icon: "Sell" }, all.sales, all.tickets);
+  else if (ctx.role === "SELLER") navItems = collect({ href: "/sales/new", label: "Sell", icon: "Sell" }, all.sales, all.tickets, all.stock);
   else if (ctx.role === "SUPERVISOR") navItems = collect(all.overview, all.scan, all.attempts, all.reports);
-  else navItems = collect(all.overview, all.sales, all.tickets, all.scan, all.events, all.team, all.audit, all.reports, all.settings);
+  else navItems = collect(all.overview, all.sales, all.tickets, all.scan, all.stock, all.events, all.team, all.audit, all.reports, all.settings);
   const landing = ctx.role === "VERIFIER" ? "/scanner" : ctx.role === "SELLER" ? "/sales/new" : "/dashboard";
 
   return (

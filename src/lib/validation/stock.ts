@@ -5,6 +5,7 @@ const uniqueSerials = z.array(serial).min(1).max(500).superRefine((values, ctx) 
   if (new Set(values).size !== values.length) ctx.addIssue({ code: "custom", message: "Ticket serials must be unique." });
 });
 const selection = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("TOKENS"), tokens: z.array(z.string().regex(/^[A-Za-z0-9_-]{43}$/)).min(1).max(500).superRefine((values,ctx)=>{if(new Set(values).size!==values.length)ctx.addIssue({code:"custom",message:"Scanned tickets must be unique."})}) }).strict(),
   z.object({ kind: z.literal("RANGE"), serialFrom: serial, serialTo: serial }).strict().refine((value) => value.serialFrom <= value.serialTo, { message: "The start serial must be before the end serial.", path: ["serialTo"] }),
   z.object({ kind: z.literal("SERIALS"), serials: uniqueSerials }).strict(),
   z.object({ kind: z.literal("CATEGORY_QUANTITY"), ticketTypeId: z.string().trim().min(1).max(100), quantity: z.number().int().min(1).max(500) }).strict(),

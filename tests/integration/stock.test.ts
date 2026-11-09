@@ -78,6 +78,23 @@ describe("seller stock operations", () => {
     expect(retry.body.issue).toMatchObject({ slipReference: expect.stringMatching(/^ISSUE-/), seller: { id: sellerId }, issuer: { displayName: expect.any(String) }, quantity: 1, serials: [first.body.issue.serials[0]] });
     expect(await prisma.stockIssue.count({ where: { eventId: data.eventId } })).toBe(1);
     expect(await prisma.ticketCustody.count({ where: { stockIssue: { eventId: data.eventId } } })).toBe(1);
+    const pdf = await admin.request(`/api/v1/stock/issues/${first.body.issue.id}/slip.pdf`);
+    expect(pdf.status).toBe(200);
+    expect(Buffer.from(await pdf.arrayBuffer()).subarray(0, 5).toString()).toBe("%PDF-");
+    expect(await prisma.auditLog.count({ where: { eventId: data.eventId, action: "stock.issue-slip.print" } })).toBe(1);
+  });
+
+  it("issues the exact ticket QR codes scanned without returning or auditing raw tokens", async () => {
+    const data = await fixture(2);
+    const ticket = data.tickets[1];
+    const token = data.tokens.get(ticket.id)!;
+    const result = await postKey(admin, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "TOKENS", tokens: [token] } });
+    expect(result.status).toBe(201);
+    expect(result.body.issue.serials).toEqual([ticket.serial]);
+    expect(JSON.stringify(result.body)).not.toContain(token);
+    const audit = await prisma.auditLog.findFirstOrThrow({ where: { eventId: data.eventId, action: "stock.issue" } });
+    expect(JSON.stringify(audit.summary)).not.toContain(token);
+    expect(await prisma.ticketCustody.count({ where: { ticketId: ticket.id, releasedAt: null, sellerId } })).toBe(1);
   });
 
   it("blocks a seller from another seller's ticket and releases held custody atomically on sale", async () => {

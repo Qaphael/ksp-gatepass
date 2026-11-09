@@ -136,7 +136,7 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 - [x] Prompt T4 — Scan-to-sell backend
 - [x] Prompt T5 — Scan-to-sell UI
 - [x] Prompt T6 — Seller stock backend
-- [ ] Prompt T7 — Stock and seller UI, slips and reports
+- [x] Prompt T7 — Stock and seller UI, slips and reports
 - [ ] Prompt T8 — Permissions, audit and privacy sweep
 - [ ] Prompt T9 — Real-world tests and release gate additions
 
@@ -157,3 +157,5 @@ Prompt T4 implementation: added seller scan-to-sell lookup and confirmation by t
 Prompt T5 implementation: added the seller Sell screen with a shared QR camera and eight-second server heartbeat, policy-aware manual serial entry, distinct lookup state messages/icons, duplicate-safe ticket cart, buyer phone normalization, payment capture, retry-stable sale idempotency, offline blocking, and success receipt/serial view. Added lookup presentation/cart tests. Focused tests (4), typecheck, ESLint and production build pass. Build output retains the existing authenticated-route `HANGING_PROMISE_REJECTION` warnings; the test harness reported a Vite shutdown timeout after the focused test had passed.
 
 Prompt T6 implementation: added database-enforced active ticket custody, stock issue batches, retry-safe return/loss operations, idempotent seller close-outs, append-only remittances with linked reversals, and sale-time custody validation/release inside the ticket transaction. Added issue/return/loss/close-out/remittance APIs and seller statements with integer-UGX takings and balances. Admin/supervisor custody overrides are audited; verifier sales remain denied. Prisma schema validation/generation, typecheck, focused ESLint, and 36 related integration/unit tests pass. The integration build retains existing authenticated-route `HANGING_PROMISE_REJECTION` warnings, and Vitest prints its existing Vite shutdown timeout after test completion.
+
+Prompt T7 implementation: added the seller My Stock screen; admin stock issue by QR scan, serial list, range, or category quantity; audited issue-slip PDFs with signature lines; returns/losses, explicit close-out blocking and confirmation, remittance record/reversal controls, and the five seller reconciliation/stock/template reports. Added role-scoped stock reports and formula-safe CSV/PDF export through the existing report pipeline. Duplicate gate results show buyer details only when returned by the audited supervisor/admin service; verifier responses remain unchanged. `pnpm exec tsc --noEmit`, focused ESLint, production build, and 11 PostgreSQL integration tests pass. Build retains the existing authenticated-route `HANGING_PROMISE_REJECTION` warnings; Vitest reports its existing 10-second shutdown timeout after tests pass. Physical device, print and privacy-at-gate release checks remain open.

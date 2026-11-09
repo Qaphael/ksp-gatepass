@@ -3,6 +3,7 @@ import { Prisma, type PaymentMethod, type StockOperationKind } from "@/generated
 import type { AuthContext } from "@/lib/auth/session";
 import { can, type Permission } from "@/lib/permissions";
 import { prisma } from "@/lib/db/client";
+import { hashQrToken } from "@/lib/qr/tokens";
 import type { RemittanceCreateInput, RemittanceReverseInput, StockCloseoutInput, StockIssueInput, StockLossInput, StockReturnInput, StockStatementQuery } from "@/lib/validation/stock";
 import { conflict, forbidden, notFound, requirePermission } from "./errors";
 
@@ -102,7 +103,13 @@ export async function issueStock(ctx: AuthContext, input: StockIssueInput, rawKe
       }
 
       let tickets: TicketRow[];
-      if (input.selection.kind === "CATEGORY_QUANTITY") {
+      if (input.selection.kind === "TOKENS") {
+        const hashes = input.selection.tokens.map(hashQrToken);
+        tickets = await tx.ticket.findMany({ where: { eventId: input.eventId, tokenHash: { in: hashes } }, select: { id: true, serial: true, eventId: true, ticketTypeId: true, status: true }, orderBy: { serial: "asc" } });
+        if (tickets.length !== hashes.length) throw notFound("One or more scanned tickets were not found for this event.");
+        await lockTickets(tx, tickets.map(ticket => ticket.id));
+        tickets = await tx.ticket.findMany({ where: { id: { in: tickets.map(ticket => ticket.id) } }, select: { id: true, serial: true, eventId: true, ticketTypeId: true, status: true }, orderBy: { serial: "asc" } });
+      } else if (input.selection.kind === "CATEGORY_QUANTITY") {
         const category = await tx.ticketType.findFirst({ where: { id: input.selection.ticketTypeId, eventId: input.eventId }, select: { id: true } });
         if (!category) throw notFound("Ticket category not found for this event.");
         tickets = await tx.$queryRaw<TicketRow[]>`
@@ -147,6 +154,14 @@ export async function issueStock(ctx: AuthContext, input: StockIssueInput, rawKe
     }
     throw error;
   }
+}
+
+export async function getStockIssueSlip(ctx: AuthContext, issueId: string) {
+  requirePermission(ctx.role, "stock:read-all");
+  const issue = await prisma.stockIssue.findUnique({ where: { id: issueId }, include: { event: { select: { name: true } }, seller: { select: { displayName: true, username: true } }, issuedBy: { select: { displayName: true } }, tickets: { include: { ticket: { select: { serial: true, ticketType: { select: { name: true } } } } }, orderBy: { ticket: { serial: "asc" } } } } });
+  if (!issue) throw notFound("Stock issue not found.");
+  await prisma.auditLog.create({ data: { actorId: ctx.userId, actorRole: ctx.role, eventId: issue.eventId, action: "stock.issue-slip.print", targetType: "stock-issue", targetId: issue.id, summary: { slipReference: issue.slipReference, ticketCount: issue.tickets.length } } });
+  return { reference: issue.slipReference, eventName: issue.event.name, sellerName: issue.seller.displayName, sellerUsername: issue.seller.username, issuerName: issue.issuedBy.displayName, issuedAt: issue.issuedAt, rows: issue.tickets.map(row => ({ serial: row.ticket.serial, category: row.ticket.ticketType.name })) };
 }
 
 async function findOperation(ctx: StockActor, operation: StockOperationKind, key: string, requestHash: string) {

@@ -14,6 +14,9 @@ async function fixture() {
   const ticketTypeId = type.body.ticketType.id as string;
   await admin.post("/api/v1/ticket-batches", { eventId, ticketTypeId, quantity: 5, serialPrefix: `R${Date.now().toString(36).slice(-6).toUpperCase()}` });
   const ownTickets = await prisma.ticket.findMany({ where: { eventId, ticketTypeId }, orderBy: { serial: "asc" }, take: 2 });
+  const sellerId = (await prisma.user.findUniqueOrThrow({ where: { username: "seller" }, select: { id: true } })).id;
+  const issued = await postKey(admin, "/api/v1/stock/issues", { eventId, sellerId, selection: { kind: "SERIALS", serials: ownTickets.map(ticket => ticket.serial) } }, unique("report-stock-issue"));
+  expect(issued.status).toBe(201);
   const ownSale = await postKey(seller, "/api/v1/sales", { eventId, tickets: ownTickets.map((ticket) => ({ serial: ticket.serial, entryMethod: "MANUAL" })), initialPayment: { amountUgx: 12_000, method: "CASH" } }, unique("report-own"));
   const otherSale = await postKey(admin, "/api/v1/sales", { eventId, items: [{ ticketTypeId, quantity: 1 }], initialPayment: { amountUgx: 12_000, method: "MOBILE_MONEY" } }, unique("report-other"));
   expect(ownSale.status).toBe(201); expect(otherSale.status).toBe(201);
@@ -23,7 +26,7 @@ async function fixture() {
 describe("reports, audit search and hardening", () => {
   it("computes server-backed event summaries and restricts seller reports to their own sales", async () => {
     const { eventId } = await fixture();
-    const reportTypes = ["TICKET_INVENTORY", "SALES_BY_CATEGORY", "SALES_BY_SELLER", "SALES_BY_DATE", "PAYMENTS_BY_METHOD", "OUTSTANDING_BALANCES", "CANCELLATIONS_REFUNDS", "PRINT_HISTORY", "ATTENDANCE_BY_GATE", "SCAN_ATTEMPTS", "SOLD_NOT_CHECKED_IN", "RECONCILIATION"];
+    const reportTypes = ["TICKET_INVENTORY", "SALES_BY_CATEGORY", "SALES_BY_SELLER", "SALES_BY_DATE", "PAYMENTS_BY_METHOD", "OUTSTANDING_BALANCES", "CANCELLATIONS_REFUNDS", "PRINT_HISTORY", "ATTENDANCE_BY_GATE", "SCAN_ATTEMPTS", "SOLD_NOT_CHECKED_IN", "RECONCILIATION", "SELLER_RECONCILIATION", "STOCK_POSITION", "UNSOLD_BY_HOLDER", "SALES_BY_ENTRY_METHOD", "TEMPLATE_CALIBRATION_HISTORY"];
     for (const type of reportTypes) expect((await admin.get(`/api/v1/reports?eventId=${eventId}&type=${type}`)).status, type).toBe(200);
     const summary = await admin.get(`/api/v1/reports?eventId=${eventId}&type=RECONCILIATION`);
     expect(summary.status).toBe(200);
@@ -37,6 +40,7 @@ describe("reports, audit search and hardening", () => {
     expect(sellerOwn.status).toBe(200);
     expect(JSON.stringify(sellerOwn.body)).toContain((await prisma.sale.findFirstOrThrow({ where: { eventId, sellerId: (await prisma.user.findUniqueOrThrow({ where: { username: "seller" } })).id } })).reference);
     expect((await seller.get(`/api/v1/reports?eventId=${eventId}&type=SALES_BY_SELLER`)).status).toBe(403);
+    expect((await seller.get(`/api/v1/reports?eventId=${eventId}&type=SELLER_RECONCILIATION`)).status).toBe(403);
     expect((await supervisor.get(`/api/v1/reports?eventId=${eventId}&type=RECONCILIATION`)).status).toBe(200);
     expect((await supervisor.get(`/api/v1/reports?eventId=${eventId}&type=OUTSTANDING_BALANCES`)).status).toBe(403);
   });

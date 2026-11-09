@@ -13,6 +13,7 @@ export type CheckInResult = {
   checkedInAt?: string;
   gate?: string;
   originalCheckIn?: { checkedInAt: string; gate: string };
+  buyerDetails?: { customerName: string | null; customerPhone: string | null };
 };
 
 type Tone = "success" | "danger" | "warning";
@@ -60,6 +61,7 @@ export function ResultTakeover({ result, onDismiss, onConfirm, busy, canConfirm 
       <p className="text-lg font-semibold">{result.ticket.ticketTypeName}</p>
       <p className="mt-2 break-all font-mono text-2xl font-bold tracking-wider sm:text-3xl">{result.ticket.serial}</p>
       {original && <div className="mt-5 border-t border-current/20 pt-4 text-base"><p className="flex items-center gap-2 font-semibold"><Clock3 className="size-5" aria-hidden="true" />Already checked in</p><p className="mt-1">{formatTime(original.checkedInAt)} · {original.gate}</p></div>}
+      {result.code === "ALREADY_USED" && result.buyerDetails && <div className="mt-5 border-t border-current/20 pt-4 text-base"><p className="font-semibold">Buyer details · access recorded</p><p className="mt-1">{result.buyerDetails.customerName || "Name not recorded"}</p><p>{result.buyerDetails.customerPhone || "Phone not recorded"}</p></div>}
       {admitted && result.checkedInAt && <p className="mt-4 border-t border-current/20 pt-4 text-lg font-semibold">{formatTime(result.checkedInAt)} · {result.gate}</p>}
     </div>}
     {canConfirm && onConfirm && <Button size="xl" onClick={onConfirm} disabled={busy} className="mt-8 w-full max-w-xl border border-current/20 bg-brand-900 text-white hover:bg-brand-700">{busy ? "Confirming…" : "Confirm admission"}</Button>}

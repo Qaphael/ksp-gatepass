@@ -17,14 +17,18 @@ export const REPORT_TITLES: Record<ReportQuery["type"], string> = {
   CANCELLATIONS_REFUNDS: "Cancelled sales and refunds", PRINT_HISTORY: "Ticket print history",
   ATTENDANCE_BY_GATE: "Attendance by time and gate", SCAN_ATTEMPTS: "Scan attempts by outcome",
   SOLD_NOT_CHECKED_IN: "Tickets sold but not checked in", RECONCILIATION: "Full event reconciliation",
+  SELLER_RECONCILIATION: "Seller stock and cash reconciliation", STOCK_POSITION: "Stock position by serial",
+  UNSOLD_BY_HOLDER: "Unsold tickets by holder", SALES_BY_ENTRY_METHOD: "Sales by entry method",
+  TEMPLATE_CALIBRATION_HISTORY: "Template and calibration history",
 };
 
 const SUMMARY_REPORTS = new Set<ReportQuery["type"]>([
   "TICKET_INVENTORY", "SALES_BY_CATEGORY", "SALES_BY_DATE", "PAYMENTS_BY_METHOD",
-  "ATTENDANCE_BY_GATE", "SCAN_ATTEMPTS", "RECONCILIATION",
+  "ATTENDANCE_BY_GATE", "SCAN_ATTEMPTS", "RECONCILIATION", "STOCK_POSITION", "SALES_BY_ENTRY_METHOD", "TEMPLATE_CALIBRATION_HISTORY",
 ]);
 const SELLER_REPORTS = new Set<ReportQuery["type"]>([
   "SALES_BY_CATEGORY", "SALES_BY_DATE", "OUTSTANDING_BALANCES", "CANCELLATIONS_REFUNDS",
+  "STOCK_POSITION", "SALES_BY_ENTRY_METHOD",
 ]);
 
 function dateRange(query: ReportQuery, timezone: string) {
@@ -162,6 +166,43 @@ export async function getReport(ctx: AuthContext, query: ReportQuery): Promise<R
         ["Outstanding balances (UGX)", balance], ["Expected cash after recorded adjustments (UGX)", cashNet], ["Actual cash counted (UGX)", "Not recorded"],
         ["Provider-verified payments", "No provider integration; staff-recorded only"],
       ], event);
+    }
+    case "SELLER_RECONCILIATION": {
+      const sellers = await prisma.user.findMany({ where: { role: "SELLER" }, select: { id: true, displayName: true } });
+      const rows = await Promise.all(sellers.map(async (seller) => {
+        const [custody, sales, remittances, issues] = await Promise.all([
+          prisma.ticketCustody.findMany({ where: { sellerId: seller.id, stockIssue: { eventId: event.id } }, select: { releasedAt: true, releaseReason: true } }),
+          prisma.sale.findMany({ where: { eventId: event.id, sellerId: seller.id }, select: { payments: { select: { method:true, amountUgx: true, adjustments: { select: { amountUgx: true } } } } } }),
+          prisma.remittance.findMany({ where: { eventId: event.id, sellerId: seller.id }, select: { amountUgx: true, reversesId: true } }),
+          prisma.stockIssue.count({ where: { eventId: event.id, sellerId: seller.id } }),
+        ]);
+        const methods = {CASH:0,MOBILE_MONEY:0,BANK_TRANSFER:0,CARD:0,OTHER:0};
+        for (const payment of sales.flatMap(s => s.payments)) methods[payment.method] += payment.amountUgx - payment.adjustments.reduce((a,x) => a+x.amountUgx,0);
+        const takings = Object.values(methods).reduce((sum,amount)=>sum+amount,0);
+        const remitted = remittances.reduce((n,r) => n + (r.reversesId ? -r.amountUgx : r.amountUgx),0);
+        return [seller.displayName, issues, custody.length, custody.filter(c=>c.releaseReason==="SOLD").length, custody.filter(c=>c.releaseReason==="RETURNED").length, custody.filter(c=>c.releaseReason==="LOST").length, custody.filter(c=>!c.releasedAt).length, ...Object.values(methods), takings, remitted, takings-remitted];
+      }));
+      return report(query.type, REPORT_TITLES[query.type], ["Seller","Issues","Issued","Sold","Returned","Lost","Outstanding","Cash takings UGX","Mobile money takings UGX","Bank transfer takings UGX","Card takings UGX","Other takings UGX","Total takings UGX","Remitted UGX","Balance owed UGX"], rows, event);
+    }
+    case "STOCK_POSITION": {
+      const ownOnly = can(ctx.role,"report:export-own") && !can(ctx.role,"report:export-full");
+      const tickets = await prisma.ticket.findMany({ where: { eventId: event.id, ...(ownOnly?{custodies:{some:{sellerId:ctx.userId,releasedAt:null}}}:{}) }, select: { serial:true,status:true,ticketType:{select:{name:true}},custodies:{where:{releasedAt:null},select:{seller:{select:{displayName:true}}},take:1} }, orderBy:{serial:"asc"} });
+      return report(query.type, REPORT_TITLES[query.type], ["Serial","Category","Inventory status","Holder"], tickets.map(t=>[t.serial,t.ticketType.name,t.status,ownOnly?"You":t.custodies[0]?.seller.displayName ?? "Unissued"]), event);
+    }
+    case "UNSOLD_BY_HOLDER": {
+      const rows = await prisma.ticketCustody.findMany({ where:{ releasedAt:null, stockIssue:{eventId:event.id} }, select:{ticket:{select:{serial:true,ticketType:{select:{name:true}}}},seller:{select:{displayName:true}}}, orderBy:{ticket:{serial:"asc"}} });
+      return report(query.type, REPORT_TITLES[query.type], ["Serial","Category","Holder"], rows.map(r=>[r.ticket.serial,r.ticket.ticketType.name,r.seller.displayName]), event);
+    }
+    case "SALES_BY_ENTRY_METHOD": {
+      const rows = await prisma.saleTicket.findMany({ where:{ sale:{eventId:event.id,...(sellerScope?{sellerId:sellerScope}:{}),...(Object.keys(range).length?{createdAt:range}:{})} }, select:{entryMethod:true, sale:{select:{seller:{select:{displayName:true}}}}} });
+      const groups = by(rows, r=>`${r.entryMethod}\0${r.sale.seller.displayName}`);
+      return report(query.type, REPORT_TITLES[query.type], ["Entry method","Seller","Tickets sold"], [...groups].map(([k,list])=>[...k.split("\0"),list.length]), event);
+    }
+    case "TEMPLATE_CALIBRATION_HISTORY": {
+      const templates = await prisma.ticketTemplate.findMany({ where:{eventId:event.id}, orderBy:{createdAt:"desc"}, select:{name:true,version:true,status:true,createdAt:true,confirmedAt:true,calibrationPrintedAt:true,calibrationPrintedById:true} });
+      const ids = [...new Set(templates.map(t=>t.calibrationPrintedById).filter((x):x is string=>Boolean(x)))];
+      const actors = await prisma.user.findMany({where:{id:{in:ids}},select:{id:true,displayName:true}}); const names = new Map(actors.map(a=>[a.id,a.displayName]));
+      return report(query.type, REPORT_TITLES[query.type], ["Template","Version","Status","Created","Owner confirmed","Calibration printed","Calibration operator"], templates.map(t=>[t.name,t.version,t.status,t.createdAt.toISOString(),t.confirmedAt?.toISOString()??"—",t.calibrationPrintedAt?.toISOString()??"Not recorded",t.calibrationPrintedById?names.get(t.calibrationPrintedById)??"Inactive staff":"—"]), event);
     }
   }
 }

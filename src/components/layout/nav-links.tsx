@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ClipboardList, Ellipsis, FileBarChart, History, LayoutDashboard, ListChecks, ScanLine, ScanSearch, ScrollText, Settings, ShoppingCart, Ticket, Users, X, CalendarDays } from "lucide-react";
+import { ClipboardList, Ellipsis, FileBarChart, History, LayoutDashboard, ListChecks, ScanLine, ScanSearch, ScrollText, Settings, ShoppingCart, Ticket, Users, X, CalendarDays, Package } from "lucide-react";
 import { cn } from "cn";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-export type NavIconName = "Overview" | "Sell" | "Sales" | "Tickets" | "Check-in" | "Manual" | "Recent" | "Attempts" | "Reports" | "Events" | "Team" | "Audit log" | "Settings";
+export type NavIconName = "Overview" | "Sell" | "Sales" | "Tickets" | "Check-in" | "Manual" | "Recent" | "Attempts" | "Reports" | "Events" | "Team" | "Audit log" | "Settings" | "Stock";
 export interface NavItem { href: string; label: string; icon?: NavIconName; }
 
 const NAV_ICONS: Record<NavIconName, React.ComponentType<{ className?: string }>> = {
@@ -24,6 +24,7 @@ const NAV_ICONS: Record<NavIconName, React.ComponentType<{ className?: string }>
   Team: Users,
   "Audit log": ScrollText,
   Settings,
+  Stock: Package,
 };
 
 export function NavLinks({ items, orientation = "horizontal" }: { items: NavItem[]; orientation?: "horizontal" | "vertical" }) {
