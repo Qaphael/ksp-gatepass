@@ -156,7 +156,7 @@ describe("seller", () => {
 });
 
 describe("supervisor", () => {
-  it("gets monitoring reads but no writes without explicit grants", async () => {
+  it("gets monitoring reads and the explicitly supported stock scan-sale override", async () => {
     const denied: Array<[string, string, unknown?]> = [
       ["POST", "/api/v1/events", validEventPayload()],
       ["PATCH", `/api/v1/events/${eventId}`, { name: "Renamed" }],
@@ -179,6 +179,10 @@ describe("supervisor", () => {
     expect(me.body.permissions).not.toContain("payment:record");
     expect(me.body.permissions).not.toContain("checkin:override");
     expect(me.body.permissions).toContain("checkin:read-buyer-details");
+    expect(me.body.permissions).toContain("sale:create");
+    expect(me.body.permissions).toContain("sale:lookup-ticket");
+    expect(me.body.permissions).toContain("stock:sell-any");
+    expect(me.body.permissions).not.toContain("stock:manage");
     expect((await supervisor.get(`/api/v1/events/${eventId}/ticket-types`)).status).toBe(200);
   });
 });

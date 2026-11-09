@@ -15,10 +15,10 @@ beforeAll(async () => {
 
 const postKey = (client: TestClient, url: string, data: unknown, key = unique("scan-sale")) => client.json(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(data) });
 
-async function fixture(options: { requireBuyerDetails?: boolean; allowSellerManualSale?: boolean; requireFullPaymentAtSale?: boolean; buyerNoticeText?: string; status?: "DRAFT" | "SCHEDULED"; quantity?: number } = {}) {
+async function fixture(options: { requireBuyerDetails?: boolean; requireStockIssue?: boolean; allowSellerManualSale?: boolean; requireFullPaymentAtSale?: boolean; buyerNoticeText?: string; status?: "DRAFT" | "SCHEDULED"; quantity?: number } = {}) {
   const event = await admin.post("/api/v1/events", {
     name: unique("Scan to sell"), venue: "KSP Hotel Gulu", eventDate: "2026-12-05", startTime: "18:00", endTime: "23:00", capacity: 100,
-    status: options.status ?? "SCHEDULED", requireBuyerDetails: options.requireBuyerDetails ?? true,
+    status: options.status ?? "SCHEDULED", requireBuyerDetails: options.requireBuyerDetails ?? true, requireStockIssue: options.requireStockIssue ?? true,
     allowSellerManualSale: options.allowSellerManualSale ?? false, requireFullPaymentAtSale: options.requireFullPaymentAtSale ?? true,
     buyerNoticeText: options.buyerNoticeText ?? "Your details are collected for ticket records.",
   });
@@ -37,6 +37,12 @@ async function fixture(options: { requireBuyerDetails?: boolean; allowSellerManu
     await prisma.ticket.update({ where: { id: ticket.id }, data: { tokenHash: hashQrToken(token), tokenEnc: encryptToken(token) } });
     tokens.set(ticket.id, token);
   }
+  const sellerId = (await prisma.user.findUniqueOrThrow({ where: { username: "seller" }, select: { id: true } })).id;
+  const issue = await admin.json("/api/v1/stock/issues", {
+    method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": unique("scan-fixture-issue") },
+    body: JSON.stringify({ eventId, sellerId, selection: { kind: "SERIALS", serials: tickets.map((ticket) => ticket.serial) } }),
+  });
+  expect(issue.status).toBe(201);
   return { eventId, ticketTypeId, tickets, tokens };
 }
 
@@ -146,7 +152,7 @@ describe("scan-to-sell backend", () => {
   });
 
   it("serializes two sellers racing to sell one ticket and returns one conflict", async () => {
-    const data = await fixture({ quantity: 1 });
+    const data = await fixture({ quantity: 1, requireStockIssue: false });
     const token = data.tokens.get(data.tickets[0].id)!;
     const username = unique("seller").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 30);
     const created = await admin.post("/api/v1/users", { displayName: "Second Seller", username, role: "SELLER", password: "SecondSeller!Password123" });

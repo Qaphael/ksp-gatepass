@@ -3,8 +3,8 @@ import type { Role } from "@/generated/prisma/client";
 /**
  * Every server operation maps to exactly one permission. Routes must check
  * `can(role, permission)` against the authenticated user — default deny.
- * The matrix follows PRD 3.2; optional supervisor/seller privileges are NOT
- * granted by default and require an explicit grant mechanism (future phase).
+ * The matrix follows PRD 3.2. Optional stock management and remittance actions
+ * stay denied; T6 grants supervisors only stock reads and audited scan sales.
  */
 export const PERMISSIONS = [
   "dashboard:view",
@@ -32,6 +32,13 @@ export const PERMISSIONS = [
   "ticket:reprint",
   "ticket:revoke",
   "template:manage",
+  // Seller stock and reconciliation (Tickets v2 Phase 8)
+  "stock:read-own",
+  "stock:read-all",
+  "stock:manage",
+  "stock:sell-any",
+  "remittance:record",
+  "remittance:reverse",
   // Sales and payments (Phase 3)
   "sale:create",
   "sale:lookup-ticket",
@@ -72,6 +79,7 @@ const SELLER: readonly Permission[] = [
   "ticket:print",
   "ticket:reprint",
   "report:export-own",
+  "stock:read-own",
 ];
 
 const VERIFIER: readonly Permission[] = [
@@ -95,6 +103,10 @@ const SUPERVISOR: readonly Permission[] = [
   "checkin:read-attempts",
   "checkin:read-buyer-details",
   "report:view-summary",
+  "sale:create",
+  "sale:lookup-ticket",
+  "stock:read-all",
+  "stock:sell-any",
 ];
 
 const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {

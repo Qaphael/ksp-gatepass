@@ -28,6 +28,7 @@ describe("permissions matrix (PRD 3.2)", () => {
       "ticket:print",
       "ticket:reprint",
       "report:export-own",
+      "stock:read-own",
     ];
     for (const permission of allowed) {
       expect(can("SELLER", permission), permission).toBe(true);
@@ -85,7 +86,7 @@ describe("permissions matrix (PRD 3.2)", () => {
     }
   });
 
-  it("supervisors get summaries and scanning, but no optional privileges", () => {
+  it("supervisors get summaries and the T6 stock scan override, but not stock management", () => {
     const allowed: Permission[] = [
       "dashboard:view",
       "event:read",
@@ -94,6 +95,10 @@ describe("permissions matrix (PRD 3.2)", () => {
       "checkin:confirm",
       "checkin:read-buyer-details",
       "report:view-summary",
+      "sale:create",
+      "sale:lookup-ticket",
+      "stock:read-all",
+      "stock:sell-any",
     ];
     for (const permission of allowed) {
       expect(can("SUPERVISOR", permission), permission).toBe(true);
@@ -103,8 +108,9 @@ describe("permissions matrix (PRD 3.2)", () => {
       "payment:record",
       "checkin:override",
       "audit:read",
-      "sale:create",
-      "sale:lookup-ticket",
+      "stock:manage",
+      "remittance:record",
+      "remittance:reverse",
       "user:manage",
       "event:create",
     ];

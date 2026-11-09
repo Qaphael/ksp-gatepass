@@ -102,6 +102,18 @@ enum SaleEntryMethod {
   BULK
 }
 
+enum CustodyReleaseReason {
+  SOLD
+  RETURNED
+  LOST
+  REASSIGNED
+}
+
+enum StockOperationKind {
+  RETURN
+  LOSS
+}
+
 enum ScanResultCode {
   ELIGIBLE
   ADMITTED
@@ -174,6 +186,17 @@ model User {
   confirmedTicketTemplates TicketTemplate[] @relation("TicketTemplateConfirmer")
   calibratedTicketTemplates TicketTemplate[] @relation("TicketTemplateCalibrationPrinter")
   ticketTemplateMutations TicketTemplateMutation[]
+  stockIssuesReceived StockIssue[] @relation("StockIssueSeller")
+  stockIssuesCreated StockIssue[] @relation("StockIssueIssuer")
+  ticketCustodiesHeld TicketCustody[] @relation("CustodySeller")
+  ticketCustodiesIssued TicketCustody[] @relation("CustodyIssuer")
+  ticketCustodiesReleased TicketCustody[] @relation("CustodyReleaser")
+  stockOperations StockOperation[]
+  stockCloseoutsReceived StockCloseout[] @relation("StockCloseoutSeller")
+  stockCloseoutsCreated StockCloseout[] @relation("StockCloseoutActor")
+  remittancesReceived Remittance[] @relation("RemittanceReceiver")
+  remittancesRecorded Remittance[] @relation("RemittanceRecorder")
+  remittancesHeld Remittance[] @relation("RemittanceSeller")
 }
 
 model Session {
@@ -248,6 +271,10 @@ model Event {
   brandingAssets EventBrandingAsset[]
   ticketTemplates TicketTemplate[]
   templateMutations TicketTemplateMutation[]
+  stockIssues StockIssue[]
+  stockOperations StockOperation[]
+  stockCloseouts StockCloseout[]
+  remittances Remittance[]
 
   @@index([status])
 }
@@ -354,6 +381,7 @@ model Ticket {
   saleTickets  SaleTicket[]
   checkIn      CheckIn?
   scanAttempts ScanAttempt[]
+  custodies TicketCustody[]
 
   @@index([eventId, status])
   @@index([ticketTypeId, status])
@@ -442,6 +470,113 @@ model TicketTemplateMutation {
 
   @@unique([actorId, operation, idempotencyKey])
   @@index([eventId, createdAt])
+}
+
+// Custody remains separate from ticket inventory, sale and admission states.
+model TicketCustody {
+  id            String                @id @default(cuid())
+  ticketId      String
+  stockIssueId  String
+  sellerId      String
+  issuedById    String
+  issuedAt      DateTime              @default(now())
+  releasedAt    DateTime?
+  releaseReason CustodyReleaseReason?
+  releasedById  String?
+  releaseNote   String?
+
+  ticket     Ticket     @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  stockIssue StockIssue @relation(fields: [stockIssueId], references: [id], onDelete: Restrict)
+  seller     User       @relation("CustodySeller", fields: [sellerId], references: [id], onDelete: Restrict)
+  issuedBy   User       @relation("CustodyIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  releasedBy User?      @relation("CustodyReleaser", fields: [releasedById], references: [id], onDelete: Restrict)
+
+  @@index([sellerId, releasedAt, issuedAt])
+  @@index([stockIssueId])
+  @@index([ticketId, issuedAt])
+}
+
+model StockIssue {
+  id             String   @id @default(cuid())
+  slipReference  String   @unique
+  eventId        String
+  sellerId       String
+  issuedById     String
+  issuedAt       DateTime @default(now())
+  idempotencyKey String
+  requestHash    String
+
+  event    Event           @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  seller   User            @relation("StockIssueSeller", fields: [sellerId], references: [id], onDelete: Restrict)
+  issuedBy User            @relation("StockIssueIssuer", fields: [issuedById], references: [id], onDelete: Restrict)
+  tickets  TicketCustody[]
+
+  @@unique([issuedById, idempotencyKey])
+  @@index([eventId, issuedAt])
+  @@index([sellerId, issuedAt])
+}
+
+model StockOperation {
+  id             String            @id @default(cuid())
+  eventId        String
+  actorId        String
+  operation      StockOperationKind
+  idempotencyKey String
+  requestHash    String
+  result         Json
+  createdAt      DateTime          @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  actor User  @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@unique([actorId, operation, idempotencyKey])
+  @@index([eventId, createdAt])
+}
+
+model StockCloseout {
+  id               String   @id @default(cuid())
+  eventId          String
+  sellerId         String
+  closedById       String
+  closedAt         DateTime @default(now())
+  outstandingCount Int      @default(0)
+  idempotencyKey   String
+  requestHash      String
+
+  event    Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  seller   User  @relation("StockCloseoutSeller", fields: [sellerId], references: [id], onDelete: Restrict)
+  closedBy User  @relation("StockCloseoutActor", fields: [closedById], references: [id], onDelete: Restrict)
+
+  @@unique([eventId, sellerId])
+  @@unique([closedById, idempotencyKey])
+  @@index([sellerId, closedAt])
+}
+
+// Reversals append a linked row instead of mutating the original handover.
+model Remittance {
+  id             String        @id @default(cuid())
+  eventId        String
+  sellerId       String
+  amountUgx      Int
+  method         PaymentMethod
+  receivedById   String
+  recordedById   String
+  note           String?
+  reversesId     String?       @unique
+  idempotencyKey String
+  requestHash    String
+  recordedAt     DateTime      @default(now())
+
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  seller     User        @relation("RemittanceSeller", fields: [sellerId], references: [id], onDelete: Restrict)
+  receivedBy User        @relation("RemittanceReceiver", fields: [receivedById], references: [id], onDelete: Restrict)
+  recordedBy User        @relation("RemittanceRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+  reverses   Remittance? @relation("RemittanceReversal", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversal   Remittance? @relation("RemittanceReversal")
+
+  @@unique([recordedById, idempotencyKey])
+  @@index([eventId, sellerId, recordedAt])
+  @@index([sellerId, recordedAt])
 }
 
 // Append-only audit trail. Never store passwords, session tokens or raw QR

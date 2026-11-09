@@ -240,8 +240,8 @@ export async function createSale(
       const locked = await tx.$queryRaw<Array<{
         id: string; name: string; venue: string; organiserContact: string | null;
         salesOpen: boolean; status: string; salesOpensAt: Date | null; salesClosesAt: Date | null;
-        requireBuyerDetails: boolean; allowSellerManualSale: boolean; requireFullPaymentAtSale: boolean;
-      }>>`SELECT id, name, venue, "organiserContact", "salesOpen", status, "salesOpensAt", "salesClosesAt", "requireBuyerDetails", "allowSellerManualSale", "requireFullPaymentAtSale" FROM "Event" WHERE id = ${input.eventId} FOR UPDATE`;
+        requireBuyerDetails: boolean; requireStockIssue: boolean; allowSellerManualSale: boolean; requireFullPaymentAtSale: boolean;
+      }>>`SELECT id, name, venue, "organiserContact", "salesOpen", status, "salesOpensAt", "salesClosesAt", "requireBuyerDetails", "requireStockIssue", "allowSellerManualSale", "requireFullPaymentAtSale" FROM "Event" WHERE id = ${input.eventId} FOR UPDATE`;
       const event = locked[0];
       if (!event) throw notFound("Event not found.");
       const now = new Date();
@@ -255,6 +255,8 @@ export async function createSale(
       let subtotalUgx = 0;
       let ticketCount = 0;
       let scannedRecords: Array<{ ticketId: string; entryMethod: SaleEntryMethod }> = [];
+      let custodyReleaseIds: string[] = [];
+      let scannedSerials: string[] = [];
       let lines: Array<{ ticketTypeId: string; quantity: number; unitPriceUgx: number; lineTotalUgx: number; type: { id: string; name: string }; ticketIds?: string[]; entryMethod?: SaleEntryMethod }>;
 
       if (bulk) {
@@ -303,7 +305,17 @@ export async function createSale(
           if (ticket.ticketType.status !== "ACTIVE") throw conflict(`Ticket category “${ticket.ticketType.name}” is inactive.`);
           if ((ticket.ticketType.salesOpensAt && ticket.ticketType.salesOpensAt > now) || (ticket.ticketType.salesClosesAt && ticket.ticketType.salesClosesAt <= now)) throw conflict(`Ticket category “${ticket.ticketType.name}” is outside its sales window.`);
         }
-        // T6 seam: when requireStockIssue is enforced, validate active custody for every ticket here.
+        scannedSerials = tickets.map((ticket) => ticket.serial);
+        const activeCustodies = await tx.ticketCustody.findMany({
+          where: { ticketId: { in: ids }, releasedAt: null },
+          select: { id: true, ticketId: true, sellerId: true },
+        });
+        const custodyByTicket = new Map(activeCustodies.map((custody) => [custody.ticketId, custody]));
+        if (ctx.role === "SELLER" && event.requireStockIssue) {
+          const notHeldBySeller = tickets.filter((ticket) => custodyByTicket.get(ticket.id)?.sellerId !== ctx.userId);
+          if (notHeldBySeller.length) throw conflict("This ticket is not issued to you. Ask an administrator to issue it before selling.");
+        }
+        custodyReleaseIds = activeCustodies.map((custody) => custody.id);
         const grouped = new Map<string, typeof tickets>();
         for (const ticket of tickets) grouped.set(ticket.ticketTypeId, [...(grouped.get(ticket.ticketTypeId) ?? []), ticket]);
         lines = [...grouped.entries()].map(([ticketTypeId, categoryTickets]) => {
@@ -328,7 +340,7 @@ export async function createSale(
         try { customerPhoneNormalized = normalizeUgandaPhone(input.customerPhone); }
         catch (error) { throw validationError(error instanceof Error ? error.message : "Enter a valid Ugandan mobile number."); }
       }
-      if (!bulk && ctx.role === "SELLER" && event.requireFullPaymentAtSale && (input.initialPayment?.amountUgx ?? 0) < totalUgx) {
+      if (!bulk && ctx.role !== "ADMIN" && event.requireFullPaymentAtSale && (input.initialPayment?.amountUgx ?? 0) < totalUgx) {
         throw conflict("Full payment is required before a seller can confirm this physical ticket sale.");
       }
 
@@ -356,10 +368,16 @@ export async function createSale(
       for (const line of lines) {
         const tickets = line.ticketIds
           ? line.ticketIds.map((id) => ({ id }))
-          : await tx.ticket.findMany({
-              where: { eventId: event.id, ticketTypeId: line.ticketTypeId, status: "AVAILABLE" },
-              orderBy: [{ createdAt: "asc" }, { serial: "asc" }], take: line.quantity, select: { id: true },
-            });
+          : await tx.$queryRaw<Array<{ id: string }>>`
+              SELECT t."id"
+              FROM "Ticket" t
+              WHERE t."eventId" = ${event.id}
+                AND t."ticketTypeId" = ${line.ticketTypeId}
+                AND t."status" = 'AVAILABLE'::"TicketStatus"
+                AND NOT EXISTS (SELECT 1 FROM "TicketCustody" c WHERE c."ticketId" = t."id" AND c."releasedAt" IS NULL)
+              ORDER BY t."createdAt" ASC, t."serial" ASC
+              LIMIT ${line.quantity}
+              FOR UPDATE OF t SKIP LOCKED`;
         if (tickets.length !== line.quantity) {
           throw conflict(`Only ${tickets.length} tickets are currently available in “${line.type.name}”.`);
         }
@@ -386,6 +404,14 @@ export async function createSale(
         });
       }
 
+      if (custodyReleaseIds.length) {
+        const released = await tx.ticketCustody.updateMany({
+          where: { id: { in: custodyReleaseIds }, releasedAt: null },
+          data: { releasedAt: now, releaseReason: "SOLD", releasedById: ctx.userId, releaseNote: `Sale ${sale.reference}` },
+        });
+        if (released.count !== custodyReleaseIds.length) throw conflict("Ticket custody changed. Please retry the sale.");
+      }
+
       if (input.initialPayment) {
         await tx.payment.create({
           data: {
@@ -410,6 +436,12 @@ export async function createSale(
         discountUgx,
         ...(discountUgx > 0 ? { discountReason: input.discountReason } : {}),
       });
+      if (!bulk && event.requireStockIssue && (ctx.role === "ADMIN" || ctx.role === "SUPERVISOR")) {
+        await auditInTransaction(tx, ctx, "stock.sale.override", "sale", sale.id, event.id, {
+          serials: scannedSerials,
+          note: "Admin or supervisor sale bypassed the seller stock custody requirement.",
+        });
+      }
       if (input.initialPayment) {
         await auditInTransaction(tx, ctx, "payment.record", "sale", sale.id, event.id, {
           amountUgx: input.initialPayment.amountUgx, method: input.initialPayment.method,
@@ -459,7 +491,7 @@ export async function lookupTicketForSale(ctx: AuthContext, input: SaleLookupTic
   const now = new Date();
   const recent = await prisma.scanAttempt.count({ where: { actorId: ctx.userId, purpose: "SALE", attemptedAt: { gte: new Date(now.getTime() - 60_000) } } });
   if (recent >= 90) throw new ServiceError(429, "RATE_LIMITED", "Too many ticket lookups. Wait a minute and try again.");
-  const event = await prisma.event.findUnique({ where: { id: input.eventId }, select: { id: true, name: true, status: true, salesOpen: true, salesOpensAt: true, salesClosesAt: true, requireBuyerDetails: true, requireFullPaymentAtSale: true, buyerNoticeText: true } });
+  const event = await prisma.event.findUnique({ where: { id: input.eventId }, select: { id: true, name: true, status: true, salesOpen: true, salesOpensAt: true, salesClosesAt: true, requireBuyerDetails: true, requireStockIssue: true, requireFullPaymentAtSale: true, buyerNoticeText: true } });
   if (!event) throw notFound("Event not found.");
   const ticket = input.token
     ? await prisma.ticket.findUnique({ where: { tokenHash: hashQrToken(input.token) }, include: { ticketType: true } })
@@ -473,9 +505,12 @@ export async function lookupTicketForSale(ctx: AuthContext, input: SaleLookupTic
     else if (ticket.ticketType.status !== "ACTIVE") state = "TICKET_TYPE_INACTIVE";
     else if (event.status === "DRAFT" || event.status === "COMPLETED" || event.status === "ARCHIVED") state = "EVENT_NOT_SELLING";
     else if (!event.salesOpen || (event.salesOpensAt && event.salesOpensAt > now) || (event.salesClosesAt && event.salesClosesAt <= now) || (ticket.ticketType.salesOpensAt && ticket.ticketType.salesOpensAt > now) || (ticket.ticketType.salesClosesAt && ticket.ticketType.salesClosesAt <= now)) state = "SALES_CLOSED";
+    else if (ticket.status === "AVAILABLE" && ctx.role === "SELLER" && event.requireStockIssue) {
+      const custody = await prisma.ticketCustody.findFirst({ where: { ticketId: ticket.id, releasedAt: null }, select: { sellerId: true } });
+      state = custody?.sellerId === ctx.userId ? "SALEABLE" : custody ? "ISSUED_TO_ANOTHER_SELLER" : "NOT_ISSUED_TO_YOU";
+    }
     else if (ticket.status === "AVAILABLE") state = "SALEABLE";
   }
-  // T6 seam: if requireStockIssue is enforced, resolve and report custody eligibility before SALEABLE.
   await prisma.scanAttempt.create({ data: {
     eventId: event.id, actorId: ctx.userId, ticketId: ticket?.id ?? null,
     method: input.token ? "QR" : "SERIAL", purpose: "SALE", resultCode: state,

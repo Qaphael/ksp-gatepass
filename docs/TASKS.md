@@ -135,7 +135,7 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 - [x] Prompt T3 — Template admin UI
 - [x] Prompt T4 — Scan-to-sell backend
 - [x] Prompt T5 — Scan-to-sell UI
-- [ ] Prompt T6 — Seller stock backend
+- [x] Prompt T6 — Seller stock backend
 - [ ] Prompt T7 — Stock and seller UI, slips and reports
 - [ ] Prompt T8 — Permissions, audit and privacy sweep
 - [ ] Prompt T9 — Real-world tests and release gate additions
@@ -155,3 +155,5 @@ Prompt T3 implementation: added the event-scoped admin template list and editor,
 Prompt T4 implementation: added seller scan-to-sell lookup and confirmation by token hash, serial entry with explicit MANUAL records and event policy, admin-only bulk sales, Uganda E.164 phone normalization, buyer-detail and full-payment policy enforcement, rate-limited token-free SALE scan attempts, and audited gate buyer-detail reveals limited to supervisors/admins on duplicates or explicit lookup. Sale confirmation retains event/ticket locking, server pricing, atomic payment writes and request-hash idempotency. `pnpm test` passes 22 files / 173 tests; typecheck and lint pass. Seller stock custody checks remain a clearly marked T6 seam; issued-stock messages are not active until that phase.
 
 Prompt T5 implementation: added the seller Sell screen with a shared QR camera and eight-second server heartbeat, policy-aware manual serial entry, distinct lookup state messages/icons, duplicate-safe ticket cart, buyer phone normalization, payment capture, retry-stable sale idempotency, offline blocking, and success receipt/serial view. Added lookup presentation/cart tests. Focused tests (4), typecheck, ESLint and production build pass. Build output retains the existing authenticated-route `HANGING_PROMISE_REJECTION` warnings; the test harness reported a Vite shutdown timeout after the focused test had passed.
+
+Prompt T6 implementation: added database-enforced active ticket custody, stock issue batches, retry-safe return/loss operations, idempotent seller close-outs, append-only remittances with linked reversals, and sale-time custody validation/release inside the ticket transaction. Added issue/return/loss/close-out/remittance APIs and seller statements with integer-UGX takings and balances. Admin/supervisor custody overrides are audited; verifier sales remain denied. Prisma schema validation/generation, typecheck, focused ESLint, and 36 related integration/unit tests pass. The integration build retains existing authenticated-route `HANGING_PROMISE_REJECTION` warnings, and Vitest prints its existing Vite shutdown timeout after test completion.
