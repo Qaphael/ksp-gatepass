@@ -132,7 +132,7 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 - [x] Prompt T0 — Impact analysis (docs/TICKETS-IMPACT.md)
 - [x] Prompt T1 — Template model, upload and zone configuration
 - [ ] Prompt T2 — Renderer and print outputs
-- [ ] Prompt T3 — Template admin UI
+- [x] Prompt T3 — Template admin UI
 - [ ] Prompt T4 — Scan-to-sell backend
 - [ ] Prompt T5 — Scan-to-sell UI
 - [ ] Prompt T6 — Seller stock backend
@@ -149,3 +149,5 @@ Prompt T2 implementation and Windows verification are in place: renderer and leg
 - [ ] Two sellers racing for one ticket on real phones: exactly one sale
 - [ ] Issue, sell, return and close-out walk-through completed
 - [ ] Buyer details not visible to verifiers (checked at the gate)
+
+Prompt T3 implementation: added the event-scoped admin template list and editor, artwork upload, measured zone fields and JSON import, sample overlay preview, QR size checks, activation confirmation, calibration PDF, and batch-based A/B/C print output links. Typecheck and focused lint pass. Print outputs require a ticket batch ID; calibration generation and paper-print confirmation are exposed in the screen. Physical calibration scanning and actual measured zone entry remain launch checks.

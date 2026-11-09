@@ -55,7 +55,7 @@ const templateConfigBaseSchema = z.object({
 
 // Tokens are always 43 base64url characters. Lowercase bytes force the
 // maximum QR version among supported token contents at error correction M.
-const QR_MODULE_COUNT = QRCode.create("x".repeat(43), { errorCorrectionLevel: "M" }).modules.size;
+export const QR_MODULE_COUNT = QRCode.create("x".repeat(43), { errorCorrectionLevel: "M" }).modules.size;
 export const TEMPLATE_A4_SCALE = 0.94;
 export const QR_MIN_PRINTED_SIZE_MM = 20;
 export const QR_MIN_MODULE_SIZE_MM = 0.5;

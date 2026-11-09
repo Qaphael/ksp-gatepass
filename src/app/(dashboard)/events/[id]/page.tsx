@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -113,6 +113,13 @@ export default async function EventDetailPage({
           }}
         />
       </section>
+
+      {can(ctx.role, "template:manage") ? (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-4">
+          <div><h2 className="font-semibold">Designed ticket</h2><p className="text-sm text-muted-foreground">Manage artwork, measured print zones and calibration.</p></div>
+          <Button variant="outline" nativeButton={false} render={<Link href={`/events/${event.id}/ticket-templates`} />}><Ticket /> Ticket templates</Button>
+        </section>
+      ) : null}
 
       <Card>
         <CardHeader>
