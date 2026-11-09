@@ -138,19 +138,22 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 - [x] Prompt T6 — Seller stock backend
 - [x] Prompt T7 — Stock and seller UI, slips and reports
 - [x] Prompt T8 — Permissions, audit and privacy sweep
-- [ ] Prompt T9 — Real-world tests and release gate additions
+- [x] Prompt T9 — Real-world tests and release gate additions
 
 Prompt T2 implementation and Windows verification are in place: renderer and legacy batch tests pass, and calibration/reprint integration coverage passes. The Linux container font smoke test remains open because Docker/Podman and WSL are unavailable in this environment; `Dockerfile` explicitly copies `assets/fonts` into the runner image. Build output retains the existing benign authenticated-route `HANGING_PROMISE_REJECTION` warnings.
 
 ### Release gate additions
 - [ ] Measured template zones confirmed and template activated for production
-- [ ] Calibration sheet scanned from paper on two Android phones
-- [ ] Production sample printed at the chosen layout and scanned from paper
-- [ ] Two sellers racing for one ticket on real phones: exactly one sale
-- [ ] Issue, sell, return and close-out walk-through completed
-- [ ] Buyer details not visible to verifiers (checked at the gate)
+- [ ] Calibration print scanned on two Android phones; confirm zone alignment and readable stub text
+- [ ] Production sample printed at chosen layout and QR scanned from paper
+- [ ] Two sellers race to sell one ticket on real phones: exactly one sale succeeds
+- [ ] Seller issue, sale, return and close-out walk-through completed
+- [ ] Buyer detail privacy checked at the gate: verifier cannot see details; authorised reveal is audited
+- [ ] Template activated with measured zone values after calibration
 
 Prompt T8 complete: direct stock-operation requests enforce server-side permissions; sale lookup and gate buyer-detail reveals are audited; audit summaries redact full Ugandan phone numbers; verifier API/report access and token-free lookup audit records are covered. The full suite reports 25 files / 186 tests passing; typecheck, lint and production build pass. Build emits the known authenticated-route `HANGING_PROMISE_REJECTION` warnings, and Vitest reports a post-run Vite-server close timeout after all tests pass. T9 physical-device and operational release checks remain open.
+
+Prompt T9 preparation complete: the launch checklist and release gate now list measured template activation, two-phone calibration and production paper scans, the real-phone seller race, seller stock issue/sale/return/close-out, and gate buyer-detail privacy. Added concise seller and stock keeper guides, a day-before rehearsal script, and `pnpm seed:rehearsal`, which creates 100 issued historical tickets for three configured sellers (60 sold, 31 returned, 9 marked lost) plus 16 unissued practice tickets and synthetic remittances. The seed requires explicit opt-in, a local allowlisted development database, a unique run ID, three existing active development sellers, and an explicitly supplied synthetic phone number; production mode is refused. Typecheck, lint and the full suite pass (25 files / 186 tests); the suite's production build succeeds with the known authenticated-route prerender warnings, and Vitest reports its post-run Vite-server close timeout after all tests pass. Production-mode seed refusal was smoke-checked. All physical/device release checks remain unchecked for the event team to complete.
 
 Prompt T3 implementation: added the event-scoped admin template list and editor, artwork upload, measured zone fields and JSON import, sample overlay preview, QR size checks, activation confirmation, calibration PDF, and batch-based A/B/C print output links. Typecheck and focused lint pass. Print outputs require a ticket batch ID; calibration generation and paper-print confirmation are exposed in the screen. Physical calibration scanning and actual measured zone entry remain launch checks.
 

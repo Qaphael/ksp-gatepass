@@ -18,7 +18,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "setup:admin": "tsx scripts/setup-admin.ts",
-    "seed:ticket-template": "tsx scripts/seed-ticket-template.ts"
+    "seed:ticket-template": "tsx scripts/seed-ticket-template.ts",
+    "seed:rehearsal": "node --conditions=react-server --import tsx scripts/seed-ticket-rehearsal.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
