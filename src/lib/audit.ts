@@ -1,6 +1,18 @@
 import type { Prisma, Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db/client";
 
+const UGANDA_PHONE = /(?:\+?256[\s().-]*7\d{2}(?:[\s().-]*\d{3}){2}|(?<!\w)07\d{2}(?:[\s().-]*\d{3}){2}(?!\d))/g;
+
+/** Scrub Uganda mobile numbers before audit data is stored or returned. */
+export function sanitizeAuditData(value: unknown): unknown {
+  if (typeof value === "string") return value.replace(UGANDA_PHONE, "[REDACTED PHONE]");
+  if (Array.isArray(value)) return value.map(sanitizeAuditData);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, sanitizeAuditData(child)]));
+  }
+  return value;
+}
+
 export type AuditOutcomeValue = "SUCCESS" | "FAILURE";
 
 export interface AuditEntry {
@@ -29,7 +41,7 @@ export async function recordAudit(entry: AuditEntry): Promise<void> {
       targetId: entry.targetId ?? null,
       eventId: entry.eventId ?? null,
       outcome: entry.outcome ?? "SUCCESS",
-      summary: (entry.summary ?? undefined) as Prisma.InputJsonValue | undefined,
+      summary: sanitizeAuditData(entry.summary ?? undefined) as Prisma.InputJsonValue | undefined,
     },
   });
 }

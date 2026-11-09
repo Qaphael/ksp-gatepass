@@ -136,9 +136,13 @@ describe("seller stock operations", () => {
     const returnRetry = await postKey(admin, "/api/v1/stock/returns", returnBody, returnKey);
     expect(returnRetry.status).toBe(200);
     expect(returnRetry.body.created).toBe(false);
-    const loss = await postKey(admin, "/api/v1/stock/losses", { eventId: data.eventId, sellerId, serials: [lost.serial], reason: "Ticket was damaged" });
+    const lossReason = "Ticket was damaged; seller called 0772 123 456";
+    const loss = await postKey(admin, "/api/v1/stock/losses", { eventId: data.eventId, sellerId, serials: [lost.serial], reason: lossReason });
     expect(loss.status).toBe(201);
-    expect(await prisma.ticket.findUniqueOrThrow({ where: { id: lost.id } })).toMatchObject({ status: "REVOKED", revokeReason: "Ticket was damaged" });
+    expect(await prisma.ticket.findUniqueOrThrow({ where: { id: lost.id } })).toMatchObject({ status: "REVOKED", revokeReason: lossReason });
+    const lossAudit = await prisma.auditLog.findFirstOrThrow({ where: { eventId: data.eventId, action: "stock.loss" } });
+    expect(JSON.stringify(lossAudit.summary)).not.toContain("0772 123 456");
+    expect(JSON.stringify(lossAudit.summary)).toContain("[REDACTED PHONE]");
 
     const receiverId = (await prisma.user.findUniqueOrThrow({ where: { username: "admin" } })).id;
     const remittanceBody = { eventId: data.eventId, sellerId, amountUgx: 5_000, method: "CASH", receivedById: receiverId, note: "Cash handover" };
@@ -190,5 +194,22 @@ describe("seller stock operations", () => {
     expect(quantity.body.issue.serials).toEqual([data.tickets[2].serial]);
     expect((await postKey(seller, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "SERIALS", serials: ["any"] } })).status).toBe(403);
     expect((await verifier.get(`/api/v1/stock/sellers/${sellerId}/statement?eventId=${data.eventId}`)).status).toBe(403);
+    const issueId = range.body.issue.id as string;
+    const firstSerial = data.tickets[0].serial;
+    const returnBody = { eventId: data.eventId, sellerId, serials: [firstSerial] };
+    const lossBody = { ...returnBody, reason: "Damaged" };
+    const closeBody = { eventId: data.eventId };
+    const receiverId = (await prisma.user.findUniqueOrThrow({ where: { username: "admin" } })).id;
+    const remittance = await postKey(admin, "/api/v1/remittances", { eventId: data.eventId, sellerId, amountUgx: 100, method: "CASH", receivedById: receiverId });
+    const remittanceId = remittance.body.remittance.id as string;
+    for (const client of [seller, verifier, supervisor]) {
+      expect((await postKey(client, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "SERIALS", serials: [data.tickets[2].serial] } })).status).toBe(403);
+      expect((await postKey(client, "/api/v1/stock/returns", returnBody)).status).toBe(403);
+      expect((await postKey(client, "/api/v1/stock/losses", lossBody)).status).toBe(403);
+      expect((await postKey(client, `/api/v1/stock/sellers/${sellerId}/close-out`, closeBody)).status).toBe(403);
+      expect((await postKey(client, "/api/v1/remittances", { eventId: data.eventId, sellerId, amountUgx: 100, method: "CASH", receivedById: receiverId })).status).toBe(403);
+      expect((await postKey(client, `/api/v1/remittances/${remittanceId}/reverse`, { reason: "Wrong entry" })).status).toBe(403);
+      expect((await client.request(`/api/v1/stock/issues/${issueId}/slip.pdf`)).status).toBe(client === supervisor ? 200 : 403);
+    }
   });
 });

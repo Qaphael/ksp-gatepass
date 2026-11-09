@@ -4,6 +4,7 @@ import type { AuthContext } from "@/lib/auth/session";
 import { can, type Permission } from "@/lib/permissions";
 import { prisma } from "@/lib/db/client";
 import { hashQrToken } from "@/lib/qr/tokens";
+import { sanitizeAuditData } from "@/lib/audit";
 import { normalizeUgandaPhone } from "@/lib/phone/uganda";
 import type {
   PaymentAdjustmentInput,
@@ -202,7 +203,7 @@ function auditInTransaction(
       targetType,
       targetId,
       eventId,
-      summary: summary as Prisma.InputJsonValue,
+      summary: sanitizeAuditData(summary) as Prisma.InputJsonValue,
     },
   });
 }
@@ -511,11 +512,20 @@ export async function lookupTicketForSale(ctx: AuthContext, input: SaleLookupTic
     }
     else if (ticket.status === "AVAILABLE") state = "SALEABLE";
   }
-  await prisma.scanAttempt.create({ data: {
-    eventId: event.id, actorId: ctx.userId, ticketId: ticket?.id ?? null,
-    method: input.token ? "QR" : "SERIAL", purpose: "SALE", resultCode: state,
-    serial: ticket?.eventId === event.id ? ticket.serial : input.serial ? input.serial.trim().toUpperCase() : null,
-  } });
+  const method = input.token ? "QR" : "SERIAL";
+  const safeSerial = ticket?.eventId === event.id ? ticket.serial : input.serial ? input.serial.trim().toUpperCase() : null;
+  await prisma.$transaction(async (tx) => {
+    await tx.scanAttempt.create({ data: {
+      eventId: event.id, actorId: ctx.userId, ticketId: ticket?.id ?? null,
+      method, purpose: "SALE", resultCode: state, serial: safeSerial,
+    } });
+    await tx.auditLog.create({ data: {
+      actorId: ctx.userId, actorRole: ctx.role, action: "sale.ticket.lookup",
+      targetType: ticket?.eventId === event.id ? "ticket" : "event",
+      targetId: ticket?.eventId === event.id ? ticket.id : event.id,
+      eventId: event.id, summary: sanitizeAuditData({ method, result: state, ...(safeSerial ? { serial: safeSerial } : {}) }) as Prisma.InputJsonValue,
+    } });
+  });
   return {
     state,
     message: SALE_STATE_MESSAGE[state] ?? "Ticket cannot be sold in its current state.",

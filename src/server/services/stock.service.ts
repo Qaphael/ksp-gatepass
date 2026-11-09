@@ -4,6 +4,7 @@ import type { AuthContext } from "@/lib/auth/session";
 import { can, type Permission } from "@/lib/permissions";
 import { prisma } from "@/lib/db/client";
 import { hashQrToken } from "@/lib/qr/tokens";
+import { sanitizeAuditData } from "@/lib/audit";
 import type { RemittanceCreateInput, RemittanceReverseInput, StockCloseoutInput, StockIssueInput, StockLossInput, StockReturnInput, StockStatementQuery } from "@/lib/validation/stock";
 import { conflict, forbidden, notFound, requirePermission } from "./errors";
 
@@ -30,7 +31,7 @@ function reference(prefix: string): string {
 }
 
 async function audit(tx: Tx, ctx: StockActor, action: string, eventId: string, targetType: string, targetId: string, summary: Record<string, unknown>) {
-  await tx.auditLog.create({ data: { actorId: ctx.userId, actorRole: ctx.role, action, eventId, targetType, targetId, summary: summary as Prisma.InputJsonValue } });
+  await tx.auditLog.create({ data: { actorId: ctx.userId, actorRole: ctx.role, action, eventId, targetType, targetId, summary: sanitizeAuditData(summary) as Prisma.InputJsonValue } });
 }
 
 async function requireEvent(tx: Tx, eventId: string) {

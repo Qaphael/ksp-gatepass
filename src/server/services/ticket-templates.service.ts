@@ -4,6 +4,7 @@ import sharp from "sharp";
 import type { AuthContext } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/client";
 import { ensureTicketTemplateStorage, readTicketTemplateArtwork, removeTicketTemplateArtwork, writeTicketTemplateArtwork } from "@/lib/ticket-template-storage";
+import { sanitizeAuditData } from "@/lib/audit";
 import type { TicketTemplateConfig } from "@/lib/validation/ticket-templates";
 import { ticketTemplateConfigSchema, placeholderTicketTemplateConfig } from "@/lib/validation/ticket-templates";
 import { conflict, forbidden, notFound, requirePermission, validationError } from "./errors";
@@ -144,7 +145,7 @@ async function resolveRace(ctx: AuthContext, operation: string, key: string, req
 async function writeAudit(tx: Tx, ctx: AuthContext, action: string, row: { id: string; eventId: string }, summary: Prisma.InputJsonObject) {
   await tx.auditLog.create({ data: {
     actorId: ctx.userId, actorRole: ctx.role, action, targetType: "ticket-template",
-    targetId: row.id, eventId: row.eventId, summary,
+    targetId: row.id, eventId: row.eventId, summary: sanitizeAuditData(summary) as Prisma.InputJsonValue,
   } });
 }
 function configParts(config: TicketTemplateConfig) {

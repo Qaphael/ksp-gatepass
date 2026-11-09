@@ -7,7 +7,7 @@ import type {
 } from "@/generated/prisma/client";
 import type { AuthContext } from "@/lib/auth/session";
 import { hashQrToken } from "@/lib/qr/tokens";
-import { recordAudit } from "@/lib/audit";
+import { recordAudit, sanitizeAuditData } from "@/lib/audit";
 import { prisma } from "@/lib/db/client";
 import type {
   CheckInCorrectionInput,
@@ -359,7 +359,7 @@ function transactionAudit(
       targetType,
       targetId,
       eventId,
-      summary: summary as Prisma.InputJsonValue,
+      summary: sanitizeAuditData(summary) as Prisma.InputJsonValue,
     },
   });
 }

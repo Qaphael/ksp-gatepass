@@ -1,6 +1,7 @@
 import type { AuthContext } from "@/lib/auth/session";
 import { localToUtc } from "@/lib/time";
 import { prisma } from "@/lib/db/client";
+import { sanitizeAuditData } from "@/lib/audit";
 import type { AuditLogQuery } from "@/lib/validation/reports";
 import { notFound, requirePermission } from "./errors";
 
@@ -40,7 +41,7 @@ export async function listAuditLogs(ctx: AuthContext, query: AuditLogQuery) {
       actor: entry.actorId ? actors.get(entry.actorId) ?? null : null,
       action: entry.action, targetType: entry.targetType, targetId: entry.targetId,
       eventId: entry.eventId, eventName: entry.event?.name ?? null, outcome: entry.outcome,
-      summary: entry.summary, createdAt: entry.createdAt.toISOString(),
+      summary: sanitizeAuditData(entry.summary), createdAt: entry.createdAt.toISOString(),
     })),
     total, page: query.page, pageSize: query.pageSize,
     pages: Math.max(1, Math.ceil(total / query.pageSize)),

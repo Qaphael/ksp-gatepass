@@ -40,10 +40,10 @@ Valid and admitted · invalid or unknown QR · other event · not fully paid · 
 
 ## Audit and privacy
 
-Audit every login, sale, payment, reversal, batch, reprint, revoke, check-in, rejected scan, role change, correction and export. Never store passwords, session secrets or raw QR tokens in logs or audit records. Customer phone numbers never appear on verifier-facing results.
+Audit every login, sale, payment, reversal, batch, reprint, revoke, check-in, rejected scan, role change, correction and export. Never store passwords, session secrets, raw QR tokens, or full phone numbers in logs or audit records. Customer phone numbers never appear on verifier-facing results.
 
 
-## Selling, stock and templates (Addendum 1)
+## Selling, stock and templates (Addendum 1 rules 16–27)
 
 16. A ticket is sold only by scanning it (or a flagged manual sale, or the admin bulk path). The server finds it from the token hash, never from a client-supplied id.
 17. Lookup for sale never admits and never changes ticket state.

@@ -137,7 +137,7 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 - [x] Prompt T5 — Scan-to-sell UI
 - [x] Prompt T6 — Seller stock backend
 - [x] Prompt T7 — Stock and seller UI, slips and reports
-- [ ] Prompt T8 — Permissions, audit and privacy sweep
+- [x] Prompt T8 — Permissions, audit and privacy sweep
 - [ ] Prompt T9 — Real-world tests and release gate additions
 
 Prompt T2 implementation and Windows verification are in place: renderer and legacy batch tests pass, and calibration/reprint integration coverage passes. The Linux container font smoke test remains open because Docker/Podman and WSL are unavailable in this environment; `Dockerfile` explicitly copies `assets/fonts` into the runner image. Build output retains the existing benign authenticated-route `HANGING_PROMISE_REJECTION` warnings.
@@ -149,6 +149,8 @@ Prompt T2 implementation and Windows verification are in place: renderer and leg
 - [ ] Two sellers racing for one ticket on real phones: exactly one sale
 - [ ] Issue, sell, return and close-out walk-through completed
 - [ ] Buyer details not visible to verifiers (checked at the gate)
+
+Prompt T8 complete: direct stock-operation requests enforce server-side permissions; sale lookup and gate buyer-detail reveals are audited; audit summaries redact full Ugandan phone numbers; verifier API/report access and token-free lookup audit records are covered. The full suite reports 25 files / 186 tests passing; typecheck, lint and production build pass. Build emits the known authenticated-route `HANGING_PROMISE_REJECTION` warnings, and Vitest reports a post-run Vite-server close timeout after all tests pass. T9 physical-device and operational release checks remain open.
 
 Prompt T3 implementation: added the event-scoped admin template list and editor, artwork upload, measured zone fields and JSON import, sample overlay preview, QR size checks, activation confirmation, calibration PDF, and batch-based A/B/C print output links. Typecheck and focused lint pass. Print outputs require a ticket batch ID; calibration generation and paper-print confirmation are exposed in the screen. Physical calibration scanning and actual measured zone entry remain launch checks.
 

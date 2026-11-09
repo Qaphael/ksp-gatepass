@@ -38,6 +38,13 @@ describe("role dashboard metrics", () => {
     const ticketTypeId = type.body.ticketType.id as string;
     const batch = await admin.post("/api/v1/ticket-batches", { eventId, ticketTypeId, quantity: 4, serialPrefix: `D${Date.now().toString(36).slice(-6).toUpperCase()}` });
     expect(batch.status).toBe(201);
+    const sellerId = (await prisma.user.findUniqueOrThrow({ where: { username: "seller" }, select: { id: true } })).id;
+    const issuedTickets = await prisma.ticket.findMany({ where: { eventId, ticketTypeId }, orderBy: { serial: "asc" } });
+    const stockIssue = await admin.json("/api/v1/stock/issues", {
+      method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": unique("dashboard-stock") },
+      body: JSON.stringify({ eventId, sellerId, selection: { kind: "SERIALS", serials: issuedTickets.map((ticket) => ticket.serial) } }),
+    });
+    expect(stockIssue.status).toBe(201);
     const seller = await loginAs("seller");
     const tickets = await prisma.ticket.findMany({ where: { eventId, ticketTypeId }, orderBy: { serial: "asc" }, take: 2 });
     const sale = await seller.json("/api/v1/sales", {

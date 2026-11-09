@@ -64,6 +64,9 @@ describe("scan-to-sell backend", () => {
     expect(await prisma.checkIn.count({ where: { ticketId: selected.id } })).toBe(0);
     const scanAttempt = await prisma.scanAttempt.findFirstOrThrow({ where: { actorId: (await prisma.user.findUniqueOrThrow({ where: { username: "seller" } })).id, purpose: "SALE", eventId: data.eventId }, orderBy: { attemptedAt: "desc" } });
     expect(scanAttempt).toMatchObject({ ticketId: selected.id, resultCode: "SALEABLE", method: "QR" });
+    const lookupAudit = await prisma.auditLog.findFirstOrThrow({ where: { eventId: data.eventId, action: "sale.ticket.lookup", targetId: selected.id } });
+    expect(lookupAudit.summary).toMatchObject({ method: "QR", result: "SALEABLE", serial: selected.serial });
+    expect(JSON.stringify(lookupAudit.summary)).not.toContain(token);
 
     const saleKey = unique("scanned-idempotent");
     const saleBody = { eventId: data.eventId, tickets: [{ token }], ...buyer, initialPayment: fullPayment };
@@ -187,5 +190,14 @@ describe("scan-to-sell backend", () => {
     const audits = await prisma.auditLog.findMany({ where: { action: "buyer.details.reveal", targetType: "ticket", targetId: data.tickets[0].id } });
     expect(audits).toHaveLength(2);
     expect(JSON.stringify(audits[0].summary)).not.toContain(buyer.customerPhone);
+    expect((await verifier.get("/api/v1/sales")).status).toBe(403);
+    expect((await verifier.get(`/api/v1/reports?eventId=${data.eventId}&type=SALES_BY_CATEGORY`)).status).toBe(403);
+    expect((await verifier.get(`/api/v1/check-in/recent?eventId=${data.eventId}`)).status).toBe(200);
+    const verifierRecent = await verifier.get(`/api/v1/check-in/recent?eventId=${data.eventId}`);
+    expect(JSON.stringify(verifierRecent.body)).not.toContain(buyer.customerPhone);
+    expect(JSON.stringify(verifierRecent.body)).not.toContain(buyer.customerName);
+    const verifierReports = await verifier.get(`/api/v1/reports/export?eventId=${data.eventId}&type=SALES_BY_CATEGORY&format=csv`);
+    expect(verifierReports.status).toBe(403);
+    expect(JSON.stringify(verifierReports.body)).not.toContain(buyer.customerPhone);
   });
 });
