@@ -140,6 +140,8 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 - [ ] Prompt T8 — Permissions, audit and privacy sweep
 - [ ] Prompt T9 — Real-world tests and release gate additions
 
+Prompt T2 implementation and Windows verification are in place: renderer and legacy batch tests pass, and calibration/reprint integration coverage passes. The Linux container font smoke test remains open because Docker/Podman and WSL are unavailable in this environment; `Dockerfile` explicitly copies `assets/fonts` into the runner image. Build output retains the existing benign authenticated-route `HANGING_PROMISE_REJECTION` warnings.
+
 ### Release gate additions
 - [ ] Measured template zones confirmed and template activated for production
 - [ ] Calibration sheet scanned from paper on two Android phones

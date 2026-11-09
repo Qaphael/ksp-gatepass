@@ -15,13 +15,14 @@ const LIST_SELECT = {
   id: true, seriesId: true, eventId: true, ticketTypeId: true, name: true, version: true,
   assetChecksum: true, assetWidthPx: true, assetHeightPx: true, trim: true, bleedMm: true,
   config: true, status: true, zonesArePlaceholder: true, confirmedById: true,
-  confirmedAt: true, calibrationPrintedAt: true, createdAt: true, updatedAt: true,
+  confirmedAt: true, calibrationPrintedAt: true, calibrationPrintedById: true,
+  createdAt: true, updatedAt: true,
 } as const;
 type TemplateRow = Pick<DbTicketTemplate,
   "id" | "seriesId" | "eventId" | "ticketTypeId" | "name" | "version" |
   "assetChecksum" | "assetWidthPx" | "assetHeightPx" | "trim" | "bleedMm" |
   "config" | "status" | "zonesArePlaceholder" | "confirmedById" |
-  "confirmedAt" | "calibrationPrintedAt" | "createdAt" | "updatedAt">;
+  "confirmedAt" | "calibrationPrintedAt" | "calibrationPrintedById" | "createdAt" | "updatedAt">;
 type Tx = Prisma.TransactionClient;
 
 export interface TicketTemplateDto {
@@ -29,7 +30,8 @@ export interface TicketTemplateDto {
   name: string; version: number; artworkUrl: string; assetWidthPx: number; assetHeightPx: number;
   trim: unknown; bleedMm: number; config: unknown; status: TicketTemplateStatus;
   zonesArePlaceholder: boolean; confirmedById: string | null; confirmedAt: Date | null;
-  calibrationPrintedAt: Date | null; createdAt: Date; updatedAt: Date;
+  calibrationPrintedAt: Date | null; calibrationPrintedById: string | null;
+  createdAt: Date; updatedAt: Date;
 }
 
 function requireTemplatePermission(ctx: AuthContext): void {
@@ -58,7 +60,8 @@ function toDto(row: TemplateRow): TicketTemplateDto {
     assetWidthPx: row.assetWidthPx, assetHeightPx: row.assetHeightPx, trim: row.trim,
     bleedMm: row.bleedMm, config: row.config, status: row.status,
     zonesArePlaceholder: row.zonesArePlaceholder, confirmedById: row.confirmedById,
-    confirmedAt: row.confirmedAt, calibrationPrintedAt: row.calibrationPrintedAt,
+      confirmedAt: row.confirmedAt, calibrationPrintedAt: row.calibrationPrintedAt,
+      calibrationPrintedById: row.calibrationPrintedById,
     createdAt: row.createdAt, updatedAt: row.updatedAt,
   };
 }
@@ -263,7 +266,9 @@ export async function activateTicketTemplate(
   const prior = await findPrior(ctx, "activate", idempotencyKey, requestHash);
   if (prior) return { template: prior, created: false };
   if (input.production && current.zonesArePlaceholder) throw conflict("Measured template zones are required before production activation.");
-  if (input.production && !current.calibrationPrintedAt) throw conflict("Print and record a calibration sheet before production activation.");
+  if (input.production && (!current.calibrationPrintedAt || !current.calibrationPrintedById)) {
+    throw conflict("Print and record a calibration sheet before production activation.");
+  }
   if (!input.ownerConfirmed) throw validationError("Owner confirmation is required before activation.");
   try {
     let created = true;
@@ -275,7 +280,9 @@ export async function activateTicketTemplate(
       const target = await tx.ticketTemplate.findUnique({ where: { id: current.id }, select: LIST_SELECT });
       if (!target) throw notFound("Ticket template not found.");
       if (input.production && target.zonesArePlaceholder) throw conflict("Measured template zones are required before production activation.");
-      if (input.production && !target.calibrationPrintedAt) throw conflict("Print and record a calibration sheet before production activation.");
+      if (input.production && (!target.calibrationPrintedAt || !target.calibrationPrintedById)) {
+        throw conflict("Print and record a calibration sheet before production activation.");
+      }
       const active = await tx.ticketTemplate.findMany({
         where: { eventId: current.eventId, ticketTypeId: current.ticketTypeId, status: "ACTIVE", id: { not: current.id } },
         select: LIST_SELECT,
@@ -294,6 +301,82 @@ export async function activateTicketTemplate(
     return { template: toDto(row), created };
   } catch (error) {
     if (isUniqueViolation(error)) return { template: await resolveRace(ctx, "activate", idempotencyKey, requestHash), created: false };
+    throw error;
+  }
+}
+
+/**
+ * The calibration PDF endpoint records that a file was generated. An admin
+ * must separately confirm the paper print before production activation can
+ * pass, so merely downloading a PDF never satisfies the calibration gate.
+ */
+export async function confirmTicketTemplateCalibration(
+  ctx: AuthContext,
+  templateId: string,
+  input: { printBatchId: string; confirmedPrinted: true },
+  idempotencyKey: string,
+): Promise<{ template: TicketTemplateDto; created: boolean }> {
+  requireTemplatePermission(ctx);
+  const current = await prisma.ticketTemplate.findUnique({ where: { id: templateId } });
+  if (!current) throw notFound("Ticket template not found.");
+  const requestHash = sha256(stableJson({ templateId, printBatchId: input.printBatchId, confirmedPrinted: input.confirmedPrinted }));
+  const prior = await findPrior(ctx, "calibration-confirm", idempotencyKey, requestHash);
+  if (prior) return { template: prior, created: false };
+
+  const assertCalibrationPrint = (print: { eventId: string; templateId: string | null; templateVersion: number | null; outputKind: string | null }) => {
+    if (print.eventId !== current.eventId || print.templateId !== current.id ||
+      print.templateVersion !== current.version || print.outputKind !== "CALIBRATION") {
+      throw conflict("Generate a calibration sheet for this exact template version before confirming its paper print.");
+    }
+  };
+  const generated = await prisma.printBatch.findUnique({
+    where: { id: input.printBatchId },
+    select: { id: true, eventId: true, templateId: true, templateVersion: true, outputKind: true },
+  });
+  if (!generated) throw notFound("Calibration PDF record not found.");
+  assertCalibrationPrint(generated);
+
+  const operation = "calibration-confirm";
+  try {
+    let created = true;
+    const row = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+        'SELECT id FROM "Event" WHERE id = $1 FOR UPDATE', current.eventId,
+      );
+      if (!locked[0]) throw notFound("Event not found.");
+      const retry = await findPriorInTransaction(tx, ctx, operation, idempotencyKey, requestHash);
+      if (retry) { created = false; return retry; }
+      const target = await tx.ticketTemplate.findUnique({ where: { id: templateId }, select: LIST_SELECT });
+      if (!target) throw notFound("Ticket template not found.");
+      if (target.version !== current.version) throw conflict("The template changed after this calibration sheet was generated.");
+      const sourcePrint = await tx.printBatch.findUnique({
+        where: { id: input.printBatchId },
+        select: { id: true, eventId: true, templateId: true, templateVersion: true, outputKind: true },
+      });
+      if (!sourcePrint) throw notFound("Calibration PDF record not found.");
+      assertCalibrationPrint(sourcePrint);
+      const saved = await tx.ticketTemplate.update({
+        where: { id: target.id },
+        data: { calibrationPrintedAt: new Date(), calibrationPrintedById: ctx.userId },
+        select: LIST_SELECT,
+      });
+      await tx.ticketTemplateMutation.create({
+        data: {
+          actorId: ctx.userId, eventId: current.eventId, operation, idempotencyKey,
+          requestHash, templateId: saved.id,
+        },
+      });
+      await writeAudit(tx, ctx, "ticket-template.calibration.printed", saved, {
+        version: saved.version,
+        calibrationPrintBatchId: input.printBatchId,
+      });
+      return saved;
+    });
+    return { template: toDto(row), created };
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      return { template: await resolveRace(ctx, operation, idempotencyKey, requestHash), created: false };
+    }
     throw error;
   }
 }

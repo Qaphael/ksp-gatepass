@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { beforeAll, describe, expect, it } from "vitest";
+import { PDFArray, PDFDocument, PDFRef, PDFStream } from "pdf-lib";
 import { BASE_URL, loginAs, unique, type TestClient } from "../helpers/client";
 import { prisma } from "../helpers/db";
 import { placeholderTicketTemplateConfig } from "@/lib/validation/ticket-templates";
@@ -33,6 +34,16 @@ async function patchTemplate(id: string, body: unknown, key = unique("patch"), c
   return client.json(`/api/v1/ticket-templates/${id}`, {
     method: "PATCH", headers: { "content-type": "application/json", "idempotency-key": key }, body: JSON.stringify(body),
   });
+}
+
+async function firstPdfPageContent(data: ArrayBuffer): Promise<string> {
+  const document = await PDFDocument.load(new Uint8Array(data));
+  const contents = document.getPages()[0].node.Contents();
+  const streams = contents instanceof PDFArray ? contents.asArray() : [contents];
+  return streams.map((streamRef) => {
+    const stream = document.context.lookup(streamRef as PDFRef, PDFStream);
+    return Buffer.from(stream.getContents()).toString("base64");
+  }).join(":");
 }
 
 beforeAll(async () => {
@@ -150,7 +161,8 @@ describe("ticket template model and artwork API", () => {
 
     const template = await createTemplate(await sampleArtwork(), admin);
     const id = template.body.template.id as string;
-    await prisma.ticketTemplate.update({ where: { id }, data: { calibrationPrintedAt: new Date() } });
+    const adminUser = await prisma.user.findUniqueOrThrow({ where: { username: "admin" }, select: { id: true } });
+    await prisma.ticketTemplate.update({ where: { id }, data: { calibrationPrintedAt: new Date(), calibrationPrintedById: adminUser.id } });
     const request = async (ownerConfirmed: boolean) => admin.request(`/api/v1/ticket-templates/${id}/activate`, {
       method: "POST", headers: { "content-type": "application/json", "idempotency-key": unique("activate") },
       body: JSON.stringify({ ownerConfirmed, production: true }),
@@ -162,5 +174,108 @@ describe("ticket template model and artwork API", () => {
     expect(body.template.status).toBe("ACTIVE");
     expect(body.template.confirmedById).toBeTruthy();
     expect(body.template.confirmedAt).toBeTruthy();
+  });
+
+  it("records who confirmed a physical calibration print, separately from PDF generation", async () => {
+    const created = await createTemplate(await sampleArtwork());
+    const id = created.body.template.id as string;
+    const calibrationUrl = `/api/v1/ticket-templates/${id}/calibration.pdf`;
+    const pdf = await admin.request(calibrationUrl);
+    expect(pdf.status, await pdf.clone().text()).toBe(200);
+    expect(pdf.headers.get("content-type")).toContain("application/pdf");
+    expect((await pdf.arrayBuffer()).byteLength).toBeGreaterThan(1000);
+
+    const generated = await prisma.printBatch.findFirstOrThrow({
+      where: { templateId: id, outputKind: "CALIBRATION" },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(generated.templateVersion).toBe(1);
+    expect(generated.ticketCount).toBe(1);
+    expect(generated.actorId).toBeTruthy();
+    expect(JSON.stringify(generated.metadata)).not.toMatch(/token/i);
+    expect((await prisma.ticketTemplate.findUniqueOrThrow({ where: { id } })).calibrationPrintedAt).toBeNull();
+
+    expect((await seller.request(calibrationUrl)).status).toBe(403);
+    const confirmPath = `/api/v1/ticket-templates/${id}/calibration`;
+    const request = (client: TestClient, key: string) => client.json(confirmPath, {
+      method: "POST",
+      headers: { "idempotency-key": key, "content-type": "application/json" },
+      body: JSON.stringify({ printBatchId: generated.id, confirmedPrinted: true }),
+    });
+    expect((await request(seller, unique("seller-calibration-confirm"))).status).toBe(403);
+
+    const key = unique("calibration-confirm");
+    const confirmed = await request(admin, key);
+    expect(confirmed.status).toBe(201);
+    expect(confirmed.body.template.calibrationPrintedById).toBeTruthy();
+    expect(confirmed.body.template.calibrationPrintedAt).toBeTruthy();
+    const retry = await request(admin, key);
+    expect(retry.status).toBe(200);
+    expect(retry.body.template.id).toBe(confirmed.body.template.id);
+
+    const audit = await prisma.auditLog.findFirstOrThrow({
+      where: { action: "ticket-template.calibration.printed", targetId: id },
+    });
+    expect(JSON.stringify(audit.summary)).toContain(generated.id);
+    expect(JSON.stringify(audit.summary)).not.toMatch(/token/i);
+  });
+
+  it("records template print snapshots and reprints the exact used version and placement", async () => {
+    const ticketType = await admin.post(`/api/v1/events/${eventId}/ticket-types`, {
+      name: unique("Template print category"), priceUgx: 10_000,
+    });
+    expect(ticketType.status).toBe(201);
+    const ticketTypeId = ticketType.body.ticketType.id as string;
+    const template = await createTemplate(await sampleArtwork());
+    const templateId = template.body.template.id as string;
+    await prisma.ticketTemplate.update({ where: { id: templateId }, data: { zonesArePlaceholder: false } });
+
+    const calibration = await admin.request(`/api/v1/ticket-templates/${templateId}/calibration.pdf`);
+    expect(calibration.status).toBe(200);
+    const calibrationPrint = await prisma.printBatch.findFirstOrThrow({
+      where: { templateId, outputKind: "CALIBRATION" }, orderBy: { createdAt: "desc" },
+    });
+    const confirmed = await admin.json(`/api/v1/ticket-templates/${templateId}/calibration`, {
+      method: "POST", headers: { "content-type": "application/json", "idempotency-key": unique("print-calibration") },
+      body: JSON.stringify({ printBatchId: calibrationPrint.id, confirmedPrinted: true }),
+    });
+    expect(confirmed.status).toBe(201);
+    const activated = await admin.json(`/api/v1/ticket-templates/${templateId}/activate`, {
+      method: "POST", headers: { "content-type": "application/json", "idempotency-key": unique("activate-template") },
+      body: JSON.stringify({ ownerConfirmed: true, production: true }),
+    });
+    expect(activated.status).toBe(200);
+
+    const batch = await admin.json("/api/v1/ticket-batches", {
+      method: "POST", headers: { "content-type": "application/json", "idempotency-key": unique("template-print-batch") },
+      body: JSON.stringify({ eventId, ticketTypeId, quantity: 2, serialPrefix: `T${Date.now().toString(36).slice(-5).toUpperCase()}` }),
+    });
+    expect(batch.status).toBe(201);
+    const batchId = batch.body.batch.id as string;
+    const printed = await admin.request(`/api/v1/ticket-batches/${batchId}/print.pdf?outputKind=SINGLE&ticketsPerPage=1&scale=1&cropMarks=true`);
+    expect(printed.status).toBe(200);
+    const printedBytes = await printed.arrayBuffer();
+    const source = await prisma.printBatch.findFirstOrThrow({
+      where: { ticketBatchId: batchId, outputKind: "SINGLE" }, orderBy: { createdAt: "desc" },
+    });
+    expect(source.templateId).toBe(templateId);
+    expect(source.templateVersion).toBe(1);
+    expect((source.sheetLayoutSnapshot as { scale: number }).scale).toBe(1);
+
+    const edited = await patchTemplate(templateId, { name: unique("Revised template") });
+    expect(edited.status).toBe(201);
+    expect(edited.body.template.version).toBe(2);
+    expect(edited.body.template.id).not.toBe(templateId);
+
+    const reprinted = await admin.request(`/api/v1/print-batches/${source.id}/reprint.pdf`, { method: "POST" });
+    expect(reprinted.status).toBe(200);
+    expect(await firstPdfPageContent(await reprinted.arrayBuffer())).toBe(await firstPdfPageContent(printedBytes));
+    const reprint = await prisma.printBatch.findFirstOrThrow({
+      where: { kind: "REPRINT", eventId, ticketId: null }, orderBy: { createdAt: "desc" },
+    });
+    expect(reprint.templateId).toBe(templateId);
+    expect(reprint.templateVersion).toBe(1);
+    expect(reprint.outputKind).toBe("SINGLE");
+    expect((reprint.metadata as { sourcePrintBatchId: string }).sourcePrintBatchId).toBe(source.id);
   });
 });

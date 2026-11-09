@@ -121,6 +121,11 @@ export const activateTicketTemplateSchema = z.object({
   production: z.boolean().default(true),
 }).strict();
 
+export const confirmTicketTemplateCalibrationSchema = z.object({
+  printBatchId: z.string().trim().min(1).max(128),
+  confirmedPrinted: z.literal(true),
+}).strict();
+
 /** Structurally valid, intentionally non-activatable development coordinates. */
 export function placeholderTicketTemplateConfig(): TicketTemplateConfig {
   return {

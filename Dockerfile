@@ -31,6 +31,7 @@ COPY prisma ./prisma
 RUN pnpm install --prod --frozen-lockfile
 COPY --from=build /app/.next ./.next
 COPY public ./public
+COPY assets/fonts ./assets/fonts
 # Include the one-time, interactive admin bootstrap and its minimal source
 # dependencies. `tsx` is a production dependency so this command works in the
 # production image without shipping the rest of the development toolchain.

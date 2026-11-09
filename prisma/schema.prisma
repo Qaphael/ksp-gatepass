@@ -154,6 +154,7 @@ model User {
   scanAttempts ScanAttempt[]
   checkInCorrections CheckInCorrection[]
   confirmedTicketTemplates TicketTemplate[] @relation("TicketTemplateConfirmer")
+  calibratedTicketTemplates TicketTemplate[] @relation("TicketTemplateCalibrationPrinter")
   ticketTemplateMutations TicketTemplateMutation[]
 }
 
@@ -385,12 +386,14 @@ model TicketTemplate {
   confirmedById        String?
   confirmedAt          DateTime?
   calibrationPrintedAt DateTime?
+  calibrationPrintedById String?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 
   event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
   ticketType  TicketType?  @relation(fields: [ticketTypeId], references: [id], onDelete: SetNull)
   confirmedBy User?        @relation("TicketTemplateConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
+  calibrationPrintedBy User? @relation("TicketTemplateCalibrationPrinter", fields: [calibrationPrintedById], references: [id], onDelete: SetNull)
   printBatches PrintBatch[]
   mutations    TicketTemplateMutation[]
 

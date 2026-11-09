@@ -60,6 +60,8 @@ export interface TicketPrintRow {
   token: string;
   ticketTypeName: string;
   printLabel: string | null;
+  /** Current category price for the printed price field; integer UGX. */
+  ticketPriceUgx?: number;
   event: {
     name: string;
     venue: string;
