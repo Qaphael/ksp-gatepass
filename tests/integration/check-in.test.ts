@@ -9,7 +9,7 @@ beforeAll(async () => { admin = await loginAs("admin"); seller = await loginAs("
 const keyed = (client: TestClient, url: string, data: unknown, key: string) => client.json(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(data) });
 
 async function soldTicket(paid = true) {
-  const event = await admin.post("/api/v1/events", { name: unique("Admission event"), venue: "KSP Hotel Gulu", status: "SCHEDULED", eventDate: "2026-12-05", startTime: "18:00", endTime: "23:00", capacity: 100 });
+  const event = await admin.post("/api/v1/events", { name: unique("Admission event"), venue: "KSP Hotel Gulu", status: "SCHEDULED", eventDate: "2026-12-05", startTime: "18:00", endTime: "23:00", capacity: 100, requireBuyerDetails: false });
   const eventId = event.body.event.id as string;
   await admin.post(`/api/v1/events/${eventId}/open-sales`);
   const type = await admin.post(`/api/v1/events/${eventId}/ticket-types`, { name: unique("Entry"), priceUgx: 12_000 });

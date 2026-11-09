@@ -50,6 +50,11 @@ interface FormState {
   accentColor: string;
   ticketFooterText: string;
   organiserContact: string;
+  requireBuyerDetails: boolean;
+  requireStockIssue: boolean;
+  allowSellerManualSale: boolean;
+  requireFullPaymentAtSale: boolean;
+  buyerNoticeText: string;
   status: "DRAFT" | "SCHEDULED";
 }
 
@@ -71,6 +76,11 @@ function initialState(event?: EventDto): FormState {
     accentColor: event?.accentColor ?? "",
     ticketFooterText: event?.ticketFooterText ?? "",
     organiserContact: event?.organiserContact ?? "",
+    requireBuyerDetails: event?.requireBuyerDetails ?? true,
+    requireStockIssue: event?.requireStockIssue ?? true,
+    allowSellerManualSale: event?.allowSellerManualSale ?? false,
+    requireFullPaymentAtSale: event?.requireFullPaymentAtSale ?? true,
+    buyerNoticeText: event?.buyerNoticeText ?? "",
     status: event?.status === "SCHEDULED" ? "SCHEDULED" : "DRAFT",
   };
 }
@@ -94,6 +104,11 @@ function toPayload(form: FormState): Record<string, unknown> {
     accentColor: optional(form.accentColor),
     ticketFooterText: optional(form.ticketFooterText),
     organiserContact: optional(form.organiserContact),
+    requireBuyerDetails: form.requireBuyerDetails,
+    requireStockIssue: form.requireStockIssue,
+    allowSellerManualSale: form.allowSellerManualSale,
+    requireFullPaymentAtSale: form.requireFullPaymentAtSale,
+    buyerNoticeText: optional(form.buyerNoticeText),
     status: form.status,
   };
 }
@@ -377,6 +392,19 @@ export function EventForm({ mode, event }: EventFormProps) {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader><CardTitle>Scan-to-sell policies</CardTitle><CardDescription>Controls are enforced by the server when a seller looks up or confirms a ticket sale.</CardDescription></CardHeader>
+        <CardContent className="grid gap-3">
+          <PolicyCheckbox checked={form.requireBuyerDetails} onChange={(checked) => set("requireBuyerDetails", checked)} title="Require buyer name and phone" description="Collect both details for every sale." disabled={saving} />
+          <PolicyCheckbox checked={form.requireStockIssue} onChange={(checked) => set("requireStockIssue", checked)} title="Require ticket stock to be issued to the seller" description="Custody enforcement is completed in the seller stock phase." disabled={saving} />
+          <PolicyCheckbox checked={form.allowSellerManualSale} onChange={(checked) => set("allowSellerManualSale", checked)} title="Allow sellers to enter a serial manually" description="Manual sales are flagged in the sale and audit history." disabled={saving} />
+          <PolicyCheckbox checked={form.requireFullPaymentAtSale} onChange={(checked) => set("requireFullPaymentAtSale", checked)} title="Require full payment at seller confirmation" description="Admins can still record partial payments. Admission follows the event payment policy." disabled={saving} />
+          <Field label="Buyer notice (optional)" htmlFor="buyer-notice" error={error}>
+            <Textarea id="buyer-notice" rows={2} maxLength={500} value={form.buyerNoticeText} onChange={(e) => set("buyerNoticeText", e.target.value)} disabled={saving} placeholder="A short notice shown when collecting buyer details." />
+          </Field>
+        </CardContent>
+      </Card>
+
       {mode === "edit" && event ? (
         <BrandingManager eventId={event.id} initialAssets={event.branding} />
       ) : (
@@ -406,6 +434,10 @@ export function EventForm({ mode, event }: EventFormProps) {
       </div>
     </form>
   );
+}
+
+function PolicyCheckbox({ checked, onChange, title, description, disabled }: { checked: boolean; onChange: (checked: boolean) => void; title: string; description: string; disabled: boolean }) {
+  return <label className="flex min-h-12 items-start gap-3 rounded-lg border p-3"><input type="checkbox" className="mt-1 size-5 accent-brand-700" checked={checked} onChange={(event) => onChange(event.target.checked)} disabled={disabled} /><span><span className="block font-medium">{title}</span><span className="block text-sm text-muted-foreground">{description}</span></span></label>;
 }
 
 function Field({

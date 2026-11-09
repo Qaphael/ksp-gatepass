@@ -91,6 +91,17 @@ enum ScanMethod {
   SERIAL
 }
 
+enum ScanPurpose {
+  ADMISSION
+  SALE
+}
+
+enum SaleEntryMethod {
+  SCAN
+  MANUAL
+  BULK
+}
+
 enum ScanResultCode {
   ELIGIBLE
   ADMITTED
@@ -106,6 +117,13 @@ enum ScanResultCode {
   ADMISSION_CLOSED
   TICKET_NOT_SOLD
   CATEGORY_NOT_ADMISSIBLE
+  SALEABLE
+  ALREADY_SOLD
+  ISSUED_TO_ANOTHER_SELLER
+  NOT_ISSUED_TO_YOU
+  SALES_CLOSED
+  TICKET_TYPE_INACTIVE
+  EVENT_NOT_SELLING
 }
 
 // Every PDF/CSV output is traceable (PRD 5.6 rule 6).
@@ -207,6 +225,11 @@ model Event {
   admissionStartedAt DateTime?
   status            EventStatus     @default(DRAFT)
   admissionPolicy   AdmissionPolicy @default(FULL_PAYMENT)
+  requireBuyerDetails Boolean @default(true)
+  requireStockIssue Boolean @default(true)
+  allowSellerManualSale Boolean @default(false)
+  requireFullPaymentAtSale Boolean @default(true)
+  buyerNoticeText String?
   accentColor       String?
   ticketFooterText  String?
   organiserContact  String?
@@ -452,6 +475,7 @@ model Sale {
   sellerId          String
   customerName      String?
   customerPhone     String?
+  customerPhoneNormalized String?
   customerReference String?
   notes             String?
   subtotalUgx       Int
@@ -500,6 +524,8 @@ model SaleTicket {
   saleId     String
   saleItemId String
   ticketId   String @unique
+  entryMethod SaleEntryMethod @default(BULK)
+  scannedAt DateTime?
 
   sale     Sale     @relation(fields: [saleId], references: [id], onDelete: Restrict)
   saleItem SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Restrict)
@@ -578,6 +604,7 @@ model ScanAttempt {
   actorId     String
   ticketId    String?
   method      ScanMethod
+  purpose     ScanPurpose @default(ADMISSION)
   resultCode  ScanResultCode
   gate        String?
   serial      String?

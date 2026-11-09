@@ -7,6 +7,7 @@ import type {
 } from "@/generated/prisma/client";
 import type { AuthContext } from "@/lib/auth/session";
 import { hashQrToken } from "@/lib/qr/tokens";
+import { recordAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db/client";
 import type {
   CheckInCorrectionInput,
@@ -40,6 +41,8 @@ const ELIGIBILITY_INCLUDE = {
           eventId: true,
           totalUgx: true,
           status: true,
+          customerName: true,
+          customerPhone: true,
           payments: { include: { adjustments: true } },
         },
       },
@@ -64,6 +67,7 @@ export interface EligibilityResult {
   eventName: string;
   ticket?: PublicTicketSummary;
   originalCheckIn?: { checkedInAt: string; gate: string };
+  buyerDetails?: { customerName: string | null; customerPhone: string | null };
 }
 
 export interface ConfirmResult extends EligibilityResult {
@@ -113,6 +117,13 @@ const MESSAGE: Record<ScanResultCode, string> = {
   ADMISSION_CLOSED: "Admission is closed for this event.",
   TICKET_NOT_SOLD: "This ticket has not been sold.",
   CATEGORY_NOT_ADMISSIBLE: "This ticket category is not valid for admission.",
+  SALEABLE: "Ticket is available to sell.",
+  ALREADY_SOLD: "Ticket has already been sold.",
+  ISSUED_TO_ANOTHER_SELLER: "Ticket is held by another seller.",
+  NOT_ISSUED_TO_YOU: "Ticket has not been issued to you.",
+  SALES_CLOSED: "Sales are closed for this event or ticket category.",
+  TICKET_TYPE_INACTIVE: "This ticket category is inactive.",
+  EVENT_NOT_SELLING: "This event is not selling tickets.",
 };
 
 function normalizeSerial(value: string): string {
@@ -249,7 +260,7 @@ export async function verifyQr(ctx: AuthContext, input: VerifyQrInput): Promise<
     ...(ticket ? { ticketId: ticket.id, serial: ticket.serial } : {}),
     gate: input.gate,
   });
-  return verification;
+  return revealBuyerOnDuplicate(ctx, event.id, ticket, verification);
 }
 
 export async function verifySerial(ctx: AuthContext, input: VerifySerialInput): Promise<EligibilityResult> {
@@ -263,7 +274,30 @@ export async function verifySerial(ctx: AuthContext, input: VerifySerialInput): 
     serial: ticket?.serial ?? serial,
     gate: input.gate,
   });
-  return verification;
+  return revealBuyerOnDuplicate(ctx, event.id, ticket, verification);
+}
+
+function maySeeBuyerAtGate(ctx: AuthContext): boolean {
+  return ctx.role === "ADMIN" || ctx.role === "SUPERVISOR";
+}
+
+async function revealBuyerOnDuplicate(ctx: AuthContext, eventId: string, ticket: EligibilityTicket | null, result: EligibilityResult, tx?: Prisma.TransactionClient): Promise<EligibilityResult> {
+  const sale = ticket?.saleTickets[0]?.sale;
+  if (result.code !== "ALREADY_USED" || !ticket || !sale || !maySeeBuyerAtGate(ctx)) return result;
+  const summary = { serial: ticket.serial, reason: "duplicate-check-in" };
+  if (tx) await transactionAudit(tx, ctx, "buyer.details.reveal", "ticket", ticket.id, eventId, summary);
+  else await recordAudit({ actorId: ctx.userId, actorRole: ctx.role, action: "buyer.details.reveal", targetType: "ticket", targetId: ticket.id, eventId, summary });
+  return { ...result, buyerDetails: { customerName: sale.customerName, customerPhone: sale.customerPhone } };
+}
+
+export async function lookupBuyerDetailsAtGate(ctx: AuthContext, eventId: string, serialInput: string) {
+  requirePermission(ctx.role, "checkin:read-buyer-details");
+  const event = await getEvent(ctx, prisma, eventId);
+  const serial = normalizeSerial(serialInput);
+  const ticket = await prisma.ticket.findUnique({ where: { serial }, include: { saleTickets: { take: 1, include: { sale: { select: { id: true, customerName: true, customerPhone: true } } } } } });
+  if (!ticket || ticket.eventId !== event.id || !ticket.saleTickets[0]) throw notFound("Buyer details are not available for this ticket.");
+  await recordAudit({ actorId: ctx.userId, actorRole: ctx.role, action: "buyer.details.reveal", targetType: "ticket", targetId: ticket.id, eventId: event.id, summary: { serial: ticket.serial, reason: "explicit-gate-lookup" } });
+  return { serial: ticket.serial, customerName: ticket.saleTickets[0].sale.customerName, customerPhone: ticket.saleTickets[0].sale.customerPhone };
 }
 
 function checkIdempotencyKey(key: string | null): string {
@@ -383,7 +417,8 @@ export async function confirmCheckIn(
           method: input.method,
           gate: input.gate,
         });
-        return { ...verified, admitted: false, created: false };
+        const withBuyer = await revealBuyerOnDuplicate(ctx, event.id, candidate, verified, tx);
+        return { ...withBuyer, admitted: false, created: false };
       }
 
       const checkIn = await tx.checkIn.create({
@@ -431,7 +466,7 @@ export async function confirmCheckIn(
         if (existing) {
           const event = await getEvent(ctx, prisma, input.eventId);
           const duplicate = result("ALREADY_USED", event.name, ticket);
-          return { ...duplicate, admitted: false, created: false };
+          return { ...await revealBuyerOnDuplicate(ctx, event.id, ticket, duplicate), admitted: false, created: false };
         }
       }
     }
@@ -513,6 +548,7 @@ export async function listScanAttempts(ctx: AuthContext, query: ScanAttemptQuery
   const rows = await prisma.scanAttempt.findMany({
     where: {
       eventId: event.id,
+      purpose: "ADMISSION",
       ...(query.method ? { method: query.method } : {}),
       ...(query.resultCode ? { resultCode: query.resultCode } : {}),
       ...(query.before ? { attemptedAt: { lt: query.before } } : {}),

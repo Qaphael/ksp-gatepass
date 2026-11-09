@@ -7,13 +7,14 @@ beforeAll(async () => { [admin, seller, supervisor] = await Promise.all([loginAs
 const postKey = (client: TestClient, url: string, data: unknown, key: string) => client.json(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(data) });
 
 async function fixture() {
-  const event = await admin.post("/api/v1/events", { name: unique("Report event"), venue: "KSP Hotel Gulu", status: "SCHEDULED", eventDate: "2026-12-05", startTime: "18:00", endTime: "23:00", capacity: 100 });
+  const event = await admin.post("/api/v1/events", { name: unique("Report event"), venue: "KSP Hotel Gulu", status: "SCHEDULED", eventDate: "2026-12-05", startTime: "18:00", endTime: "23:00", capacity: 100, requireBuyerDetails: false, allowSellerManualSale: true, requireFullPaymentAtSale: false });
   const eventId = event.body.event.id as string;
   await admin.post(`/api/v1/events/${eventId}/open-sales`);
   const type = await admin.post(`/api/v1/events/${eventId}/ticket-types`, { name: unique("General"), priceUgx: 12_000 });
   const ticketTypeId = type.body.ticketType.id as string;
   await admin.post("/api/v1/ticket-batches", { eventId, ticketTypeId, quantity: 5, serialPrefix: `R${Date.now().toString(36).slice(-6).toUpperCase()}` });
-  const ownSale = await postKey(seller, "/api/v1/sales", { eventId, items: [{ ticketTypeId, quantity: 2 }], initialPayment: { amountUgx: 12_000, method: "CASH" } }, unique("report-own"));
+  const ownTickets = await prisma.ticket.findMany({ where: { eventId, ticketTypeId }, orderBy: { serial: "asc" }, take: 2 });
+  const ownSale = await postKey(seller, "/api/v1/sales", { eventId, tickets: ownTickets.map((ticket) => ({ serial: ticket.serial, entryMethod: "MANUAL" })), initialPayment: { amountUgx: 12_000, method: "CASH" } }, unique("report-own"));
   const otherSale = await postKey(admin, "/api/v1/sales", { eventId, items: [{ ticketTypeId, quantity: 1 }], initialPayment: { amountUgx: 12_000, method: "MOBILE_MONEY" } }, unique("report-other"));
   expect(ownSale.status).toBe(201); expect(otherSale.status).toBe(201);
   return { eventId, ticketTypeId, ownSale: ownSale.body.sale, otherSale: otherSale.body.sale };

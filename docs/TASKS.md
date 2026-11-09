@@ -133,8 +133,8 @@ Prompt 9 verification: direct TypeScript, ESLint and the Next.js production buil
 - [x] Prompt T1 — Template model, upload and zone configuration
 - [ ] Prompt T2 — Renderer and print outputs
 - [x] Prompt T3 — Template admin UI
-- [ ] Prompt T4 — Scan-to-sell backend
-- [ ] Prompt T5 — Scan-to-sell UI
+- [x] Prompt T4 — Scan-to-sell backend
+- [x] Prompt T5 — Scan-to-sell UI
 - [ ] Prompt T6 — Seller stock backend
 - [ ] Prompt T7 — Stock and seller UI, slips and reports
 - [ ] Prompt T8 — Permissions, audit and privacy sweep
@@ -151,3 +151,7 @@ Prompt T2 implementation and Windows verification are in place: renderer and leg
 - [ ] Buyer details not visible to verifiers (checked at the gate)
 
 Prompt T3 implementation: added the event-scoped admin template list and editor, artwork upload, measured zone fields and JSON import, sample overlay preview, QR size checks, activation confirmation, calibration PDF, and batch-based A/B/C print output links. Typecheck and focused lint pass. Print outputs require a ticket batch ID; calibration generation and paper-print confirmation are exposed in the screen. Physical calibration scanning and actual measured zone entry remain launch checks.
+
+Prompt T4 implementation: added seller scan-to-sell lookup and confirmation by token hash, serial entry with explicit MANUAL records and event policy, admin-only bulk sales, Uganda E.164 phone normalization, buyer-detail and full-payment policy enforcement, rate-limited token-free SALE scan attempts, and audited gate buyer-detail reveals limited to supervisors/admins on duplicates or explicit lookup. Sale confirmation retains event/ticket locking, server pricing, atomic payment writes and request-hash idempotency. `pnpm test` passes 22 files / 173 tests; typecheck and lint pass. Seller stock custody checks remain a clearly marked T6 seam; issued-stock messages are not active until that phase.
+
+Prompt T5 implementation: added the seller Sell screen with a shared QR camera and eight-second server heartbeat, policy-aware manual serial entry, distinct lookup state messages/icons, duplicate-safe ticket cart, buyer phone normalization, payment capture, retry-stable sale idempotency, offline blocking, and success receipt/serial view. Added lookup presentation/cart tests. Focused tests (4), typecheck, ESLint and production build pass. Build output retains the existing authenticated-route `HANGING_PROMISE_REJECTION` warnings; the test harness reported a Vite shutdown timeout after the focused test had passed.

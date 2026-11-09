@@ -33,6 +33,11 @@ export interface EventDto {
   admissionOpen: boolean;
   status: EventStatus;
   admissionPolicy: string;
+  requireBuyerDetails: boolean;
+  requireStockIssue: boolean;
+  allowSellerManualSale: boolean;
+  requireFullPaymentAtSale: boolean;
+  buyerNoticeText: string | null;
   accentColor: string | null;
   ticketFooterText: string | null;
   organiserContact: string | null;
@@ -84,6 +89,11 @@ async function toEventDto(event: Event): Promise<EventDto> {
     admissionOpen: event.admissionOpen,
     status: event.status,
     admissionPolicy: event.admissionPolicy,
+    requireBuyerDetails: event.requireBuyerDetails,
+    requireStockIssue: event.requireStockIssue,
+    allowSellerManualSale: event.allowSellerManualSale,
+    requireFullPaymentAtSale: event.requireFullPaymentAtSale,
+    buyerNoticeText: event.buyerNoticeText,
     accentColor: event.accentColor,
     ticketFooterText: event.ticketFooterText,
     organiserContact: event.organiserContact,
@@ -147,6 +157,11 @@ export async function createEvent(
         : null,
       status: input.status,
       admissionPolicy: input.admissionPolicy,
+      requireBuyerDetails: input.requireBuyerDetails,
+      requireStockIssue: input.requireStockIssue,
+      allowSellerManualSale: input.allowSellerManualSale,
+      requireFullPaymentAtSale: input.requireFullPaymentAtSale,
+      buyerNoticeText: input.buyerNoticeText ?? null,
       accentColor: input.accentColor ?? null,
       ticketFooterText: input.ticketFooterText ?? null,
       organiserContact: input.organiserContact ?? null,
@@ -205,6 +220,11 @@ export async function updateEvent(
     // assertEditable above guarantees DRAFT/SCHEDULED here.
     status: existing.status as CreateEventInput["status"],
     admissionPolicy: existing.admissionPolicy,
+    requireBuyerDetails: existing.requireBuyerDetails,
+    requireStockIssue: existing.requireStockIssue,
+    allowSellerManualSale: existing.allowSellerManualSale,
+    requireFullPaymentAtSale: existing.requireFullPaymentAtSale,
+    buyerNoticeText: existing.buyerNoticeText,
   };
   const merged = { ...current, ...patch } as CreateEventInput;
   const parsed = createEventSchema.parse(merged);
@@ -246,6 +266,11 @@ export async function updateEvent(
         : null,
       status: parsed.status,
       admissionPolicy: parsed.admissionPolicy,
+      requireBuyerDetails: parsed.requireBuyerDetails,
+      requireStockIssue: parsed.requireStockIssue,
+      allowSellerManualSale: parsed.allowSellerManualSale,
+      requireFullPaymentAtSale: parsed.requireFullPaymentAtSale,
+      buyerNoticeText: parsed.buyerNoticeText ?? null,
       accentColor: parsed.accentColor ?? null,
       ticketFooterText: parsed.ticketFooterText ?? null,
       organiserContact: parsed.organiserContact ?? null,

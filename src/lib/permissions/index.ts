@@ -34,6 +34,7 @@ export const PERMISSIONS = [
   "template:manage",
   // Sales and payments (Phase 3)
   "sale:create",
+  "sale:lookup-ticket",
   "sale:read-own",
   "sale:read-all",
   "sale:cancel",
@@ -48,6 +49,7 @@ export const PERMISSIONS = [
   "checkin:read-recent",
   "checkin:read-summary",
   "checkin:read-attempts",
+  "checkin:read-buyer-details",
   // Reporting and audit (Phase 5)
   "report:view-summary",
   "report:export-own",
@@ -64,6 +66,7 @@ const SELLER: readonly Permission[] = [
   "event:read",
   "ticket-type:read",
   "sale:create",
+  "sale:lookup-ticket",
   "sale:read-own",
   "payment:record",
   "ticket:print",
@@ -90,6 +93,7 @@ const SUPERVISOR: readonly Permission[] = [
   "checkin:read-recent",
   "checkin:read-summary",
   "checkin:read-attempts",
+  "checkin:read-buyer-details",
   "report:view-summary",
 ];
 

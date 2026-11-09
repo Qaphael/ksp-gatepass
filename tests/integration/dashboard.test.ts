@@ -27,7 +27,8 @@ describe("role dashboard metrics", () => {
   it("computes seller totals from own server-side sales and payments", async () => {
     const created = await admin.post("/api/v1/events", {
       name: unique("Dashboard event"), venue: "KSP Hotel Gulu", status: "SCHEDULED", eventDate: "2026-12-05",
-      startTime: "18:00", endTime: "23:00", capacity: 20,
+      startTime: "18:00", endTime: "23:00", capacity: 20, requireBuyerDetails: false,
+      allowSellerManualSale: true, requireFullPaymentAtSale: false,
     });
     expect(created.status).toBe(201);
     const eventId = created.body.event.id as string;
@@ -38,9 +39,10 @@ describe("role dashboard metrics", () => {
     const batch = await admin.post("/api/v1/ticket-batches", { eventId, ticketTypeId, quantity: 4, serialPrefix: `D${Date.now().toString(36).slice(-6).toUpperCase()}` });
     expect(batch.status).toBe(201);
     const seller = await loginAs("seller");
+    const tickets = await prisma.ticket.findMany({ where: { eventId, ticketTypeId }, orderBy: { serial: "asc" }, take: 2 });
     const sale = await seller.json("/api/v1/sales", {
       method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": unique("dashboard-sale") },
-      body: JSON.stringify({ eventId, items: [{ ticketTypeId, quantity: 2 }], initialPayment: { amountUgx: 12_000, method: "CASH" } }),
+      body: JSON.stringify({ eventId, tickets: tickets.map((ticket) => ({ serial: ticket.serial, entryMethod: "MANUAL" })), initialPayment: { amountUgx: 12_000, method: "CASH" } }),
     });
     expect(sale.status).toBe(201);
 

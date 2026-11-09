@@ -42,6 +42,11 @@ export const eventBaseSchema = z.object({
   // COMPLETED/ARCHIVED only change through their dedicated endpoints.
   status: z.enum(["DRAFT", "SCHEDULED"]).default("DRAFT"),
   admissionPolicy: z.enum(["FULL_PAYMENT"]).default("FULL_PAYMENT"),
+  requireBuyerDetails: z.boolean().default(true),
+  requireStockIssue: z.boolean().default(true),
+  allowSellerManualSale: z.boolean().default(false),
+  requireFullPaymentAtSale: z.boolean().default(true),
+  buyerNoticeText: z.string().trim().max(500).nullish(),
 });
 
 function toMinutes(time: string): number {

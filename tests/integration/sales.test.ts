@@ -13,7 +13,7 @@ beforeAll(async () => {
 async function fixture(quantity = 8) {
   const event = await admin.post("/api/v1/events", {
     name: unique("Sales Event"), venue: "KSP Hotel Gulu", status: "SCHEDULED", eventDate: "2026-12-05",
-    startTime: "18:00", endTime: "23:00", capacity: 100,
+    startTime: "18:00", endTime: "23:00", capacity: 100, requireBuyerDetails: false,
   });
   expect(event.status).toBe(201);
   const eventId = event.body.event.id as string;
@@ -51,7 +51,7 @@ describe("sales and payment tracking", () => {
       eventId, customerName: "Guest", items: [{ ticketTypeId: generalId, quantity: 1 }, { ticketTypeId: vipId, quantity: 1 }],
       initialPayment: { amountUgx: 10_000, method: "CASH" },
     };
-    const created = await postWithKey(seller, "/api/v1/sales", body, key);
+    const created = await postWithKey(admin, "/api/v1/sales", body, key);
     expect(created.status).toBe(201);
     expect(created.body.sale.subtotalUgx).toBe(37_000);
     expect(created.body.sale.totalUgx).toBe(37_000);
@@ -63,14 +63,14 @@ describe("sales and payment tracking", () => {
 
     const paymentKey = unique("payment-key");
     const paymentBody = { amountUgx: 20_000, method: "MOBILE_MONEY", externalRef: "TX-123" };
-    const recorded = await postWithKey(seller, `/api/v1/sales/${created.body.sale.id}/payments`, paymentBody, paymentKey);
+    const recorded = await postWithKey(admin, `/api/v1/sales/${created.body.sale.id}/payments`, paymentBody, paymentKey);
     expect(recorded.status).toBe(201);
     expect(recorded.body.sale.balanceUgx).toBe(7_000);
     expect(recorded.body.sale.status).toBe("PARTIALLY_PAID");
-    const retry = await postWithKey(seller, `/api/v1/sales/${created.body.sale.id}/payments`, paymentBody, paymentKey);
+    const retry = await postWithKey(admin, `/api/v1/sales/${created.body.sale.id}/payments`, paymentBody, paymentKey);
     expect(retry.status).toBe(200);
     expect(retry.body.sale.payments).toHaveLength(2);
-    const final = await postWithKey(seller, `/api/v1/sales/${created.body.sale.id}/payments`, { amountUgx: 7_000, method: "CASH" }, unique("final-payment"));
+    const final = await postWithKey(admin, `/api/v1/sales/${created.body.sale.id}/payments`, { amountUgx: 7_000, method: "CASH" }, unique("final-payment"));
     expect(final.status).toBe(201);
     expect(final.body.sale.status).toBe("PAID");
     expect(final.body.sale.balanceUgx).toBe(0);
@@ -79,15 +79,15 @@ describe("sales and payment tracking", () => {
 
   it("rejects browser prices, discounts and overpayment", async () => {
     const { eventId, generalId } = await fixture();
-    const forged = await seller.post("/api/v1/sales", {
+    const forged = await admin.post("/api/v1/sales", {
       eventId, items: [{ ticketTypeId: generalId, quantity: 1, unitPriceUgx: 1 }],
     });
     expect(forged.status).toBe(422);
-    const discounted = await seller.post("/api/v1/sales", {
+    const discounted = await admin.post("/api/v1/sales", {
       eventId, discountUgx: 1, items: [{ ticketTypeId: generalId, quantity: 1 }],
     });
     expect(discounted.status).toBe(422);
-    const overpaid = await postWithKey(seller, "/api/v1/sales", {
+    const overpaid = await postWithKey(admin, "/api/v1/sales", {
       eventId, items: [{ ticketTypeId: generalId, quantity: 1 }],
       initialPayment: { amountUgx: 12_001, method: "CASH" },
     }, unique("overpaid"));
@@ -99,9 +99,9 @@ describe("sales and payment tracking", () => {
     const { eventId, generalId } = await fixture();
     const key = unique("same-sale");
     const body = { eventId, items: [{ ticketTypeId: generalId, quantity: 1 }] };
-    const first = await postWithKey(seller, "/api/v1/sales", body, key);
-    const retry = await postWithKey(seller, "/api/v1/sales", body, key);
-    const changed = await postWithKey(seller, "/api/v1/sales", { ...body, customerName: "Different" }, key);
+    const first = await postWithKey(admin, "/api/v1/sales", body, key);
+    const retry = await postWithKey(admin, "/api/v1/sales", body, key);
+    const changed = await postWithKey(admin, "/api/v1/sales", { ...body, customerName: "Different" }, key);
     expect(first.status).toBe(201);
     expect(retry.status).toBe(200);
     expect(retry.body.sale.id).toBe(first.body.sale.id);
@@ -126,7 +126,7 @@ describe("sales and payment tracking", () => {
 
   it("serializes concurrent sales so tickets cannot be allocated twice or oversold", async () => {
     const { eventId, generalId } = await fixture(2);
-    const create = (key: string) => postWithKey(seller, "/api/v1/sales", {
+    const create = (key: string) => postWithKey(admin, "/api/v1/sales", {
       eventId, items: [{ ticketTypeId: generalId, quantity: 2 }],
     }, key);
     const results = await Promise.all([create(unique("race-a")), create(unique("race-b"))]);
@@ -156,13 +156,13 @@ describe("sales and payment tracking", () => {
 
   it("serializes concurrent retries for the same payment and reversal key", async () => {
     const { eventId, generalId } = await fixture();
-    const sale = await postWithKey(seller, "/api/v1/sales", { eventId, items: [{ ticketTypeId: generalId, quantity: 1 }] }, unique("retry-sale"));
+    const sale = await postWithKey(admin, "/api/v1/sales", { eventId, items: [{ ticketTypeId: generalId, quantity: 1 }] }, unique("retry-sale"));
     expect(sale.status).toBe(201);
     const paymentKey = unique("concurrent-payment");
     const paymentBody = { amountUgx: 5_000, method: "CASH" };
     const payments = await Promise.all([
-      postWithKey(seller, `/api/v1/sales/${sale.body.sale.id}/payments`, paymentBody, paymentKey),
-      postWithKey(seller, `/api/v1/sales/${sale.body.sale.id}/payments`, paymentBody, paymentKey),
+      postWithKey(admin, `/api/v1/sales/${sale.body.sale.id}/payments`, paymentBody, paymentKey),
+      postWithKey(admin, `/api/v1/sales/${sale.body.sale.id}/payments`, paymentBody, paymentKey),
     ]);
     expect(payments.map((result) => result.status).sort()).toEqual([200, 201]);
     const paymentId = payments[0].body.sale.payments[0].id as string;

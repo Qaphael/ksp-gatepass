@@ -1,15 +1,18 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { Prisma, SaleStatus } from "@/generated/prisma/client";
+import { Prisma, type SaleEntryMethod, type SaleStatus, type ScanResultCode } from "@/generated/prisma/client";
 import type { AuthContext } from "@/lib/auth/session";
 import { can, type Permission } from "@/lib/permissions";
 import { prisma } from "@/lib/db/client";
+import { hashQrToken } from "@/lib/qr/tokens";
+import { normalizeUgandaPhone } from "@/lib/phone/uganda";
 import type {
   PaymentAdjustmentInput,
   PaymentCreateInput,
+  SaleLookupTicketInput,
   SaleCreateInput,
   SaleListQuery,
 } from "@/lib/validation/sales";
-import { conflict, notFound, requirePermission } from "./errors";
+import { conflict, forbidden, notFound, requirePermission, ServiceError, validationError } from "./errors";
 
 const SALE_INCLUDE = {
   event: { select: { id: true, name: true, venue: true, organiserContact: true } },
@@ -222,6 +225,8 @@ export async function createSale(
 ): Promise<{ sale: SaleDto; created: boolean }> {
   requirePermission(ctx.role, "sale:create");
   if (input.discountUgx) requirePermission(ctx.role, "sale:discount");
+  const bulk = "items" in input;
+  if (bulk && ctx.role !== "ADMIN") throw forbidden("Quantity-based ticket sales are restricted to administrators.");
   const key = checkKey(rawKey);
   if (!key) throw conflict("Sale creation requires an Idempotency-Key.");
   const requestHash = hash(input);
@@ -235,7 +240,8 @@ export async function createSale(
       const locked = await tx.$queryRaw<Array<{
         id: string; name: string; venue: string; organiserContact: string | null;
         salesOpen: boolean; status: string; salesOpensAt: Date | null; salesClosesAt: Date | null;
-      }>>`SELECT id, name, venue, "organiserContact", "salesOpen", status, "salesOpensAt", "salesClosesAt" FROM "Event" WHERE id = ${input.eventId} FOR UPDATE`;
+        requireBuyerDetails: boolean; allowSellerManualSale: boolean; requireFullPaymentAtSale: boolean;
+      }>>`SELECT id, name, venue, "organiserContact", "salesOpen", status, "salesOpensAt", "salesClosesAt", "requireBuyerDetails", "allowSellerManualSale", "requireFullPaymentAtSale" FROM "Event" WHERE id = ${input.eventId} FOR UPDATE`;
       const event = locked[0];
       if (!event) throw notFound("Event not found.");
       const now = new Date();
@@ -246,29 +252,84 @@ export async function createSale(
         throw conflict("This event is outside its sales window.");
       }
 
-      const types = await tx.ticketType.findMany({
-        where: { id: { in: input.items.map((item) => item.ticketTypeId) }, eventId: event.id },
-      });
-      if (types.length !== input.items.length) throw notFound("One or more ticket categories were not found for this event.");
-      const byId = new Map(types.map((type) => [type.id, type]));
       let subtotalUgx = 0;
-      const lines = input.items.map((item) => {
-        const type = byId.get(item.ticketTypeId)!;
-        if (type.status !== "ACTIVE") throw conflict(`Ticket category “${type.name}” is inactive.`);
-        if ((type.salesOpensAt && type.salesOpensAt > now) || (type.salesClosesAt && type.salesClosesAt <= now)) {
-          throw conflict(`Ticket category “${type.name}” is outside its sales window.`);
+      let ticketCount = 0;
+      let scannedRecords: Array<{ ticketId: string; entryMethod: SaleEntryMethod }> = [];
+      let lines: Array<{ ticketTypeId: string; quantity: number; unitPriceUgx: number; lineTotalUgx: number; type: { id: string; name: string }; ticketIds?: string[]; entryMethod?: SaleEntryMethod }>;
+
+      if (bulk) {
+        lines = [];
+        const types = await tx.ticketType.findMany({ where: { id: { in: input.items.map((item) => item.ticketTypeId) }, eventId: event.id } });
+        if (types.length !== input.items.length) throw notFound("One or more ticket categories were not found for this event.");
+        const byId = new Map(types.map((type) => [type.id, type]));
+        lines = input.items.map((item) => {
+          const type = byId.get(item.ticketTypeId)!;
+          if (type.status !== "ACTIVE") throw conflict(`Ticket category “${type.name}” is inactive.`);
+          if ((type.salesOpensAt && type.salesOpensAt > now) || (type.salesClosesAt && type.salesClosesAt <= now)) throw conflict(`Ticket category “${type.name}” is outside its sales window.`);
+          const lineTotalUgx = type.priceUgx * item.quantity;
+          if (!Number.isSafeInteger(lineTotalUgx)) throw conflict("Sale total exceeds the supported amount.");
+          subtotalUgx += lineTotalUgx; ticketCount += item.quantity;
+          return { ...item, unitPriceUgx: type.priceUgx, lineTotalUgx, type };
+        });
+      } else {
+        const entries = input.tickets.map((entry) => ({
+          identity: "token" in entry ? hashQrToken(entry.token) : entry.serial.trim().toUpperCase(),
+          byToken: "token" in entry,
+          entryMethod: ("token" in entry ? "SCAN" : "MANUAL") as SaleEntryMethod,
+        }));
+        if (new Set(entries.map((entry) => `${entry.byToken ? "t:" : "s:"}${entry.identity}`)).size !== entries.length) throw conflict("A ticket can appear only once in a sale.");
+        if (entries.some((entry) => entry.entryMethod === "MANUAL") && !(ctx.role === "ADMIN" || (ctx.role === "SELLER" && event.allowSellerManualSale))) {
+          throw forbidden("Manual serial sales are not enabled for this seller.");
         }
-        const lineTotalUgx = type.priceUgx * item.quantity;
-        if (!Number.isSafeInteger(lineTotalUgx)) throw conflict("Sale total exceeds the supported amount.");
-        subtotalUgx += lineTotalUgx;
-        return { ...item, unitPriceUgx: type.priceUgx, lineTotalUgx, type };
-      });
+        const resolved: Array<{ id: string; entryMethod: SaleEntryMethod }> = [];
+        for (const entry of entries) {
+          const ticket = await tx.ticket.findUnique({ where: entry.byToken ? { tokenHash: entry.identity } : { serial: entry.identity }, select: { id: true } });
+          if (!ticket) throw conflict(entry.byToken ? "Ticket QR is unknown or invalid." : "Ticket serial was not found.");
+          resolved.push({ id: ticket.id, entryMethod: entry.entryMethod });
+        }
+        if (new Set(resolved.map((ticket) => ticket.id)).size !== resolved.length) throw conflict("A ticket can appear only once in a sale.");
+        const ids = resolved.map((ticket) => ticket.id).sort();
+        if (ids.length) await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`;
+        const tickets = await tx.ticket.findMany({
+          where: { id: { in: ids } },
+          include: { ticketType: true, saleTickets: { take: 1, select: { id: true } } },
+        });
+        if (tickets.length !== resolved.length) throw conflict("Ticket inventory changed. Please retry the sale.");
+        for (const ticket of tickets) {
+          if (ticket.eventId !== event.id) throw conflict("This ticket belongs to another event.");
+          if (ticket.status === "SOLD" || ticket.saleTickets.length) throw conflict("This ticket has already been sold.");
+          if (ticket.status === "CANCELLED" || ticket.status === "REVOKED") throw conflict("Cancelled or revoked tickets cannot be sold.");
+          if (ticket.status !== "AVAILABLE") throw conflict("This ticket is not available for sale.");
+          if (ticket.ticketType.status !== "ACTIVE") throw conflict(`Ticket category “${ticket.ticketType.name}” is inactive.`);
+          if ((ticket.ticketType.salesOpensAt && ticket.ticketType.salesOpensAt > now) || (ticket.ticketType.salesClosesAt && ticket.ticketType.salesClosesAt <= now)) throw conflict(`Ticket category “${ticket.ticketType.name}” is outside its sales window.`);
+        }
+        // T6 seam: when requireStockIssue is enforced, validate active custody for every ticket here.
+        const grouped = new Map<string, typeof tickets>();
+        for (const ticket of tickets) grouped.set(ticket.ticketTypeId, [...(grouped.get(ticket.ticketTypeId) ?? []), ticket]);
+        lines = [...grouped.entries()].map(([ticketTypeId, categoryTickets]) => {
+          const type = categoryTickets[0].ticketType;
+          const lineTotalUgx = type.priceUgx * categoryTickets.length;
+          if (!Number.isSafeInteger(lineTotalUgx)) throw conflict("Sale total exceeds the supported amount.");
+          subtotalUgx += lineTotalUgx; ticketCount += categoryTickets.length;
+          return { ticketTypeId, quantity: categoryTickets.length, unitPriceUgx: type.priceUgx, lineTotalUgx, type, ticketIds: categoryTickets.map((ticket) => ticket.id) };
+        });
+        scannedRecords = resolved.map((ticket) => ({ ticketId: ticket.id, entryMethod: ticket.entryMethod }));
+      }
       if (!Number.isSafeInteger(subtotalUgx) || subtotalUgx > 2_000_000_000) throw conflict("Sale total exceeds the supported amount.");
       const discountUgx = input.discountUgx ?? 0;
       if (discountUgx > subtotalUgx) throw conflict("Discount cannot exceed the sale subtotal.");
       const totalUgx = subtotalUgx - discountUgx;
       if (input.initialPayment && input.initialPayment.amountUgx > totalUgx) {
         throw conflict("Initial payment cannot exceed the sale total.");
+      }
+      if (event.requireBuyerDetails && (!input.customerName || !input.customerPhone)) throw validationError("Buyer name and phone are required for this event.");
+      let customerPhoneNormalized: string | null = null;
+      if (input.customerPhone) {
+        try { customerPhoneNormalized = normalizeUgandaPhone(input.customerPhone); }
+        catch (error) { throw validationError(error instanceof Error ? error.message : "Enter a valid Ugandan mobile number."); }
+      }
+      if (!bulk && ctx.role === "SELLER" && event.requireFullPaymentAtSale && (input.initialPayment?.amountUgx ?? 0) < totalUgx) {
+        throw conflict("Full payment is required before a seller can confirm this physical ticket sale.");
       }
 
       const sale = await tx.sale.create({
@@ -278,6 +339,7 @@ export async function createSale(
           sellerId: ctx.userId,
           customerName: input.customerName ?? null,
           customerPhone: input.customerPhone ?? null,
+          customerPhoneNormalized,
           customerReference: input.customerReference ?? null,
           notes: input.notes ?? null,
           subtotalUgx,
@@ -292,12 +354,12 @@ export async function createSale(
       });
 
       for (const line of lines) {
-        const tickets = await tx.ticket.findMany({
-          where: { eventId: event.id, ticketTypeId: line.ticketTypeId, status: "AVAILABLE" },
-          orderBy: [{ createdAt: "asc" }, { serial: "asc" }],
-          take: line.quantity,
-          select: { id: true },
-        });
+        const tickets = line.ticketIds
+          ? line.ticketIds.map((id) => ({ id }))
+          : await tx.ticket.findMany({
+              where: { eventId: event.id, ticketTypeId: line.ticketTypeId, status: "AVAILABLE" },
+              orderBy: [{ createdAt: "asc" }, { serial: "asc" }], take: line.quantity, select: { id: true },
+            });
         if (tickets.length !== line.quantity) {
           throw conflict(`Only ${tickets.length} tickets are currently available in “${line.type.name}”.`);
         }
@@ -317,7 +379,10 @@ export async function createSale(
         });
         if (updated.count !== tickets.length) throw conflict("Ticket inventory changed. Please retry the sale.");
         await tx.saleTicket.createMany({
-          data: tickets.map((ticket) => ({ saleId: sale.id, saleItemId: item.id, ticketId: ticket.id })),
+          data: tickets.map((ticket) => ({ saleId: sale.id, saleItemId: item.id, ticketId: ticket.id,
+            entryMethod: scannedRecords.find((record) => record.ticketId === ticket.id)?.entryMethod ?? "BULK",
+            ...(scannedRecords.some((record) => record.ticketId === ticket.id) ? { scannedAt: now } : {}),
+          })),
         });
       }
 
@@ -339,7 +404,8 @@ export async function createSale(
         : "PENDING_PAYMENT";
       await tx.sale.update({ where: { id: sale.id }, data: { status } });
       await auditInTransaction(tx, ctx, "sale.create", "sale", sale.id, event.id, {
-        reference: sale.reference, totalUgx, ticketCount: input.items.reduce((sum, item) => sum + item.quantity, 0),
+        reference: sale.reference, totalUgx, ticketCount,
+        entryMethods: bulk ? { bulk: ticketCount } : scannedRecords.reduce<Record<string, number>>((counts, row) => { counts[row.entryMethod] = (counts[row.entryMethod] ?? 0) + 1; return counts; }, {}),
         initialPaymentUgx: input.initialPayment?.amountUgx ?? 0,
         discountUgx,
         ...(discountUgx > 0 ? { discountReason: input.discountReason } : {}),
@@ -360,6 +426,69 @@ export async function createSale(
     }
     throw error;
   }
+}
+
+export interface SaleLookupResult {
+  state: ScanResultCode;
+  message: string;
+  ticket?: { serial: string; ticketTypeName: string; priceUgx: number };
+  requireBuyerDetails: boolean;
+  requireFullPaymentAtSale: boolean;
+  buyerNoticeText: string | null;
+}
+
+const SALE_STATE_MESSAGE: Record<string, string> = {
+  SALEABLE: "Ticket is available to sell.",
+  INVALID_QR: "QR code is unknown or invalid.",
+  UNKNOWN_SERIAL: "Ticket serial was not found.",
+  OTHER_EVENT: "This ticket belongs to another event.",
+  ALREADY_SOLD: "This ticket has already been sold.",
+  ISSUED_TO_ANOTHER_SELLER: "This ticket is held by another seller.",
+  NOT_ISSUED_TO_YOU: "This ticket has not been issued to you.",
+  TICKET_CANCELLED: "This ticket has been cancelled.",
+  TICKET_REVOKED: "This ticket has been revoked.",
+  SALES_CLOSED: "Sales are closed for this event or ticket category.",
+  TICKET_TYPE_INACTIVE: "This ticket category is inactive.",
+  EVENT_NOT_SELLING: "This event is not selling tickets.",
+};
+
+/** Ticket lookup is read-only except for its token-free SALE scan-attempt record. */
+export async function lookupTicketForSale(ctx: AuthContext, input: SaleLookupTicketInput): Promise<SaleLookupResult> {
+  requirePermission(ctx.role, "sale:lookup-ticket");
+  requirePermission(ctx.role, "event:read");
+  const now = new Date();
+  const recent = await prisma.scanAttempt.count({ where: { actorId: ctx.userId, purpose: "SALE", attemptedAt: { gte: new Date(now.getTime() - 60_000) } } });
+  if (recent >= 90) throw new ServiceError(429, "RATE_LIMITED", "Too many ticket lookups. Wait a minute and try again.");
+  const event = await prisma.event.findUnique({ where: { id: input.eventId }, select: { id: true, name: true, status: true, salesOpen: true, salesOpensAt: true, salesClosesAt: true, requireBuyerDetails: true, requireFullPaymentAtSale: true, buyerNoticeText: true } });
+  if (!event) throw notFound("Event not found.");
+  const ticket = input.token
+    ? await prisma.ticket.findUnique({ where: { tokenHash: hashQrToken(input.token) }, include: { ticketType: true } })
+    : await prisma.ticket.findUnique({ where: { serial: input.serial!.trim().toUpperCase() }, include: { ticketType: true } });
+  let state: ScanResultCode = input.token ? "INVALID_QR" : "UNKNOWN_SERIAL";
+  if (ticket) {
+    if (ticket.eventId !== event.id) state = "OTHER_EVENT";
+    else if (ticket.status === "SOLD") state = "ALREADY_SOLD";
+    else if (ticket.status === "CANCELLED") state = "TICKET_CANCELLED";
+    else if (ticket.status === "REVOKED") state = "TICKET_REVOKED";
+    else if (ticket.ticketType.status !== "ACTIVE") state = "TICKET_TYPE_INACTIVE";
+    else if (event.status === "DRAFT" || event.status === "COMPLETED" || event.status === "ARCHIVED") state = "EVENT_NOT_SELLING";
+    else if (!event.salesOpen || (event.salesOpensAt && event.salesOpensAt > now) || (event.salesClosesAt && event.salesClosesAt <= now) || (ticket.ticketType.salesOpensAt && ticket.ticketType.salesOpensAt > now) || (ticket.ticketType.salesClosesAt && ticket.ticketType.salesClosesAt <= now)) state = "SALES_CLOSED";
+    else if (ticket.status === "AVAILABLE") state = "SALEABLE";
+  }
+  // T6 seam: if requireStockIssue is enforced, resolve and report custody eligibility before SALEABLE.
+  await prisma.scanAttempt.create({ data: {
+    eventId: event.id, actorId: ctx.userId, ticketId: ticket?.id ?? null,
+    method: input.token ? "QR" : "SERIAL", purpose: "SALE", resultCode: state,
+    serial: ticket?.eventId === event.id ? ticket.serial : input.serial ? input.serial.trim().toUpperCase() : null,
+  } });
+  return {
+    state,
+    message: SALE_STATE_MESSAGE[state] ?? "Ticket cannot be sold in its current state.",
+    ...(state === "SALEABLE" && ticket ? { ticket: { serial: ticket.serial, ticketTypeName: ticket.ticketType.name, priceUgx: ticket.ticketType.priceUgx } } : {}),
+    requireBuyerDetails: event.requireBuyerDetails,
+    requireFullPaymentAtSale: event.requireFullPaymentAtSale,
+    buyerNoticeText: event.buyerNoticeText,
+  };
 }
 
 export async function listSales(ctx: AuthContext, query: SaleListQuery): Promise<SaleListResult> {

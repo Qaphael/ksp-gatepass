@@ -138,7 +138,7 @@ export async function getReport(ctx: AuthContext, query: ReportQuery): Promise<R
       return report(query.type, REPORT_TITLES[query.type], ["Local event time", "Gate", "Admissions"], [...groups].sort(([a], [b]) => a.localeCompare(b)).map(([key, list]) => [...key.split("\0"), list.length]), event);
     }
     case "SCAN_ATTEMPTS": {
-      const attempts = await prisma.scanAttempt.findMany({ where: { eventId: event.id, ...(Object.keys(range).length ? { attemptedAt: range } : {}) }, select: { method: true, resultCode: true } });
+      const attempts = await prisma.scanAttempt.findMany({ where: { eventId: event.id, purpose: "ADMISSION", ...(Object.keys(range).length ? { attemptedAt: range } : {}) }, select: { method: true, resultCode: true } });
       const groups = by(attempts, (a) => `${a.method}\0${a.resultCode}`);
       return report(query.type, REPORT_TITLES[query.type], ["Method", "Outcome", "Attempts"], [...groups].sort(([a], [b]) => a.localeCompare(b)).map(([key, list]) => [...key.split("\0"), list.length]), event);
     }

@@ -40,9 +40,12 @@ export const checkInCorrectionSchema = z.object({
   reason: z.string().trim().min(3).max(500),
 }).strict();
 
+export const buyerDetailsLookupSchema = z.object({ eventId, serial }).strict();
+
 export type VerifyQrInput = z.infer<typeof verifyQrSchema>;
 export type VerifySerialInput = z.infer<typeof verifySerialSchema>;
 export type ConfirmInput = z.infer<typeof confirmSchema>;
 export type CheckInListQuery = z.infer<typeof checkInListQuerySchema>;
 export type ScanAttemptQuery = z.infer<typeof scanAttemptQuerySchema>;
 export type CheckInCorrectionInput = z.infer<typeof checkInCorrectionSchema>;
+export type BuyerDetailsLookupInput = z.infer<typeof buyerDetailsLookupSchema>;

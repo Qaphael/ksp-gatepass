@@ -22,6 +22,7 @@ describe("permissions matrix (PRD 3.2)", () => {
       "event:read",
       "ticket-type:read",
       "sale:create",
+      "sale:lookup-ticket",
       "sale:read-own",
       "payment:record",
       "ticket:print",
@@ -67,6 +68,8 @@ describe("permissions matrix (PRD 3.2)", () => {
     }
     const denied: Permission[] = [
       "sale:create",
+      "sale:lookup-ticket",
+      "checkin:read-buyer-details",
       "payment:record",
       "user:read",
       "user:manage",
@@ -89,6 +92,7 @@ describe("permissions matrix (PRD 3.2)", () => {
       "ticket-type:read",
       "checkin:verify",
       "checkin:confirm",
+      "checkin:read-buyer-details",
       "report:view-summary",
     ];
     for (const permission of allowed) {
@@ -100,6 +104,7 @@ describe("permissions matrix (PRD 3.2)", () => {
       "checkin:override",
       "audit:read",
       "sale:create",
+      "sale:lookup-ticket",
       "user:manage",
       "event:create",
     ];

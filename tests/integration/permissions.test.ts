@@ -93,6 +93,8 @@ describe("verifier", () => {
       ["POST", `/api/v1/events/${eventId}/complete`],
       ["POST", `/api/v1/events/${eventId}/archive`],
       ["POST", `/api/v1/events/${eventId}/ticket-types`, { name: "VIP", priceUgx: 50000 }],
+      ["POST", "/api/v1/sales/lookup-ticket", { eventId, token: "probe" }],
+      ["POST", "/api/v1/check-in/buyer-details", { eventId, serial: "PROBE-00001" }],
       ["GET", "/api/v1/users"],
       ["POST", "/api/v1/users", { displayName: "X", username: "verifiercreates", role: "SELLER", password: "long-enough-pass" }],
       ["PATCH", "/api/v1/users/some-user-id", { role: "ADMIN" }],
@@ -118,6 +120,8 @@ describe("verifier", () => {
     expect(me.body.user.role).toBe("VERIFIER");
     expect(me.body.permissions).toContain("checkin:verify");
     expect(me.body.permissions).not.toContain("sale:create");
+    expect(me.body.permissions).not.toContain("sale:lookup-ticket");
+    expect(me.body.permissions).not.toContain("checkin:read-buyer-details");
   });
 });
 
@@ -143,6 +147,7 @@ describe("seller", () => {
     expect((await seller.get("/api/v1/events")).status).toBe(200);
     // Sellers may read category prices for selling…
     expect((await seller.get(`/api/v1/events/${eventId}/ticket-types`)).status).toBe(200);
+    expect((await seller.get("/api/v1/auth/me")).body.permissions).toContain("sale:lookup-ticket");
     // …but not create or edit them.
     expect(
       (await seller.patch(`/api/v1/ticket-types/some-type-id`, { priceUgx: 1 })).status,
@@ -173,6 +178,7 @@ describe("supervisor", () => {
     expect(me.body.permissions).not.toContain("audit:read");
     expect(me.body.permissions).not.toContain("payment:record");
     expect(me.body.permissions).not.toContain("checkin:override");
+    expect(me.body.permissions).toContain("checkin:read-buyer-details");
     expect((await supervisor.get(`/api/v1/events/${eventId}/ticket-types`)).status).toBe(200);
   });
 });
