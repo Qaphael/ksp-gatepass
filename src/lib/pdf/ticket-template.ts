@@ -555,14 +555,14 @@ function drawRulers(page: PDFPage, ticketLeftMm: number, ticketTopMm: number, co
   const rulerLeft = ticketLeftMm - 4;
   page.drawLine({ start: { x: mm(ticketLeftMm), y: pageHeight - mm(rulerTop) }, end: { x: mm(ticketLeftMm + width), y: pageHeight - mm(rulerTop) }, thickness: 0.6, color: CALIBRATION_COLOR });
   page.drawLine({ start: { x: mm(rulerLeft), y: pageHeight - mm(ticketTopMm) }, end: { x: mm(rulerLeft), y: pageHeight - mm(ticketTopMm + height) }, thickness: 0.6, color: CALIBRATION_COLOR });
-  for (let value = 0; value <= width; value += 10) {
-    const x = ticketLeftMm + value;
+  for (let value = 0; value <= config.trim.widthMm; value += 10) {
+    const x = ticketLeftMm + value * scale;
     const lineHeight = value % 50 === 0 ? 2.5 : 1.5;
     page.drawLine({ start: { x: mm(x), y: pageHeight - mm(rulerTop) }, end: { x: mm(x), y: pageHeight - mm(rulerTop - lineHeight) }, thickness: 0.5, color: CALIBRATION_COLOR });
     page.drawText(String(value), { x: mm(x) - 2, y: pageHeight - mm(rulerTop - 3.5), size: 5, font, color: CALIBRATION_COLOR });
   }
-  for (let value = 0; value <= height; value += 10) {
-    const y = ticketTopMm + value;
+  for (let value = 0; value <= config.trim.heightMm; value += 10) {
+    const y = ticketTopMm + value * scale;
     const lineWidth = value % 50 === 0 ? 2.5 : 1.5;
     page.drawLine({ start: { x: mm(rulerLeft), y: pageHeight - mm(y) }, end: { x: mm(rulerLeft - lineWidth), y: pageHeight - mm(y) }, thickness: 0.5, color: CALIBRATION_COLOR });
   }
@@ -582,13 +582,31 @@ export async function renderTemplateCalibrationPdf(request: TemplateCalibrationR
   const scale = TEMPLATE_A4_SCALE;
   const ticketLeft = (A4_WIDTH_MM - config.trim.widthMm * scale) / 2;
   const ticketTop = (A4_HEIGHT_MM - config.trim.heightMm * scale) / 2;
+  const calibrationRow: TicketPrintRow = {
+    serial: "KSP-00001",
+    token: testToken,
+    ticketTypeName: "VIP",
+    printLabel: "VIP",
+    ticketPriceUgx: 50_000,
+    event: {
+      name: "KSP Hotel Gulu",
+      venue: "KSP Hotel Gulu",
+      address: null,
+      eventDate: "2026-11-10",
+      startTime: "19:00",
+      endTime: "23:00",
+      accentColor: null,
+      ticketFooterText: "Thank you for joining us",
+      organiserContact: "+256 700 000 000",
+    },
+  };
   drawTicketBackground(page, image, ticketLeft, ticketTop, config.trim.widthMm, config.trim.heightMm, pageHeight, scale);
-  drawQr(page, testToken, config, ticketLeft, ticketTop, pageHeight, scale);
+  drawTemplateFields(page, calibrationRow, config, fonts, ticketLeft, ticketTop, pageHeight, scale);
   drawZoneOutline(page, ticketLeft + config.bottomStrip.xMm * scale, ticketTop + config.bottomStrip.yMm * scale, config.bottomStrip.widthMm * scale, config.bottomStrip.heightMm * scale, pageHeight);
   drawZoneOutline(page, ticketLeft + config.stub.xMm * scale, ticketTop + config.stub.yMm * scale, config.stub.widthMm * scale, config.stub.heightMm * scale, pageHeight);
   drawZoneOutline(page, ticketLeft + config.qr.xMm * scale, ticketTop + config.qr.yMm * scale, config.qr.sizeMm * scale, config.qr.sizeMm * scale, pageHeight);
   drawRulers(page, ticketLeft, ticketTop, config, pageHeight, scale, fonts.primary.regular);
-  page.drawText("CALIBRATION — TEST QR, NOT A REAL TICKET", {
+  page.drawText("CALIBRATION — SAMPLE TEXT AND TEST QR, NOT A REAL TICKET · PRINT AT 100% / ACTUAL SIZE", {
     x: mm(12), y: mm(12), size: 10, font: fonts.primary.bold, color: CALIBRATION_COLOR,
   });
   const layout: TemplateSheetLayout = {
