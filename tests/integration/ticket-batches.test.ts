@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { loginAs, unique, type TestClient } from "../helpers/client";
 import { prisma } from "../helpers/db";
+import { createActiveTicketTemplate } from "../helpers/active-ticket-template";
 
 /**
  * PRD 13.2 — batch generation, capacity, concurrency, rollback, printing.
@@ -315,6 +316,7 @@ describe("batch permissions (direct API calls)", () => {
     const first = await admin.post("/api/v1/ticket-batches", payload);
     expect(first.status).toBe(201);
     const batchId = first.body.batch.id;
+    await createActiveTicketTemplate(eventId, ticketTypeId);
 
     for (const client of [seller, verifier, supervisor]) {
       const denied = await client.post("/api/v1/ticket-batches", payload);
@@ -379,6 +381,7 @@ describe("batch printing", () => {
     expect(batch.status).toBe(201);
     batchId = batch.body.batch.id;
     quantity = 6;
+    await createActiveTicketTemplate(eventId, ticketTypeId);
   });
 
   it("prints a single-ticket sample before the production run", async () => {

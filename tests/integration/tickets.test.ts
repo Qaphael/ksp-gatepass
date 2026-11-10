@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { loginAs, unique, type TestClient } from "../helpers/client";
 import { prisma } from "../helpers/db";
+import { createActiveTicketTemplate } from "../helpers/active-ticket-template";
 
 /**
  * PRD 13.2 — inventory reads, revocation, reprint identity and CSV export.
@@ -55,6 +56,7 @@ beforeAll(async () => {
   });
   expect(batch.status).toBe(201);
   batchId = batch.body.batch.id;
+  await createActiveTicketTemplate(eventId, type.body.ticketType.id);
 });
 
 describe("inventory list and detail", () => {
