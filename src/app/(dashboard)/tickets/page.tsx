@@ -134,7 +134,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
         initial={query}
       /></FilterSheet>
 
-      <TicketsTable tickets={result.tickets} showEvent={!query.eventId} />
+      <TicketsTable tickets={result.tickets} showEvent={!query.eventId} canRemove={can(ctx.role, "ticket:revoke")} />
 
       <div className="flex items-center justify-between text-base text-muted-foreground">
         <span>

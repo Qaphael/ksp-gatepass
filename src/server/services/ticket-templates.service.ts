@@ -14,16 +14,19 @@ const MAX_PIXELS = 40_000_000;
 const SAFE_ARTWORK_KEY = /^[A-Za-z0-9_-]{32}\.(?:png|jpg)$/;
 const LIST_SELECT = {
   id: true, seriesId: true, eventId: true, ticketTypeId: true, name: true, version: true,
-  assetChecksum: true, assetWidthPx: true, assetHeightPx: true, trim: true, bleedMm: true,
+  assetStorageKey: true, assetChecksum: true, assetWidthPx: true, assetHeightPx: true, trim: true, bleedMm: true,
   config: true, status: true, zonesArePlaceholder: true, confirmedById: true,
   confirmedAt: true, calibrationPrintedAt: true, calibrationPrintedById: true,
   createdAt: true, updatedAt: true,
+  _count: { select: { printBatches: true } },
 } as const;
 type TemplateRow = Pick<DbTicketTemplate,
   "id" | "seriesId" | "eventId" | "ticketTypeId" | "name" | "version" |
-  "assetChecksum" | "assetWidthPx" | "assetHeightPx" | "trim" | "bleedMm" |
+  "assetStorageKey" | "assetChecksum" | "assetWidthPx" | "assetHeightPx" | "trim" | "bleedMm" |
   "config" | "status" | "zonesArePlaceholder" | "confirmedById" |
-  "confirmedAt" | "calibrationPrintedAt" | "calibrationPrintedById" | "createdAt" | "updatedAt">;
+  "confirmedAt" | "calibrationPrintedAt" | "calibrationPrintedById" | "createdAt" | "updatedAt"> & {
+  _count?: { printBatches: number };
+};
 type Tx = Prisma.TransactionClient;
 
 export interface TicketTemplateDto {
@@ -32,6 +35,7 @@ export interface TicketTemplateDto {
   trim: unknown; bleedMm: number; config: unknown; status: TicketTemplateStatus;
   zonesArePlaceholder: boolean; confirmedById: string | null; confirmedAt: Date | null;
   calibrationPrintedAt: Date | null; calibrationPrintedById: string | null;
+  printBatchCount: number;
   createdAt: Date; updatedAt: Date;
 }
 
@@ -63,6 +67,7 @@ function toDto(row: TemplateRow): TicketTemplateDto {
     zonesArePlaceholder: row.zonesArePlaceholder, confirmedById: row.confirmedById,
       confirmedAt: row.confirmedAt, calibrationPrintedAt: row.calibrationPrintedAt,
       calibrationPrintedById: row.calibrationPrintedById,
+    printBatchCount: row._count?.printBatches ?? 0,
     createdAt: row.createdAt, updatedAt: row.updatedAt,
   };
 }
@@ -252,6 +257,44 @@ export async function patchTicketTemplate(
   } catch (error) {
     if (artwork) await removeTicketTemplateArtwork([nextKey]).catch(() => undefined);
     if (isUniqueViolation(error)) return { template: await resolveRace(ctx, "patch", idempotencyKey, requestHash), created: false };
+    throw error;
+  }
+}
+
+/** Only an inactive, never-printed version can be permanently removed. */
+export async function deleteTicketTemplate(ctx: AuthContext, templateId: string): Promise<void> {
+  requireTemplatePermission(ctx);
+  const initial = await prisma.ticketTemplate.findUnique({ where: { id: templateId }, select: LIST_SELECT });
+  // DELETE is intentionally idempotent so a retry after a network timeout is safe.
+  if (!initial) return;
+  if (initial.status === "ACTIVE") throw conflict("Activate a replacement template before deleting this version.");
+  if (initial._count.printBatches > 0) throw conflict("This version has print history and must stay available for reprints and audit.");
+
+  try {
+    const unusedArtwork = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+        'SELECT id FROM "Event" WHERE id = $1 FOR UPDATE', initial.eventId,
+      );
+      if (!locked[0]) throw notFound("Event not found.");
+      const current = await tx.ticketTemplate.findUnique({ where: { id: templateId }, select: LIST_SELECT });
+      if (!current) return null;
+      if (current.status === "ACTIVE") throw conflict("Activate a replacement template before deleting this version.");
+      if (current._count.printBatches > 0) throw conflict("This version has print history and must stay available for reprints and audit.");
+
+      await writeAudit(tx, ctx, "ticket-template.delete", current, {
+        name: current.name,
+        version: current.version,
+        status: current.status,
+      });
+      await tx.ticketTemplate.delete({ where: { id: current.id } });
+      const remainingAssets = await tx.ticketTemplate.count({ where: { assetStorageKey: current.assetStorageKey } });
+      return remainingAssets === 0 ? current.assetStorageKey : null;
+    });
+    if (unusedArtwork) await removeTicketTemplateArtwork([unusedArtwork]);
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2003") {
+      throw conflict("This version is referenced by print history and cannot be deleted.");
+    }
     throw error;
   }
 }

@@ -3,14 +3,14 @@
 import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, FileImage, FileText, Loader2, Minus, Plus, Save, Upload } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, FileImage, FileText, Loader2, Minus, Plus, Save, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiFetch } from "@/lib/api-client";
 import { QR_MODULE_COUNT, QR_MIN_MODULE_SIZE_MM, QR_MIN_PRINTED_SIZE_MM, TEMPLATE_A4_SCALE, placeholderTicketTemplateConfig, type TicketTemplateConfig } from "@/lib/validation/ticket-templates";
 
-type Template = { id: string; seriesId: string; eventId: string; name: string; version: number; artworkUrl: string; assetWidthPx: number; assetHeightPx: number; config: unknown; status: "DRAFT" | "ACTIVE" | "RETIRED"; zonesArePlaceholder: boolean; confirmedAt: string | null; calibrationPrintedAt: string | null; createdAt: string };
+type Template = { id: string; seriesId: string; eventId: string; name: string; version: number; artworkUrl: string; assetWidthPx: number; assetHeightPx: number; config: unknown; status: "DRAFT" | "ACTIVE" | "RETIRED"; zonesArePlaceholder: boolean; confirmedAt: string | null; calibrationPrintedAt: string | null; printBatchCount: number; createdAt: string };
 const keys = ["serial", "category", "price", "eventName", "eventDate", "eventTime", "venue", "footerText", "organiserContact", "authNotice"] as const;
 const labels: Record<string, string> = { serial: "Serial", category: "Category", price: "Price", eventName: "Event name", eventDate: "Event date", eventTime: "Event time", venue: "Venue", footerText: "Footer", organiserContact: "Organiser contact", authNotice: "Authenticity notice" };
 function initialConfig(value?: unknown): TicketTemplateConfig { try { return value as TicketTemplateConfig ?? placeholderTicketTemplateConfig(); } catch { return placeholderTicketTemplateConfig(); } }
@@ -31,6 +31,7 @@ export function TicketTemplateManager({ eventId, initialTemplates }: { eventId: 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [activationOpen, setActivationOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Template | null>(null);
   const activeConfig = useMemo(() => config, [config]);
   const printedQr = activeConfig.qr.sizeMm * TEMPLATE_A4_SCALE;
   const moduleSize = printedQr / (QR_MODULE_COUNT + 8);
@@ -79,6 +80,19 @@ export function TicketTemplateManager({ eventId, initialTemplates }: { eventId: 
     if (!result.ok) { setError(result.error.message); setBusy(false); setActivationOpen(false); return; }
     setTemplates((items) => items.map((item) => item.seriesId === result.data.template.seriesId ? { ...item, status: item.id === result.data.template.id ? "ACTIVE" : "RETIRED" } : item)); setActivationOpen(false); setNotice("Template activated by the server."); router.refresh(); setBusy(false);
   }
+  async function deleteTemplate() {
+    if (!deleteTarget) return;
+    setBusy(true); setError("");
+    const result = await apiFetch<{ deleted: boolean }>(`/api/v1/ticket-templates/${encodeURIComponent(deleteTarget.id)}`, { method: "DELETE" });
+    if (!result.ok) { setError(result.error.message); setBusy(false); return; }
+    const remaining = templates.filter((item) => item.id !== deleteTarget.id);
+    setTemplates(remaining); setDeleteTarget(null); setNotice("Unprinted template version deleted.");
+    if (selectedId === deleteTarget.id) {
+      if (remaining[0]) selectTemplate(remaining[0]);
+      else { setSelectedId(""); setName(""); setConfig(placeholderTicketTemplateConfig()); }
+    }
+    router.refresh(); setBusy(false);
+  }
   function importMeasurements() {
     setError("");
     try { const parsed = JSON.parse(importText) as TicketTemplateConfig; if (parsed.schemaVersion !== 1 || !parsed.qr || !parsed.bottomStrip || !parsed.stub || parsed.trim?.widthMm !== 210 || parsed.trim?.heightMm !== 59) throw new Error("JSON must contain the version 1 template measurements for a 210 × 59 mm ticket."); setConfig(parsed); setNotice("Measurement values loaded into the editor. Save to create a version."); }
@@ -102,7 +116,7 @@ export function TicketTemplateManager({ eventId, initialTemplates }: { eventId: 
   return <div className="grid gap-5 lg:grid-cols-[minmax(15rem,0.75fr)_minmax(0,2fr)]">
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Versions</h2><Button type="button" size="sm" variant="outline" onClick={() => { setSelectedId(""); setName(""); setConfig(placeholderTicketTemplateConfig()); setFile(null); setError(""); }}><Plus /> New</Button></div>
-      {templates.length ? templates.map((template) => <button key={template.id} type="button" onClick={() => selectTemplate(template)} className={`min-h-16 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${template.id === selectedId ? "border-primary bg-primary/5" : "bg-card"}`}><span className="flex items-center justify-between gap-2 font-medium"><span className="truncate">{template.name} · v{template.version}</span><span className="rounded-full bg-muted px-2 py-0.5 text-xs">{template.status}</span></span><span className="mt-1 block text-sm text-muted-foreground">{template.zonesArePlaceholder ? "Placeholder zones" : "Measured zones"} · {template.calibrationPrintedAt ? "Calibration recorded" : "No calibration print"}</span></button>) : <div className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No ticket templates yet. Upload your ticket artwork to begin.</div>}
+      {templates.length ? templates.map((template) => <div key={template.id} className={`flex items-stretch gap-2 rounded-xl border p-2 ${template.id === selectedId ? "border-primary bg-primary/5" : "bg-card"}`}><button type="button" onClick={() => selectTemplate(template)} className="min-h-16 min-w-0 flex-1 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="flex items-center justify-between gap-2 font-medium"><span className="truncate">{template.name} · v{template.version}</span><span className="rounded-full bg-muted px-2 py-0.5 text-xs">{template.status}</span></span><span className="mt-1 block text-sm text-muted-foreground">{template.zonesArePlaceholder ? "Placeholder zones" : "Measured zones"} · {template.calibrationPrintedAt ? "Calibration recorded" : "No calibration print"}</span></button>{template.status !== "ACTIVE" && template.printBatchCount === 0 ? <Button type="button" variant="ghost" size="icon" disabled={busy} className="size-11 shrink-0 self-center text-destructive" aria-label={`Delete ${template.name} version ${template.version}`} title="Delete unused template version" onClick={() => setDeleteTarget(template)}><Trash2 /></Button> : <span className="flex max-w-20 items-center text-center text-[11px] leading-tight text-muted-foreground">{template.status === "ACTIVE" ? "Active" : "Print history"}</span>}</div>) : <div className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No ticket templates yet. Upload your ticket artwork to begin.</div>}
       <div className="rounded-xl border bg-muted/30 p-4 text-sm"><p className="font-medium">Measurement sheet</p><p className="mt-1 text-muted-foreground">Measure from the top-left trim edge. Artwork is 210 × 59 mm plus bleed. Placeholder values cannot be activated for production. The guide is in docs/TICKET-ZONES-MEASUREMENT.md.</p></div>
     </section>
     <section className="min-w-0 space-y-4">
@@ -120,6 +134,7 @@ export function TicketTemplateManager({ eventId, initialTemplates }: { eventId: 
       {error ? <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-base text-destructive">{error}</p> : null}{notice ? <p role="status" className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-base">{notice}</p> : null}
     </section>
     <Dialog open={activationOpen} onOpenChange={setActivationOpen}><DialogContent><DialogHeader><DialogTitle>Activate template for production?</DialogTitle><DialogDescription>Confirm the measurements were taken from the real artwork. The server will reject placeholder zones and undersized QR codes. A calibration print should be printed and scanned on paper before production.</DialogDescription></DialogHeader><div className="rounded-lg bg-muted p-3 text-sm"><p>{allMeasured ? <><Check className="mr-1 inline size-4" />Measurements are marked as measured.</> : <><AlertTriangle className="mr-1 inline size-4" />This version still has placeholder measurements.</>}</p><p className="mt-1">Calibration print: {selected?.calibrationPrintedAt ? "recorded" : "not recorded yet"}</p><p className="mt-1">QR size check: {qrReady ? "passes" : "fails"}</p></div><DialogFooter><Button type="button" variant="outline" onClick={() => setActivationOpen(false)}>Cancel</Button><Button type="button" disabled={busy || !allMeasured || !qrReady} onClick={() => void activate()}>{busy ? <Loader2 className="animate-spin" /> : null} Confirm activation</Button></DialogFooter></DialogContent></Dialog>
+    <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open && !busy) setDeleteTarget(null); }}><DialogContent><DialogHeader><DialogTitle>Delete {deleteTarget?.name} v{deleteTarget?.version}?</DialogTitle><DialogDescription>This permanently deletes an inactive template version that has no print history. Active templates and versions used for printing are kept so tickets can be reproduced and audited. Shared artwork remains available to other versions.</DialogDescription></DialogHeader><DialogFooter><Button type="button" variant="outline" disabled={busy} onClick={() => setDeleteTarget(null)}>Keep template</Button><Button type="button" variant="destructive" disabled={busy} onClick={() => void deleteTemplate()}>{busy ? <Loader2 className="animate-spin" /> : <Trash2 />} Delete version</Button></DialogFooter></DialogContent></Dialog>
   </div>;
 }
 

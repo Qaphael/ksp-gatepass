@@ -44,6 +44,14 @@ export const revokeTicketSchema = z.object({
 
 export type RevokeTicketInput = z.infer<typeof revokeTicketSchema>;
 
+export const bulkRemoveTicketsSchema = z.object({
+  ticketIds: z.array(z.string().trim().min(1).max(128)).min(1).max(100)
+    .refine((ids) => new Set(ids).size === ids.length, "Choose each ticket only once."),
+  reason: z.string().trim().min(3, "Give a reason of at least 3 characters.").max(500),
+}).strict();
+
+export type BulkRemoveTicketsInput = z.infer<typeof bulkRemoveTicketsSchema>;
+
 const intQuery = z.coerce.number().int().min(1);
 
 /** Inventory list filters (PRD 5.5: search by serial, filter by everything). */

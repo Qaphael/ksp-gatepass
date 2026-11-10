@@ -1,13 +1,14 @@
 import type { PrintKind, Prisma, TicketStatus } from "@/generated/prisma/client";
-import { recordAudit } from "@/lib/audit";
+import { recordAudit, sanitizeAuditData } from "@/lib/audit";
 import type { AuthContext } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/client";
 import type {
+  BulkRemoveTicketsInput,
   RevokeTicketInput,
   TicketExportQuery,
   TicketListQuery,
 } from "@/lib/validation/tickets";
-import { conflict, notFound, requirePermission } from "./errors";
+import { conflict, notFound, requirePermission, validationError } from "./errors";
 
 /**
  * Ticket inventory reads and lifecycle actions (PRD 5.5, 7.1, 7.5).
@@ -199,6 +200,67 @@ export async function revokeTicket(
     summary: { serial: ticket.serial, reason: input.reason, previousStatus: ticket.status },
   });
   return toDto(updated as TicketRecord);
+}
+
+/**
+ * Removes available stock from circulation without erasing its serial, token
+ * hash, or audit trail. Repeating the same actor/reason request is a no-op.
+ */
+export async function bulkRemoveTickets(ctx: AuthContext, input: BulkRemoveTicketsInput): Promise<TicketDto[]> {
+  requirePermission(ctx.role, "ticket:revoke");
+  const initial = await prisma.ticket.findMany({
+    where: { id: { in: input.ticketIds } },
+    select: { id: true, eventId: true },
+  });
+  if (initial.length !== input.ticketIds.length) throw notFound("One or more tickets were not found.");
+  const eventIds = new Set(initial.map((ticket) => ticket.eventId));
+  if (eventIds.size !== 1) throw validationError("Remove tickets from one event at a time.");
+  const eventId = initial[0].eventId;
+
+  return prisma.$transaction(async (tx) => {
+    const lockedEvent = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+      'SELECT id FROM "Event" WHERE id = $1 FOR UPDATE', eventId,
+    );
+    if (!lockedEvent[0]) throw notFound("Event not found.");
+    await tx.$queryRawUnsafe<Array<{ id: string }>>(
+      'SELECT id FROM "Ticket" WHERE id = ANY($1::text[]) ORDER BY id FOR UPDATE', input.ticketIds,
+    );
+
+    const tickets = await tx.ticket.findMany({ where: { id: { in: input.ticketIds } }, include: DTO_INCLUDE });
+    if (tickets.length !== input.ticketIds.length || tickets.some((ticket) => ticket.eventId !== eventId)) {
+      throw notFound("One or more tickets were not found.");
+    }
+    const alreadyRemoved = tickets.filter((ticket) =>
+      ticket.status === "REVOKED" && ticket.revokedById === ctx.userId && ticket.revokeReason === input.reason,
+    );
+    const toRemove = tickets.filter((ticket) => !alreadyRemoved.some((removed) => removed.id === ticket.id));
+    if (toRemove.some((ticket) => ticket.status !== "AVAILABLE")) {
+      throw conflict("Only available tickets can be removed. Sold, cancelled, and previously revoked tickets keep their history.");
+    }
+
+    if (toRemove.length) {
+      const updated = await tx.ticket.updateMany({
+        where: { id: { in: toRemove.map((ticket) => ticket.id) }, status: "AVAILABLE" },
+        data: { status: "REVOKED", revokeReason: input.reason, revokedById: ctx.userId },
+      });
+      if (updated.count !== toRemove.length) throw conflict("Ticket inventory changed. Refresh the list and try again.");
+      for (const ticket of toRemove) {
+        await tx.auditLog.create({
+          data: {
+            actorId: ctx.userId,
+            actorRole: ctx.role,
+            action: "ticket.remove",
+            targetType: "ticket",
+            targetId: ticket.id,
+            eventId: ticket.eventId,
+            summary: sanitizeAuditData({ serial: ticket.serial, reason: input.reason, previousStatus: ticket.status, method: "bulk" }) as Prisma.InputJsonValue,
+          },
+        });
+      }
+    }
+    const result = await tx.ticket.findMany({ where: { id: { in: input.ticketIds } }, include: DTO_INCLUDE });
+    return result.map((ticket) => toDto(ticket as TicketRecord));
+  }, { maxWait: 10_000, timeout: 30_000 });
 }
 
 /** Authorised inventory export (PRD 5.5 / 10.3) — never includes tokens. */

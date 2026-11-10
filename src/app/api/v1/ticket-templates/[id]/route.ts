@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiHandler, jsonOk, readJson, ServiceError, ERROR_CODES } from "@/lib/api";
 import { patchTicketTemplateSchema } from "@/lib/validation/ticket-templates";
-import { patchTicketTemplate, TICKET_TEMPLATE_MAX_BYTES } from "@/server/services/ticket-templates.service";
+import { deleteTicketTemplate, patchTicketTemplate, TICKET_TEMPLATE_MAX_BYTES } from "@/server/services/ticket-templates.service";
 
 const IDEMPOTENCY_KEY_RE = /^[\x21-\x7E]{1,128}$/;
 
@@ -44,4 +44,9 @@ export const PATCH = apiHandler(async (ctx, req: NextRequest, params) => {
   const input = patchTicketTemplateSchema.parse(body);
   const result = await patchTicketTemplate(ctx, params.id, { ...input, artwork }, idempotencyKey(req));
   return jsonOk(result, result.created ? 201 : 200);
+});
+
+export const DELETE = apiHandler(async (ctx, _req, params) => {
+  await deleteTicketTemplate(ctx, params.id);
+  return jsonOk({ deleted: true });
 });
