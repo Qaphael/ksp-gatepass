@@ -29,6 +29,10 @@ const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
 const CUT_COLOR = rgb(0.28, 0.32, 0.3);
 const CALIBRATION_COLOR = rgb(0.8, 0.12, 0.42);
+const QR_GUIDE_COLOR = rgb(0.04, 0.35, 0.65);
+const STRIP_GUIDE_COLOR = rgb(0.58, 0.31, 0.02);
+const STUB_GUIDE_COLOR = rgb(0.35, 0.2, 0.56);
+const FIELD_GUIDE_COLOR = rgb(0.78, 0.05, 0.12);
 const CALIBRATION_QR_TOKEN_PREFIX = "KSP-CALIBRATION-NOT-A-REAL-TICKET-";
 
 export type TemplateOutputKind = "SHEET" | "SINGLE" | "DATA_LAYER" | "CALIBRATION";
@@ -536,16 +540,40 @@ export async function renderTemplateTicketsPdf(request: TemplateRenderRequest): 
   return Buffer.from(await doc.save({ useObjectStreams: false }));
 }
 
-function drawZoneOutline(page: PDFPage, xMm: number, yMm: number, widthMm: number, heightMm: number, pageHeight: number): void {
+function drawZoneOutline(page: PDFPage, xMm: number, yMm: number, widthMm: number, heightMm: number, pageHeight: number, color = CALIBRATION_COLOR): void {
   page.drawRectangle({
     x: mm(xMm),
     y: pageHeight - mm(yMm + heightMm),
     width: mm(widthMm),
     height: mm(heightMm),
-    borderColor: CALIBRATION_COLOR,
+    borderColor: color,
     borderWidth: 0.8,
     borderDashArray: [3, 2],
   });
+}
+
+function drawTextFieldOutlines(page: PDFPage, config: TicketTemplateConfig, ticketLeftMm: number, ticketTopMm: number, pageHeight: number, scale: number): void {
+  const zones = [
+    { zone: config.bottomStrip, rotation: 0 },
+    { zone: config.stub, rotation: config.stub.rotation },
+  ];
+  for (const { zone, rotation } of zones) {
+    for (const field of zone.fields) {
+      if (!field.enabled) continue;
+      const textHeightMm = field.sizePt * 25.4 / 72;
+      const widthMm = rotation ? textHeightMm : field.maxWidthMm;
+      const heightMm = rotation ? field.maxWidthMm : textHeightMm;
+      drawZoneOutline(
+        page,
+        ticketLeftMm + zone.xMm * scale + field.xMm * scale,
+        ticketTopMm + zone.yMm * scale + field.yMm * scale,
+        widthMm * scale,
+        heightMm * scale,
+        pageHeight,
+        FIELD_GUIDE_COLOR,
+      );
+    }
+  }
 }
 
 function drawRulers(page: PDFPage, ticketLeftMm: number, ticketTopMm: number, config: TicketTemplateConfig, pageHeight: number, scale: number, font: PDFFont): void {
@@ -602,11 +630,12 @@ export async function renderTemplateCalibrationPdf(request: TemplateCalibrationR
   };
   drawTicketBackground(page, image, ticketLeft, ticketTop, config.trim.widthMm, config.trim.heightMm, pageHeight, scale);
   drawTemplateFields(page, calibrationRow, config, fonts, ticketLeft, ticketTop, pageHeight, scale);
-  drawZoneOutline(page, ticketLeft + config.bottomStrip.xMm * scale, ticketTop + config.bottomStrip.yMm * scale, config.bottomStrip.widthMm * scale, config.bottomStrip.heightMm * scale, pageHeight);
-  drawZoneOutline(page, ticketLeft + config.stub.xMm * scale, ticketTop + config.stub.yMm * scale, config.stub.widthMm * scale, config.stub.heightMm * scale, pageHeight);
-  drawZoneOutline(page, ticketLeft + config.qr.xMm * scale, ticketTop + config.qr.yMm * scale, config.qr.sizeMm * scale, config.qr.sizeMm * scale, pageHeight);
+  drawZoneOutline(page, ticketLeft + config.bottomStrip.xMm * scale, ticketTop + config.bottomStrip.yMm * scale, config.bottomStrip.widthMm * scale, config.bottomStrip.heightMm * scale, pageHeight, STRIP_GUIDE_COLOR);
+  drawZoneOutline(page, ticketLeft + config.stub.xMm * scale, ticketTop + config.stub.yMm * scale, config.stub.widthMm * scale, config.stub.heightMm * scale, pageHeight, STUB_GUIDE_COLOR);
+  drawZoneOutline(page, ticketLeft + config.qr.xMm * scale, ticketTop + config.qr.yMm * scale, config.qr.sizeMm * scale, config.qr.sizeMm * scale, pageHeight, QR_GUIDE_COLOR);
+  drawTextFieldOutlines(page, config, ticketLeft, ticketTop, pageHeight, scale);
   drawRulers(page, ticketLeft, ticketTop, config, pageHeight, scale, fonts.primary.regular);
-  page.drawText("CALIBRATION — SAMPLE TEXT AND TEST QR, NOT A REAL TICKET · PRINT AT 100% / ACTUAL SIZE", {
+  page.drawText("CALIBRATION — RED BOXES = TEXT · BLUE = QR · AMBER = STRIP · PURPLE = STUB · PRINT AT 100% / ACTUAL SIZE", {
     x: mm(12), y: mm(12), size: 10, font: fonts.primary.bold, color: CALIBRATION_COLOR,
   });
   const layout: TemplateSheetLayout = {
