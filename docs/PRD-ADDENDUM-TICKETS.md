@@ -2,7 +2,7 @@
 
 Extends PRD sections 5.5 to 5.7, 6.3, 7, 9, 10 and 13. Where this addendum conflicts with the PRD for **sales and printing**, the addendum wins. Check-in rules (PRD 5.10, 5.11, 6.4 to 6.6) are unchanged. Nothing here weakens a rule in `docs/business-rules.md`.
 
-Verified against the current code: sale creation allocates the oldest `AVAILABLE` tickets by quantity (`sales.service.ts`); the ticket PDF draws its own green/gold layout, 5 tickets per A4 at 94% scale (`src/lib/pdf/ticket.tsx`); an event poster/logo upload service exists (`event-branding.service.ts`).
+Verified against the current code: sale creation allocates the oldest `AVAILABLE` tickets by quantity (`sales.service.ts`); first-time production printing requires an active measured template, while the original green/gold PDF renderer remains for historical reprints without a recorded template (`src/server/services/print.service.ts`, `src/lib/pdf/ticket.tsx`); an event poster/logo upload service exists (`event-branding.service.ts`).
 
 ## A1. Summary
 

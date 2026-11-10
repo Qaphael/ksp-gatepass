@@ -198,10 +198,7 @@ function printFilename(batchRef: string, outputKind: TemplateOutputKind, mode: P
   return `ksp-${batchRef}-${outputKind.toLocaleLowerCase().replace("_", "-")}.pdf`;
 }
 
-/**
- * Prints a full generation batch or a one-ticket sample. With no active
- * template, the established A4 generator remains the legacy fallback.
- */
+/** Prints a generation batch or one-ticket sample using an active template. */
 export async function printBatch(
   ctx: AuthContext,
   batchId: string,
@@ -237,14 +234,12 @@ export async function printBatch(
   const skipped = mode === "full" ? totalInBatch - printableCount : 0;
   const rows = tickets.map(toRow);
   const activeTemplate = await findActiveTemplate(batch.eventId, batch.ticketTypeId);
-  if (!activeTemplate && options.outputKind !== "SHEET") {
-    throw conflict("Activate a ticket template before requesting single-ticket or data-layer output.");
+  if (!activeTemplate) {
+    throw conflict("Activate a measured ticket template for this event and category before printing tickets.");
   }
-  const outputKind = activeTemplate ? options.outputKind : "SHEET";
-  const layout = activeTemplate ? safeLayout(outputKind, options) : LEGACY_LAYOUT;
-  const pdf = activeTemplate
-    ? await renderTemplateOutput(activeTemplate, rows, outputKind, layout)
-    : await renderTicketsPdf(rows);
+  const outputKind = options.outputKind;
+  const layout = safeLayout(outputKind, options);
+  const pdf = await renderTemplateOutput(activeTemplate, rows, outputKind, layout);
 
   const printBatchRecord = await prisma.printBatch.create({
     data: {
@@ -466,9 +461,8 @@ export async function reprintBatchOutput(ctx: AuthContext, sourcePrintBatchId: s
 }
 
 /**
- * First prints use the active template. Direct reprints keep the prior
- * PrintBatch's immutable version/layout; without a template, the legacy path
- * remains unchanged.
+ * First prints require an active template. Reprints retain their recorded
+ * template version and layout, including historical legacy output.
  */
 export async function printTicket(
   ctx: AuthContext,
@@ -516,15 +510,13 @@ export async function printTicket(
     if (source.outputKind === "SHEET" && serials) slotIndex = Math.max(0, serials.indexOf(ticket.serial));
   } else {
     template = await findActiveTemplate(ticket.eventId, ticket.ticketTypeId);
-    if (template) {
-      outputKind = options.outputKind;
-      layout = safeLayout(outputKind, options);
+    if (!template) {
+      throw conflict("Activate a measured ticket template for this event and category before printing tickets.");
     }
+    outputKind = options.outputKind;
+    layout = safeLayout(outputKind, options);
   }
 
-  if (!source && !template && options.outputKind === "DATA_LAYER") {
-    throw conflict("Activate a ticket template before requesting a data-only PDF.");
-  }
   if (outputKind === "CALIBRATION") throw conflict("Use the template calibration endpoint to print a calibration sheet.");
 
   const pdf = template
