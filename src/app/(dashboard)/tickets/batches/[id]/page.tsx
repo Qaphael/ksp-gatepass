@@ -16,8 +16,14 @@ import { getBatch } from "@/server/services/ticket-batches.service";
 import { getEvent } from "@/server/services/events.service";
 import { listTickets } from "@/server/services/tickets.service";
 import { BatchPrintActions } from "@/components/tickets/batch-print-actions";
-import { TicketPreview } from "@/components/tickets/ticket-preview";
+import { TemplateTicketPreview } from "@/components/tickets/template-ticket-preview";
 import { formatTimestamp } from "@/components/tickets/ticket-format";
+import { formatCalendarDate } from "@/components/tickets/ticket-format";
+import { formatEventTimeRange } from "@/lib/time";
+import { listTicketTemplates } from "@/server/services/ticket-templates.service";
+import { ticketTemplateConfigSchema } from "@/lib/validation/ticket-templates";
+import { listTicketTypes } from "@/server/services/ticket-types.service";
+import { formatUGX } from "@/components/ui/money";
 
 export const instant = false;
 
@@ -39,11 +45,16 @@ export default async function BatchDetailPage({
     throw error;
   }
 
-  const [event, firstPage] = await Promise.all([
+  const [event, firstPage, templates, ticketTypes] = await Promise.all([
     getEvent(ctx, batch.eventId),
     listTickets(ctx, { batchId: batch.id, page: 1, pageSize: 1 }),
+    can(ctx.role, "template:manage") ? listTicketTemplates(ctx, batch.eventId) : Promise.resolve([]),
+    listTicketTypes(ctx, batch.eventId),
   ]);
   const firstTicket = firstPage.tickets[0];
+  const template = templates.find((item) => item.ticketTypeId === batch.ticketTypeId && item.status === "ACTIVE")
+    ?? templates.find((item) => item.ticketTypeId === null && item.status === "ACTIVE");
+  const templateConfig = template ? ticketTemplateConfigSchema.safeParse(template.config) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -104,29 +115,34 @@ export default async function BatchDetailPage({
         </CardContent>
       </Card>
 
-      {firstTicket ? (
+      {firstTicket && template && templateConfig?.success ? (
         <Card>
           <CardHeader>
-            <CardTitle>Ticket preview</CardTitle>
+            <CardTitle>Active template preview</CardTitle>
             <CardDescription>
-              Shown at ~50% of the printed 210 × 59 mm. The QR below is the real
-              code for {firstTicket.serial}.
+              This shows the artwork and fields used for a new print. The PDF
+              arranges tickets on the selected paper layout.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <TicketPreview
+            <TemplateTicketPreview
+              name={template.name}
+              version={template.version}
+              artworkUrl={template.artworkUrl}
+              config={templateConfig.data}
               serial={firstTicket.serial}
-              categoryName={batch.ticketTypeName}
-              event={{
-                name: event.name,
-                venue: event.venue,
-                address: event.address,
-                eventDate: event.eventDate,
-                startTime: event.startTime,
-                endTime: event.endTime,
-                ticketFooterText: event.ticketFooterText,
-              }}
               qrSrc={`/api/v1/tickets/${firstTicket.id}/qr.png`}
+              values={{
+                category: batch.ticketTypeName,
+                price: formatUGX(ticketTypes.find((type) => type.id === batch.ticketTypeId)?.priceUgx ?? 0),
+                eventName: event.name,
+                eventDate: formatCalendarDate(event.eventDate),
+                eventTime: formatEventTimeRange(event.startTime, event.endTime),
+                venue: event.address ? `${event.venue}, ${event.address}` : event.venue,
+                footerText: event.ticketFooterText ?? "",
+                organiserContact: event.organiserContact ?? "",
+                authNotice: "Valid only after verification at the gate.",
+              }}
             />
             <BatchPrintActions
               batchId={batch.id}
@@ -134,10 +150,11 @@ export default async function BatchDetailPage({
               quantity={batch.quantity}
               canPrint={can(ctx.role, "ticket:print")}
               canExport={can(ctx.role, "inventory:export")}
+              templateReady={true}
             />
           </CardContent>
         </Card>
-      ) : null}
+      ) : firstTicket ? <Card><CardHeader><CardTitle>Ticket design not active</CardTitle><CardDescription>The generic preview is hidden. Activate a measured template for this event and ticket category before printing this batch.</CardDescription></CardHeader><CardContent className="flex flex-col gap-3"><BatchPrintActions batchId={batch.id} eventId={batch.eventId} quantity={batch.quantity} canPrint={can(ctx.role, "ticket:print")} canExport={can(ctx.role, "inventory:export")} templateReady={false} />{can(ctx.role, "template:manage") ? <Button variant="outline" nativeButton={false} render={<Link href={`/events/${batch.eventId}/ticket-templates`} />}>Manage ticket templates</Button> : null}</CardContent></Card> : null}
     </div>
   );
 }

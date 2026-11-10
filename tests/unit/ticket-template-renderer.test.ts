@@ -77,6 +77,27 @@ function pageContentBytes(doc: PDFDocument, pageIndex: number): string {
 }
 
 describe("ticket template PDF renderer", () => {
+  it("keeps A4 ticket slots 59 mm apart after scaling", async () => {
+    const config = templateConfig();
+    const rows = [ticketRow(0), ticketRow(1)];
+    const layout = createTemplateSheetLayout("SHEET", { ticketsPerPage: 5, scale: 0.94 });
+    const pdf = await renderTemplateTicketsPdf({
+      config,
+      artwork: { data: await artworkPromise, format: "png" },
+      rows,
+      outputKind: "SHEET",
+      layout,
+    });
+    const loadingTask = pdfjs.getDocument({ data: new Uint8Array(pdf) });
+    const document = await loadingTask.promise;
+    const content = await (await document.getPage(1)).getTextContent();
+    const serials = content.items.filter((item) => "str" in item && item.str.startsWith("KSP-PRINT-"));
+    expect(serials).toHaveLength(2);
+    const yPositions = serials.map((item) => (item as { transform: number[] }).transform[5]);
+    expect(Math.abs(yPositions[0] - yPositions[1])).toBeCloseTo((59 * 0.94 * 72) / 25.4, 1);
+    await loadingTask.destroy();
+  });
+
   it("renders configurable A4 sheets and reuses one artwork image object", async () => {
     const config = templateConfig();
     const artwork = { data: await artworkPromise, format: "png" as const };

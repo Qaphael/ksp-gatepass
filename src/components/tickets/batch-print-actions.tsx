@@ -7,6 +7,7 @@ interface BatchPrintActionsProps {
   quantity: number;
   canPrint: boolean;
   canExport: boolean;
+  templateReady: boolean;
 }
 
 /**
@@ -20,11 +21,12 @@ export function BatchPrintActions({
   quantity,
   canPrint,
   canExport,
+  templateReady,
 }: BatchPrintActionsProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
-        {canPrint ? (
+        {canPrint && templateReady ? (
           <>
             <Button
               nativeButton={false}
@@ -62,7 +64,7 @@ export function BatchPrintActions({
           </Button>
         ) : null}
       </div>
-      {canPrint ? (
+      {canPrint && templateReady ? (
         <p className="text-xs text-muted-foreground">
           Sample is one ticket on A4. Print at 100% / Actual size (turn off
           “Fit to page”), then measure the artwork and scan the paper QR before

@@ -348,19 +348,19 @@ function drawField(
   if (!text) return;
   const measuredWidth = font.widthOfTextAtSize(text, size) + Math.max(0, text.length - 1) * field.letterSpacingPt * scale;
   const horizontalOffset = alignOffset(field.align, maxWidth, measuredWidth);
-  const localX = ticketLeftMm + zone.xMm + field.xMm;
-  const localTop = ticketTopMm + zone.yMm + field.yMm;
+  const localX = zone.xMm + field.xMm;
+  const localTop = zone.yMm + field.yMm;
   let x: number;
   let y: number;
   if (rotation === 90) {
-    x = mm(localX + (field.sizePt * 25.4 / 72)) * scale;
-    y = pageHeight - mm(localTop + field.maxWidthMm - horizontalOffset) * scale;
+    x = mm(ticketLeftMm + (localX + field.sizePt / PT_PER_MM) * scale);
+    y = pageHeight - mm(ticketTopMm + (localTop + field.maxWidthMm) * scale) + horizontalOffset;
   } else if (rotation === 270) {
-    x = mm(localX) * scale;
-    y = pageHeight - mm(localTop + horizontalOffset) * scale;
+    x = mm(ticketLeftMm + localX * scale);
+    y = pageHeight - mm(ticketTopMm + localTop * scale) - horizontalOffset;
   } else {
-    x = mm(localX) * scale + horizontalOffset;
-    y = pageHeight - mm(localTop) * scale - size;
+    x = mm(ticketLeftMm + localX * scale) + horizontalOffset;
+    y = pageHeight - mm(ticketTopMm + localTop * scale) - size;
   }
   drawTrackedText(page, text, font, size, x, y, hexColor(field.color), rotation, field.letterSpacingPt * scale);
 }
@@ -377,8 +377,8 @@ function drawQr(
   assertQrPrintSize(config, scale, token);
   const { path: matrixPath, modules } = qrData(token);
   const quietModules = modules + 8;
-  const qrX = ticketLeftMm + config.qr.xMm;
-  const qrTop = ticketTopMm + config.qr.yMm;
+  const qrX = config.qr.xMm;
+  const qrTop = config.qr.yMm;
   const qrSize = config.qr.sizeMm;
   const padding = config.qr.panel.enabled ? config.qr.panel.paddingMm : 0;
   if (config.qr.panel.enabled) {
@@ -386,15 +386,15 @@ function drawQr(
     const panelLeft = qrX - padding;
     const panelTop = qrTop - padding;
     page.drawSvgPath(roundedRectPath(panelSize, panelSize, config.qr.panel.radiusMm), {
-      x: mm(panelLeft) * scale,
-      y: pageHeight - mm(panelTop) * scale,
+      x: mm(ticketLeftMm + panelLeft * scale),
+      y: pageHeight - mm(ticketTopMm + panelTop * scale),
       scale: PT_PER_MM * scale,
       color: hexColor(config.qr.panel.color),
     });
   }
   page.drawSvgPath(matrixPath, {
-    x: mm(qrX) * scale,
-    y: pageHeight - mm(qrTop) * scale,
+    x: mm(ticketLeftMm + qrX * scale),
+    y: pageHeight - mm(ticketTopMm + qrTop * scale),
     scale: (mm(qrSize) * scale) / quietModules,
     color: rgb(0, 0, 0),
   });
@@ -436,9 +436,9 @@ function drawCutGuides(page: PDFPage, pageHeight: number, leftMm: number, topMm:
 
 function drawPerforation(page: PDFPage, config: TicketTemplateConfig, ticketLeftMm: number, ticketTopMm: number, pageHeight: number, scale: number): void {
   if (config.perforationXMm === null) return;
-  const x = mm(ticketLeftMm + config.perforationXMm) * scale;
-  const yTop = mm(ticketTopMm) * scale;
-  const height = mm(config.trim.heightMm) * scale;
+  const x = mm(ticketLeftMm + config.perforationXMm * scale);
+  const yTop = mm(ticketTopMm);
+  const height = mm(config.trim.heightMm * scale);
   page.drawLine({
     start: { x, y: pageHeight - yTop },
     end: { x, y: pageHeight - yTop - height },
@@ -473,10 +473,10 @@ function drawCropMarks(page: PDFPage, config: TicketTemplateConfig, pageHeight: 
 
 function drawTicketBackground(page: PDFPage, image: PDFImage, leftMm: number, topMm: number, widthMm: number, heightMm: number, pageHeight: number, scale: number): void {
   page.drawImage(image, {
-    x: mm(leftMm) * scale,
-    y: pageHeight - mm(topMm + heightMm) * scale,
-    width: mm(widthMm) * scale,
-    height: mm(heightMm) * scale,
+    x: mm(leftMm),
+    y: pageHeight - mm(topMm + heightMm * scale),
+    width: mm(widthMm * scale),
+    height: mm(heightMm * scale),
   });
 }
 
