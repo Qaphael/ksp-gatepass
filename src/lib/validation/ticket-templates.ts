@@ -135,7 +135,7 @@ export function placeholderTicketTemplateConfig(): TicketTemplateConfig {
     perforationXMm: null,
     qr: {
       xMm: 155, yMm: 5, sizeMm: 30, errorCorrection: "M",
-      panel: { enabled: true, color: "#FFFFFF", paddingMm: 2, radiusMm: 1.5 },
+      panel: { enabled: true, color: "#FFFFFF", paddingMm: 1.5, radiusMm: 1.5 },
     },
     bottomStrip: { xMm: 4, yMm: 44, widthMm: 150, heightMm: 12, fields: [] },
     stub: { xMm: 185, yMm: 4, widthMm: 21, heightMm: 51, rotation: 0, fields: [] },

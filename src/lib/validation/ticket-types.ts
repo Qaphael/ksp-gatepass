@@ -7,6 +7,7 @@ const localDateTimeField = z
 
 const ticketTypeFields = z.object({
   name: z.string().trim().min(1).max(80),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a six-digit hex color.").default("#0F3D2E"),
   description: z.string().trim().max(500).nullish(),
   // Integer UGX; free tickets are allowed (0), negatives are rejected.
   priceUgx: z.number().int().min(0).max(2_000_000_000),

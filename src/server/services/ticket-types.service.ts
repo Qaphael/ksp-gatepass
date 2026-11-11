@@ -14,6 +14,7 @@ export interface TicketTypeDto {
   id: string;
   eventId: string;
   name: string;
+  color: string;
   description: string | null;
   priceUgx: number;
   allocationLimit: number | null;
@@ -31,6 +32,7 @@ function toTicketTypeDto(type: TicketType, timezone: string): TicketTypeDto {
     id: type.id,
     eventId: type.eventId,
     name: type.name,
+    color: type.color,
     description: type.description,
     priceUgx: type.priceUgx,
     allocationLimit: type.allocationLimit,
@@ -119,6 +121,7 @@ export async function createTicketType(
       data: {
         eventId,
         name: input.name,
+        color: input.color,
         description: input.description ?? null,
         priceUgx: input.priceUgx,
         allocationLimit: input.allocationLimit ?? null,
@@ -149,6 +152,7 @@ export async function createTicketType(
     eventId,
     summary: {
       name: ticketType.name,
+      color: ticketType.color,
       priceUgx: ticketType.priceUgx,
       allocationLimit: ticketType.allocationLimit,
     },
@@ -167,6 +171,7 @@ export async function updateTicketType(
 
   const current: CreateTicketTypeInput = {
     name: existing.name,
+    color: existing.color,
     description: existing.description,
     priceUgx: existing.priceUgx,
     allocationLimit: existing.allocationLimit,
@@ -201,6 +206,7 @@ export async function updateTicketType(
       where: { id },
       data: {
         name: parsed.name,
+        color: parsed.color,
         description: parsed.description ?? null,
         priceUgx: parsed.priceUgx,
         allocationLimit: parsed.allocationLimit ?? null,
@@ -229,7 +235,7 @@ export async function updateTicketType(
     targetType: "ticket-type",
     targetId: id,
     eventId: event.id,
-    summary: { name: ticketType.name, priceUgx: ticketType.priceUgx },
+    summary: { name: ticketType.name, color: ticketType.color, priceUgx: ticketType.priceUgx },
   });
   return toTicketTypeDto(ticketType, event.timezone);
 }

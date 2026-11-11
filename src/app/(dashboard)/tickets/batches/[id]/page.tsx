@@ -132,6 +132,7 @@ export default async function BatchDetailPage({
               config={templateConfig.data}
               serial={firstTicket.serial}
               qrSrc={`/api/v1/tickets/${firstTicket.id}/qr.png`}
+              categoryColor={ticketTypes.find((type) => type.id === batch.ticketTypeId)?.color ?? "#0F3D2E"}
               values={{
                 category: batch.ticketTypeName,
                 price: formatUGX(ticketTypes.find((type) => type.id === batch.ticketTypeId)?.priceUgx ?? 0),

@@ -60,6 +60,8 @@ export interface TicketPrintRow {
   token: string;
   ticketTypeName: string;
   printLabel: string | null;
+  /** Category color snapshot used for the printed stub background. */
+  categoryColor?: string;
   /** Current category price for the printed price field; integer UGX. */
   ticketPriceUgx?: number;
   event: {

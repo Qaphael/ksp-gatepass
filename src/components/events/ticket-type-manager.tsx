@@ -47,6 +47,7 @@ interface TicketTypeManagerProps {
 
 interface FormState {
   name: string;
+  color: string;
   description: string;
   priceUgx: string;
   allocationLimit: string;
@@ -59,6 +60,7 @@ interface FormState {
 
 const EMPTY_FORM: FormState = {
   name: "",
+  color: "#0F3D2E",
   description: "",
   priceUgx: "",
   allocationLimit: "",
@@ -72,6 +74,7 @@ const EMPTY_FORM: FormState = {
 function fromDto(dto: TicketTypeDto): FormState {
   return {
     name: dto.name,
+    color: dto.color,
     description: dto.description ?? "",
     priceUgx: String(dto.priceUgx),
     allocationLimit: dto.allocationLimit === null ? "" : String(dto.allocationLimit),
@@ -87,6 +90,7 @@ function toPayload(form: FormState): Record<string, unknown> {
   const optional = (value: string): string | null => (value === "" ? null : value);
   return {
     name: form.name,
+    color: form.color,
     description: optional(form.description),
     priceUgx: Number(form.priceUgx),
     allocationLimit: form.allocationLimit === "" ? null : Number(form.allocationLimit),
@@ -195,6 +199,14 @@ export function TicketTypeManager({
                   <details open className="rounded-lg border p-3">
                     <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Basics</summary>
                     <div className="grid gap-3 pt-2">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="tt-color">Category color</Label>
+                    <div className="flex items-center gap-3">
+                      <Input id="tt-color" type="color" className="h-12 w-16 p-1" value={form.color} onChange={(e) => set("color", e.target.value)} disabled={saving} />
+                      <span className="font-mono text-sm">{form.color}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">This color fills the ticket stub behind its configured text.</p>
+                  </div>
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="tt-name">Name</Label>
                     <Input
@@ -362,7 +374,7 @@ export function TicketTypeManager({
                 {ticketTypes.map((type) => (
                   <tr key={type.id}>
                     <td className="py-2.5 pr-3">
-                      <p className="font-medium">{type.name}</p>
+                      <p className="flex items-center gap-2 font-medium"><span aria-hidden="true" className="size-3 shrink-0 rounded-full border" style={{ backgroundColor: type.color }} />{type.name}</p>
                       {type.description ? (
                         <p className="text-xs text-muted-foreground">
                           {type.description}

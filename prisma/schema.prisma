@@ -302,6 +302,7 @@ model TicketType {
   id               String           @id @default(cuid())
   eventId          String
   name             String
+  color            String           @default("#0F3D2E")
   description      String?
   // Integer UGX. A sold ticket snapshots its price at sale time (later phases).
   priceUgx         Int

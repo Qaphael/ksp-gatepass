@@ -10,6 +10,7 @@ interface TemplateTicketPreviewProps {
   config: TicketTemplateConfig;
   serial: string;
   qrSrc: string;
+  categoryColor: string;
   values: {
     category: string;
     price: string;
@@ -34,7 +35,7 @@ function trimPosition(xMm: number, yMm: number, widthMm: number, heightMm: numbe
   };
 }
 
-export function TemplateTicketPreview({ name, version, artworkUrl, config, serial, qrSrc, values }: TemplateTicketPreviewProps) {
+export function TemplateTicketPreview({ name, version, artworkUrl, config, serial, qrSrc, categoryColor, values }: TemplateTicketPreviewProps) {
   const outerWidth = config.trim.widthMm + config.bleedMm * 2;
   const outerHeight = config.trim.heightMm + config.bleedMm * 2;
   const trim = trimPosition(0, 0, config.trim.widthMm, config.trim.heightMm, config.bleedMm);
@@ -65,6 +66,7 @@ export function TemplateTicketPreview({ name, version, artworkUrl, config, seria
       <div className="relative mx-auto w-full max-w-4xl overflow-hidden bg-white shadow-sm" style={{ containerType: "inline-size", aspectRatio: `${outerWidth}/${outerHeight}` }} aria-label={`Template ticket preview for ${serial}`}>
         <Image src={artworkUrl} alt={`${name} ticket artwork`} fill unoptimized sizes="(max-width: 768px) 100vw, 900px" className="object-fill" />
         <div className="absolute overflow-hidden" style={trim}>
+          <div aria-hidden="true" className="absolute" style={{ left: `${config.stub.xMm / config.trim.widthMm * 100}%`, top: `${config.stub.yMm / config.trim.heightMm * 100}%`, width: `${config.stub.widthMm / config.trim.widthMm * 100}%`, height: `${config.stub.heightMm / config.trim.heightMm * 100}%`, backgroundColor: categoryColor }} />
           <div className="absolute" style={{ left: `${config.qr.xMm / 210 * 100}%`, top: `${config.qr.yMm / 59 * 100}%`, width: `${config.qr.sizeMm / 210 * 100}%`, aspectRatio: "1" }}>
             {config.qr.panel.enabled ? <div className="absolute rounded-sm" style={{
               inset: `${config.qr.panel.paddingMm / config.qr.sizeMm * -100}%`,

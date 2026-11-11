@@ -32,7 +32,7 @@ const EVENT_SELECT = {
   organiserContact: true,
 } as const;
 
-const TICKET_TYPE_SELECT = { name: true, printLabel: true, priceUgx: true } as const;
+const TICKET_TYPE_SELECT = { name: true, printLabel: true, priceUgx: true, color: true } as const;
 
 const PRINT_TEMPLATE_SELECT = {
   id: true,
@@ -62,7 +62,7 @@ type PrintableTicket = {
     ticketFooterText: string | null;
     organiserContact: string | null;
   };
-  ticketType: { name: string; printLabel: string | null; priceUgx: number };
+  ticketType: { name: string; printLabel: string | null; priceUgx: number; color: string };
 };
 
 type PrintTemplate = Prisma.TicketTemplateGetPayload<{ select: typeof PRINT_TEMPLATE_SELECT }>;
@@ -94,6 +94,7 @@ function toRow(ticket: PrintableTicket): TicketPrintRow {
     token: decryptToken(ticket.tokenEnc),
     ticketTypeName: ticket.ticketType.name,
     printLabel: ticket.ticketType.printLabel,
+    categoryColor: ticket.ticketType.color,
     ticketPriceUgx: ticket.ticketType.priceUgx,
     event: {
       name: ticket.event.name,
@@ -130,6 +131,12 @@ function metadataSerials(value: Prisma.JsonValue | null): string[] | null {
   return Array.isArray(serials) && serials.every((serial) => typeof serial === "string")
     ? serials as string[]
     : null;
+}
+
+function metadataColor(value: Prisma.JsonValue | null): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const color = value.categoryColor;
+  return typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color) ? color : null;
 }
 
 async function findActiveTemplate(eventId: string, ticketTypeId: string): Promise<PrintTemplate | null> {
@@ -255,6 +262,7 @@ export async function printBatch(
       metadata: {
         batchRef: batch.batchRef,
         mode,
+        categoryColor: rows[0].categoryColor ?? "#0F3D2E",
         serialFirst: rows[0].serial,
         serialLast: rows[rows.length - 1].serial,
         serials: rows.map((row) => row.serial),
@@ -391,6 +399,10 @@ export async function reprintBatchOutput(ctx: AuthContext, sourcePrintBatchId: s
       throw conflict("This print batch cannot be recreated because it has no ticket source.");
     }
   }
+  const recordedCategoryColor = metadataColor(source.metadata);
+  if (recordedCategoryColor) {
+    rows = rows.map((row) => row ? { ...row, categoryColor: recordedCategoryColor } : null);
+  }
   const ticketCount = rows.filter((row) => row !== null).length;
   if (source.outputKind !== "CALIBRATION" && ticketCount === 0) {
     throw conflict("There are no printable tickets left in this output.");
@@ -438,7 +450,7 @@ export async function reprintBatchOutput(ctx: AuthContext, sourcePrintBatchId: s
       templateVersion: source.templateVersion,
       sheetLayoutSnapshot: source.sheetLayoutSnapshot ?? undefined,
       outputKind: source.outputKind,
-      metadata: { sourcePrintBatchId: source.id, serials, skipped: rows.length - ticketCount },
+      metadata: { sourcePrintBatchId: source.id, serials, skipped: rows.length - ticketCount, ...(recordedCategoryColor ? { categoryColor: recordedCategoryColor } : {}) },
     },
   });
   await recordAudit({
@@ -517,13 +529,17 @@ export async function printTicket(
     layout = safeLayout(outputKind, options);
   }
 
+  const renderRow = source
+    ? { ...row, categoryColor: metadataColor(source.metadata) ?? row.categoryColor }
+    : row;
+
   if (outputKind === "CALIBRATION") throw conflict("Use the template calibration endpoint to print a calibration sheet.");
 
   const pdf = template
-    ? await renderTemplateOutput(template, [row], outputKind as Exclude<TemplateOutputKind, "CALIBRATION">, layout, {
+    ? await renderTemplateOutput(template, [renderRow], outputKind as Exclude<TemplateOutputKind, "CALIBRATION">, layout, {
       ...(slotIndex !== undefined ? { slotIndexes: [slotIndex], pageCount: 1 } : {}),
     })
-    : await renderTicketsPdf([row]);
+    : await renderTicketsPdf([renderRow]);
   const record = await prisma.printBatch.create({
     data: {
       kind: isReprint ? "REPRINT" : "PRODUCTION",
@@ -538,6 +554,7 @@ export async function printTicket(
       metadata: {
         serial: ticket.serial,
         serials: [ticket.serial],
+        categoryColor: renderRow.categoryColor ?? "#0F3D2E",
         sourcePrintBatchId: source?.id ?? null,
       },
     },
