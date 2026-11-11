@@ -25,6 +25,8 @@ export interface TicketDto {
   eventName: string;
   ticketTypeId: string;
   ticketTypeName: string;
+  ticketTypeColor: string;
+  ticketTypePriceUgx: number;
   batchId: string | null;
   batchRef: string | null;
   revokeReason: string | null;
@@ -35,7 +37,7 @@ export interface TicketDto {
 
 const DTO_INCLUDE = {
   event: { select: { name: true } },
-  ticketType: { select: { name: true } },
+  ticketType: { select: { name: true, color: true, priceUgx: true } },
   batch: { select: { batchRef: true } },
 } as const;
 
@@ -50,6 +52,8 @@ function toDto(ticket: NonNullable<TicketRecord>): TicketDto {
     eventName: ticket.event.name,
     ticketTypeId: ticket.ticketTypeId,
     ticketTypeName: ticket.ticketType.name,
+    ticketTypeColor: ticket.ticketType.color,
+    ticketTypePriceUgx: ticket.ticketType.priceUgx,
     batchId: ticket.batchId,
     batchRef: ticket.batch?.batchRef ?? null,
     revokeReason: ticket.revokeReason,

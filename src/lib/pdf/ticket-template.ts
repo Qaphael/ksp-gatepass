@@ -73,6 +73,10 @@ export interface TemplateRenderRequest {
 export interface TemplateCalibrationRequest {
   config: unknown;
   artwork: TemplateArtwork;
+  categoryColor?: string;
+  categoryName?: string;
+  categoryPrintLabel?: string | null;
+  categoryPriceUgx?: number;
   /** Injectable only so tests can prove the QR is not persisted or printed as text. */
   testToken?: string;
 }
@@ -621,9 +625,10 @@ export async function renderTemplateCalibrationPdf(request: TemplateCalibrationR
   const calibrationRow: TicketPrintRow = {
     serial: "KSP-00001",
     token: testToken,
-    ticketTypeName: "VIP",
-    printLabel: "VIP",
-    ticketPriceUgx: 50_000,
+    ticketTypeName: request.categoryName ?? "VIP",
+    printLabel: request.categoryPrintLabel ?? request.categoryName ?? "VIP",
+    categoryColor: request.categoryColor ?? "#0F3D2E",
+    ticketPriceUgx: request.categoryPriceUgx ?? 50_000,
     event: {
       name: "KSP Hotel Gulu",
       venue: "KSP Hotel Gulu",

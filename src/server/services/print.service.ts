@@ -297,11 +297,21 @@ export async function printBatch(
 }
 
 /** Generates the calibration PDF. Physical print confirmation is a separate audited POST. */
-export async function renderTicketTemplateCalibration(ctx: AuthContext, templateId: string): Promise<PrintJob> {
+export async function renderTicketTemplateCalibration(ctx: AuthContext, templateId: string, requestedTicketTypeId?: string): Promise<PrintJob> {
   if (ctx.role !== "ADMIN") throw forbidden("Only administrators can print ticket template calibration sheets.");
   requirePermission(ctx.role, "template:manage");
   const template = await prisma.ticketTemplate.findUnique({ where: { id: templateId }, select: PRINT_TEMPLATE_SELECT });
   if (!template) throw notFound("Ticket template not found.");
+  if (template.ticketTypeId && requestedTicketTypeId && template.ticketTypeId !== requestedTicketTypeId) {
+    throw conflict("Choose the category assigned to this ticket template.");
+  }
+  const calibrationTicketTypeId = template.ticketTypeId ?? requestedTicketTypeId;
+  const calibrationTicketType = calibrationTicketTypeId
+    ? await prisma.ticketType.findUnique({ where: { id: calibrationTicketTypeId }, select: { eventId: true, color: true, name: true, printLabel: true, priceUgx: true } })
+    : null;
+  if (calibrationTicketTypeId && (!calibrationTicketType || calibrationTicketType.eventId !== template.eventId)) {
+    throw notFound("Ticket category not found for this event.");
+  }
   const config = parseTemplateConfig(template);
   let artwork: Buffer;
   try {
@@ -313,6 +323,10 @@ export async function renderTicketTemplateCalibration(ctx: AuthContext, template
   const rendered = await renderTemplateCalibrationPdf({
     config,
     artwork: { data: artwork, format: template.assetStorageKey.endsWith(".png") ? "png" : "jpeg" },
+    categoryColor: calibrationTicketType?.color,
+    categoryName: calibrationTicketType?.name,
+    categoryPrintLabel: calibrationTicketType?.printLabel,
+    categoryPriceUgx: calibrationTicketType?.priceUgx,
   });
   const record = await prisma.printBatch.create({
     data: {
@@ -326,7 +340,7 @@ export async function renderTicketTemplateCalibration(ctx: AuthContext, template
       templateVersion: template.version,
       sheetLayoutSnapshot: rendered.layout as unknown as Prisma.InputJsonObject,
       outputKind: "CALIBRATION",
-      metadata: { calibrationPdfGenerated: true },
+      metadata: { calibrationPdfGenerated: true, categoryColor: calibrationTicketType?.color ?? "#0F3D2E", ticketTypeId: calibrationTicketTypeId ?? null },
     },
   });
   await recordAudit({

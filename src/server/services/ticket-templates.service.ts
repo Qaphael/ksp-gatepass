@@ -165,6 +165,26 @@ export async function listTicketTemplates(ctx: AuthContext, eventId: string): Pr
   return rows.map(toDto);
 }
 
+/** Resolve the production template used to preview an inventory ticket. */
+export async function getActiveTicketTemplatePreview(
+  ctx: AuthContext,
+  eventId: string,
+  ticketTypeId: string,
+): Promise<TicketTemplateDto | null> {
+  requirePermission(ctx.role, "inventory:read");
+  const specific = await prisma.ticketTemplate.findFirst({
+    where: { eventId, ticketTypeId, status: "ACTIVE" },
+    orderBy: [{ version: "desc" }, { createdAt: "desc" }],
+    select: LIST_SELECT,
+  });
+  const template = specific ?? await prisma.ticketTemplate.findFirst({
+    where: { eventId, ticketTypeId: null, status: "ACTIVE" },
+    orderBy: [{ version: "desc" }, { createdAt: "desc" }],
+    select: LIST_SELECT,
+  });
+  return template ? toDto(template) : null;
+}
+
 export async function createTicketTemplate(
   ctx: AuthContext, eventId: string,
   input: { name: string; ticketTypeId?: string | null; config: TicketTemplateConfig; artwork: Buffer },
@@ -426,9 +446,10 @@ export async function confirmTicketTemplateCalibration(
 }
 
 export async function getTicketTemplateArtwork(ctx: AuthContext, templateId: string): Promise<{ data: Buffer; format: "png" | "jpeg" }> {
-  requireTemplatePermission(ctx);
-  const row = await prisma.ticketTemplate.findUnique({ where: { id: templateId }, select: { assetStorageKey: true } });
-  if (!row || !SAFE_ARTWORK_KEY.test(row.assetStorageKey)) throw notFound("Ticket artwork not found.");
+  const canManageTemplates = ctx.role === "ADMIN";
+  if (!canManageTemplates) requirePermission(ctx.role, "inventory:read");
+  const row = await prisma.ticketTemplate.findUnique({ where: { id: templateId }, select: { assetStorageKey: true, status: true } });
+  if (!row || (!canManageTemplates && row.status !== "ACTIVE") || !SAFE_ARTWORK_KEY.test(row.assetStorageKey)) throw notFound("Ticket artwork not found.");
   try {
     return { data: await readTicketTemplateArtwork(row.assetStorageKey), format: row.assetStorageKey.endsWith(".png") ? "png" : "jpeg" };
   } catch (error) {

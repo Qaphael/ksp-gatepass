@@ -21,11 +21,16 @@ import { can } from "@/lib/permissions";
 import { ServiceError } from "@/lib/api";
 import { getTicket, type TicketDetail } from "@/server/services/tickets.service";
 import { getEvent } from "@/server/services/events.service";
+import { getActiveTicketTemplatePreview } from "@/server/services/ticket-templates.service";
 import { RevokeTicketDialog } from "@/components/tickets/revoke-ticket-dialog";
 import { TicketActions } from "@/components/tickets/ticket-actions";
 import { TicketPreview } from "@/components/tickets/ticket-preview";
+import { TemplateTicketPreview } from "@/components/tickets/template-ticket-preview";
 import { TicketStatusBadge } from "@/components/tickets/ticket-status-badge";
-import { formatTimestamp } from "@/components/tickets/ticket-format";
+import { formatCalendarDate, formatTimestamp } from "@/components/tickets/ticket-format";
+import { formatEventTimeRange } from "@/lib/time";
+import { formatUGX } from "@/components/ui/money";
+import { ticketTemplateConfigSchema } from "@/lib/validation/ticket-templates";
 
 export const instant = false;
 
@@ -49,7 +54,13 @@ export default async function TicketDetailPage({
 
   const printable =
     ticket.status !== "REVOKED" && ticket.status !== "CANCELLED";
-  const event = printable ? await getEvent(ctx, ticket.eventId) : null;
+  const [event, activeTemplate] = printable
+    ? await Promise.all([
+      getEvent(ctx, ticket.eventId),
+      getActiveTicketTemplatePreview(ctx, ticket.eventId, ticket.ticketTypeId),
+    ])
+    : [null, null];
+  const templateConfig = activeTemplate ? ticketTemplateConfigSchema.safeParse(activeTemplate.config) : null;
   const canRevoke =
     can(ctx.role, "ticket:revoke") &&
     (ticket.status === "AVAILABLE" || ticket.status === "RESERVED");
@@ -95,24 +106,47 @@ export default async function TicketDetailPage({
           <CardHeader>
             <CardTitle>Ticket preview</CardTitle>
             <CardDescription>
-              The QR below is the real code printed on this ticket.
+              The QR and ticket design come from the active template.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <TicketPreview
-              serial={ticket.serial}
-              categoryName={ticket.ticketTypeName}
-              event={{
-                name: event.name,
-                venue: event.venue,
-                address: event.address,
-                eventDate: event.eventDate,
-                startTime: event.startTime,
-                endTime: event.endTime,
-                ticketFooterText: event.ticketFooterText,
-              }}
-              qrSrc={`/api/v1/tickets/${ticket.id}/qr.png`}
-            />
+            {activeTemplate && templateConfig?.success ? (
+              <TemplateTicketPreview
+                name={activeTemplate.name}
+                version={activeTemplate.version}
+                artworkUrl={activeTemplate.artworkUrl}
+                config={templateConfig.data}
+                serial={ticket.serial}
+                qrSrc={`/api/v1/tickets/${ticket.id}/qr.png`}
+                categoryColor={ticket.ticketTypeColor}
+                values={{
+                  category: ticket.ticketTypeName,
+                  price: formatUGX(ticket.ticketTypePriceUgx),
+                  eventName: event.name,
+                  eventDate: formatCalendarDate(event.eventDate),
+                  eventTime: formatEventTimeRange(event.startTime, event.endTime),
+                  venue: event.address ? `${event.venue}, ${event.address}` : event.venue,
+                  footerText: event.ticketFooterText ?? "",
+                  organiserContact: event.organiserContact ?? "",
+                  authNotice: "Valid only after verification at the gate.",
+                }}
+              />
+            ) : (
+              <TicketPreview
+                serial={ticket.serial}
+                categoryName={ticket.ticketTypeName}
+                event={{
+                  name: event.name,
+                  venue: event.venue,
+                  address: event.address,
+                  eventDate: event.eventDate,
+                  startTime: event.startTime,
+                  endTime: event.endTime,
+                  ticketFooterText: event.ticketFooterText,
+                }}
+                qrSrc={`/api/v1/tickets/${ticket.id}/qr.png`}
+              />
+            )}
           </CardContent>
         </Card>
       ) : null}
