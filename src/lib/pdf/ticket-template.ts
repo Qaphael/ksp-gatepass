@@ -410,12 +410,12 @@ function drawTemplateFields(
   pageHeight: number,
   scale: number,
 ): void {
-  const stub = config.stub;
+  const strip = config.bottomStrip;
   page.drawRectangle({
-    x: mm(ticketLeftMm + stub.xMm * scale),
-    y: pageHeight - mm(ticketTopMm + (stub.yMm + stub.heightMm) * scale),
-    width: mm(stub.widthMm * scale),
-    height: mm(stub.heightMm * scale),
+    x: mm(ticketLeftMm + strip.xMm * scale),
+    y: pageHeight - mm(ticketTopMm + (strip.yMm + strip.heightMm) * scale),
+    width: mm(strip.widthMm * scale),
+    height: mm(strip.heightMm * scale),
     color: hexColor(row.categoryColor ?? "#0F3D2E"),
   });
   drawQr(page, row.token, config, ticketLeftMm, ticketTopMm, pageHeight, scale);
