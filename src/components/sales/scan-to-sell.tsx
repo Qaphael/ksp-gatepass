@@ -156,7 +156,7 @@ export function ScanToSell({ events, initialEventId }: Props) {
       <BadgeCheck className="mx-auto size-14 text-success-foreground" aria-hidden="true" />
       <div><h2 className="text-2xl font-bold">Sale recorded</h2><p className="mt-1 text-base text-muted-foreground">{success.reference} · {formatUGX(success.totalUgx)}</p></div>
       <div className="rounded-xl border bg-background p-4 text-left"><p className="text-base font-semibold">Tickets sold</p><ul className="mt-2 divide-y">{serials.map((serial) => <li key={serial} className="py-2 font-mono text-base tracking-wide">{serial}</li>)}</ul></div>
-      <div className="grid gap-2 sm:grid-cols-2"><Button nativeButton={false} render={<Link href={`/sales/${success.id}/receipt.pdf`} target="_blank" />} className="min-h-14">Receipt PDF</Button><Button type="button" variant="outline" className="min-h-14" onClick={scanNext}>Scan next</Button></div>
+      <div className="grid gap-2 sm:grid-cols-2"><Button nativeButton={false} render={<Link href={`/api/v1/sales/${success.id}/receipt.pdf`} target="_blank" />} className="min-h-14">Receipt PDF</Button><Button type="button" variant="outline" className="min-h-14" onClick={scanNext}>Scan next</Button></div>
       <Link className="min-h-11 content-center text-base underline underline-offset-4" href={`/sales/${success.id}`}>View sale details</Link>
     </section>;
   }
