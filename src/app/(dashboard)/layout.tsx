@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BrandLockup, LogoMark } from "@/components/brand/logo-mark";
 import { Toaster } from "@/components/ui/sonner";
 import { NavLinks, type NavIconName, type NavItem } from "@/components/layout/nav-links";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -43,7 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row" style={{ minHeight: "100dvh" }}>
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-background px-4 py-5 lg:flex">
-        <Link href={landing} className="mb-6 px-2 font-semibold tracking-tight">KSP GatePass</Link>
+        <Link href={landing} aria-label="KSP GatePass home" className="mb-6 block px-2"><BrandLockup /></Link>
         <EventSwitcher events={events.map(({ id, name }) => ({ id, name }))} />
         <div className="mt-5"><NavLinks items={navItems} orientation="vertical" /></div>
         <div className="mt-auto border-t border-border pt-4"><UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} /></div>
@@ -51,7 +52,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur" style={{ paddingTop: "env(safe-area-inset-top)" }}>
           <div className="mx-auto flex min-h-14 w-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-5">
-            <div className="flex min-w-0 items-center gap-2 lg:hidden"><Link href={landing} className="shrink-0 font-semibold tracking-tight">KSP</Link><EventSwitcher events={events.map(({ id, name }) => ({ id, name }))} /></div>
+            <div className="flex min-w-0 items-center gap-2 lg:hidden"><Link href={landing} aria-label="KSP GatePass home" className="flex size-11 shrink-0 items-center justify-center"><LogoMark className="size-8 text-primary" /></Link><EventSwitcher events={events.map(({ id, name }) => ({ id, name }))} /></div>
             <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="truncate text-sm font-medium">{events.length ? "Event workspace" : "Operations"}</span></div>
             <span data-connection-indicator-slot="" className="ml-auto size-2 shrink-0" aria-hidden="true" />
             <UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} />

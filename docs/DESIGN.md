@@ -13,6 +13,8 @@ Authoritative design rules. Read before touching any UI. Mobile first: design at
 
 Deep green, gold and white (matches the printed ticket). Neat, calm, premium hotel feel. No gradients-for-decoration, no clutter.
 
+See [BRAND.md](BRAND.md) for logo assets, usage rules and regeneration instructions.
+
 | Token | Start value | Use |
 | --- | --- | --- |
 | `--brand-900` | #0A2A20 | App bar, scanner chrome, dark surfaces |
