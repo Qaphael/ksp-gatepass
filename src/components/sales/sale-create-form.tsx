@@ -89,7 +89,7 @@ export function SaleCreateForm({ events, initialEventId, initialTypes, canDiscou
 
   const fieldClass = "min-h-12 w-full rounded-md border border-input bg-background px-3 text-base";
   return <form onSubmit={submit} className="flex min-h-[min(640px,calc(100dvh-12rem))] flex-col gap-3">
-    <nav aria-label="Sale progress" className="rounded-xl border bg-card p-3">
+    <nav aria-label="Sale progress" className="rounded-2xl border border-border/70 bg-card p-3">
       <ol className="grid grid-cols-5 gap-1">{STEPS.map((name, index) => <li key={name} aria-label={name} aria-current={step === name ? "step" : undefined} className={`min-w-0 text-center ${index <= stepIndex ? "text-foreground" : "text-muted-foreground"}`}><span aria-hidden="true" className="mx-auto flex size-8 items-center justify-center rounded-full border text-base">{index + 1}</span></li>)}</ol>
       <p className="mt-2 text-center text-base font-medium">Step {stepIndex + 1} of {STEPS.length}: {step}</p>
     </nav>

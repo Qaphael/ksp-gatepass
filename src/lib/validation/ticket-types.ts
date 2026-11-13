@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isLocalDateTime } from "@/lib/time";
+import { isLocalDateTime, rollOvernightClose } from "@/lib/time";
 
 const localDateTimeField = z
   .string()
@@ -20,6 +20,16 @@ const ticketTypeFields = z.object({
   printLabel: z.string().trim().max(80).nullish(),
 });
 
+type TicketTypeRuleData = Partial<z.output<typeof ticketTypeFields>>;
+
+function normalizeTicketTypeWindow<T extends TicketTypeRuleData>(data: T) {
+  const normalized = { ...data } as T & { salesClosesAtLocal?: string | null };
+  if (Object.hasOwn(data, "salesOpensAtLocal") && Object.hasOwn(data, "salesClosesAtLocal")) {
+    normalized.salesClosesAtLocal = rollOvernightClose(data.salesOpensAtLocal, data.salesClosesAtLocal);
+  }
+  return normalized;
+}
+
 function checkTicketTypeRules(
   data: Partial<z.output<typeof ticketTypeFields>>,
   ctx: z.RefinementCtx,
@@ -37,7 +47,7 @@ function checkTicketTypeRules(
   if (
     data.salesOpensAtLocal &&
     data.salesClosesAtLocal &&
-    Date.parse(data.salesClosesAtLocal) <= Date.parse(data.salesOpensAtLocal)
+    Date.parse(rollOvernightClose(data.salesOpensAtLocal, data.salesClosesAtLocal) ?? data.salesClosesAtLocal) <= Date.parse(data.salesOpensAtLocal)
   ) {
     ctx.addIssue({
       code: "custom",
@@ -47,11 +57,14 @@ function checkTicketTypeRules(
   }
 }
 
-export const createTicketTypeSchema = ticketTypeFields.superRefine(checkTicketTypeRules);
+export const createTicketTypeSchema = ticketTypeFields
+  .superRefine(checkTicketTypeRules)
+  .transform(normalizeTicketTypeWindow);
 
 export const updateTicketTypeSchema = ticketTypeFields
   .partial()
-  .superRefine(checkTicketTypeRules);
+  .superRefine(checkTicketTypeRules)
+  .transform(normalizeTicketTypeWindow);
 
 export type CreateTicketTypeInput = z.infer<typeof createTicketTypeSchema>;
 export type UpdateTicketTypeInput = z.infer<typeof updateTicketTypeSchema>;

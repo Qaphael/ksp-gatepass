@@ -64,7 +64,7 @@ export function ResultTakeover({ result, onDismiss, onConfirm, busy, canConfirm 
       {result.code === "ALREADY_USED" && result.buyerDetails && <div className="mt-5 border-t border-current/20 pt-4 text-base"><p className="font-semibold">Buyer details · access recorded</p><p className="mt-1">{result.buyerDetails.customerName || "Name not recorded"}</p><p>{result.buyerDetails.customerPhone || "Phone not recorded"}</p></div>}
       {admitted && result.checkedInAt && <p className="mt-4 border-t border-current/20 pt-4 text-lg font-semibold">{formatTime(result.checkedInAt)} · {result.gate}</p>}
     </div>}
-    {canConfirm && onConfirm && <Button size="xl" onClick={onConfirm} disabled={busy} className="mt-8 w-full max-w-xl border border-current/20 bg-brand-900 text-white hover:bg-brand-700">{busy ? "Confirming…" : "Confirm admission"}</Button>}
+    {canConfirm && onConfirm && <Button size="xl" onClick={onConfirm} disabled={busy} className="mt-8 w-full max-w-xl border border-current/20 bg-primary text-primary-foreground hover:bg-primary/90">{busy ? "Confirming…" : "Confirm admission"}</Button>}
     {!admitted && !canConfirm && <Button size="xl" variant="outline" onClick={onDismiss} className="mt-8 w-full max-w-xl border-current/40 bg-transparent text-current hover:bg-black/5">Tap to continue</Button>}
     {admitted && <p className="mt-7 text-lg font-semibold">Ready for next ticket</p>}
   </div>;

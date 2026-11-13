@@ -10,6 +10,22 @@ export function formatEventTimeRange(startTime: string, endTime: string): string
   return `${startTime}–${endTime}${endTime < startTime ? " (+1 day)" : ""}`;
 }
 
+/** Treat an earlier clock time on the same local date as a next-morning close. */
+export function rollOvernightClose(
+  opensAt: string | null | undefined,
+  closesAt: string | null | undefined,
+): string | null | undefined {
+  if (!opensAt || !closesAt) return closesAt;
+  const openDate = opensAt.slice(0, 10);
+  const closeDate = closesAt.slice(0, 10);
+  if (openDate !== closeDate || closesAt.slice(11) >= opensAt.slice(11)) return closesAt;
+
+  const closeDay = new Date(`${closeDate}T00:00:00.000Z`);
+  if (Number.isNaN(closeDay.getTime()) || closeDay.toISOString().slice(0, 10) !== closeDate) return closesAt;
+  closeDay.setUTCDate(closeDay.getUTCDate() + 1);
+  return `${closeDay.toISOString().slice(0, 10)}${closesAt.slice(10)}`;
+}
+
 export function isLocalDateTime(value: string): boolean {
   if (!LOCAL_DATETIME_RE.test(value)) return false;
   return !Number.isNaN(Date.parse(value));

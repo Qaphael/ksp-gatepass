@@ -101,7 +101,7 @@ function money(value: number): string {
 
 function EmptyDashboard({ role }: { role: "SUPER_ADMIN" | "ADMIN" | "SELLER" | "VERIFIER" | "SUPERVISOR" }) {
   return <section className="mx-auto flex min-h-[55dvh] max-w-lg flex-col justify-center gap-4 text-center">
-    <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-700"><CalendarDaysIcon /></div>
+    <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-accent text-primary"><CalendarDaysIcon /></div>
     <div><h1 className="text-2xl font-semibold">No event is ready</h1><p className="mt-2 text-base text-muted-foreground">An administrator needs to configure an event before your {ROLE_LABELS[role].toLowerCase()} dashboard can show event activity.</p></div>
     {(role === "ADMIN" || role === "SUPER_ADMIN") && <Button nativeButton={false} render={<Link href="/events/new" />}>Create event <ArrowRight /></Button>}
   </section>;
@@ -124,13 +124,13 @@ function DashboardHeading({ event, eyebrow = "Event overview" }: { event: EventD
 }
 
 function Stat({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail?: string }) {
-  return <Card><CardContent className="p-3 sm:p-4"><div className="flex items-center gap-2 text-muted-foreground"><span aria-hidden="true" className="*:size-4">{icon}</span><span className="text-xs font-medium sm:text-sm">{label}</span></div><p className="mt-2 text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>{detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}</CardContent></Card>;
+  return <Card className="min-w-0"><CardContent className="p-4"><div className="flex items-center gap-2.5"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-primary *:size-4">{icon}</span><span className="min-w-0 text-sm font-semibold text-muted-foreground">{label}</span></div><p className="mt-3 break-words text-xl font-bold tabular-nums tracking-tight sm:text-2xl">{value}</p>{detail && <p className="mt-1 text-sm leading-snug text-muted-foreground">{detail}</p>}</CardContent></Card>;
 }
 
 function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: EventDto; stats: { sold: number; paidUgx: number; outstandingUgx: number; checkedIn: number; remaining: number; capacity: number; today: number }; sales: Awaited<ReturnType<typeof listSales>>["sales"]; checkins: Awaited<ReturnType<typeof listRecentCheckIns>>; alerts: { balances: number; failed: number; revoked: number; configuration: boolean } }) {
   return <main className="flex flex-col gap-4 sm:gap-6">
     <DashboardHeading event={event} />
-    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
+    <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5 lg:gap-4">
       <Stat icon={<Ticket />} label="Tickets sold" value={String(stats.sold)} detail={`of ${stats.capacity} capacity`} />
       <Stat icon={<Banknote />} label="Paid" value={money(stats.paidUgx)} />
       <Stat icon={<Wallet />} label="Outstanding" value={money(stats.outstandingUgx)} />
@@ -141,7 +141,7 @@ function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: Even
       <CircleAlert className="size-5 shrink-0 text-warning-foreground" aria-hidden="true" /><strong>Needs attention</strong>
       {alerts.balances > 0 && <Badge variant="outline">{alerts.balances} open balances</Badge>}{alerts.failed > 0 && <Badge variant="outline">{alerts.failed} unsuccessful scans today</Badge>}{alerts.revoked > 0 && <Badge variant="outline">{alerts.revoked} revoked tickets</Badge>}{alerts.configuration && <Badge variant="outline">No ticket categories configured</Badge>}
     </section>}
-    <div className="grid gap-3 lg:grid-cols-2">
+    <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-5">
     <RecentSales sales={sales} /><RecentCheckins rows={checkins} timezone={event.timezone} />
     </div>
     <QuickActions event={event} admin />
@@ -152,7 +152,7 @@ function SellerDashboard({ event, metrics, recent, outstandingRows }: { event: E
   return <main className="flex flex-col gap-4 sm:gap-6">
     <DashboardHeading event={event} eyebrow="Seller overview" />
     <Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center text-lg"><Plus aria-hidden="true" />New sale</Button>
-    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+    <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 lg:gap-4">
       <Stat icon={<Ticket />} label="Sales today" value={String(metrics.salesCount)} />
       <Stat icon={<Banknote />} label="Sales value" value={money(metrics.salesValueUgx)} detail="Today · UGX" />
       <Stat icon={<Banknote />} label="Received net today" value={money(metrics.receivedNetUgx)} detail="Recorded payments less adjustments" />
@@ -166,7 +166,7 @@ function VerifierDashboard({ event, count, day, recent, attempts }: { event: Eve
   return <main className="mx-auto flex w-full max-w-xl flex-col gap-4 sm:gap-6">
     <DashboardHeading event={event} eyebrow="Gate overview" />
     <DashboardConnection eventId={event.id} />
-    <Card className="border-brand-700 bg-brand-900 text-white"><CardContent className="flex flex-col gap-4 p-5 sm:p-6"><div><p className="text-sm text-white/75">Successful check-ins · {day}</p><p className="mt-1 text-4xl font-bold tabular-nums">{count}</p></div><Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-16 w-full justify-center bg-white text-brand-900 hover:bg-white/90"><ScanLine aria-hidden="true" />Scan ticket</Button><Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"><ClipboardList aria-hidden="true" />Enter serial</Button></CardContent></Card>
+    <Card className="border-border/70 bg-card"><CardContent className="flex flex-col gap-4 p-5 sm:p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-full bg-success text-success-foreground"><Check aria-hidden="true" className="size-5" /></span><div><p className="text-base font-semibold">Successful check-ins · {day}</p><p className="mt-1 text-4xl font-bold tabular-nums">{count}</p></div></div><Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-16 w-full justify-center"><ScanLine aria-hidden="true" />Scan ticket</Button><Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center"><ClipboardList aria-hidden="true" />Enter serial</Button></CardContent></Card>
     <RecentAttempts rows={attempts} timezone={event.timezone} />
     <RecentCheckins rows={recent} timezone={event.timezone} />
   </main>;
@@ -180,17 +180,42 @@ function SupervisorDashboard({ event, attendance, today, attempts, byGate, recen
   for (const row of byGate) gates.set(String(row[1]), (gates.get(String(row[1])) ?? 0) + Number(row[2] ?? 0));
   return <main className="flex flex-col gap-4 sm:gap-6">
     <DashboardHeading event={event} eyebrow="Supervisor overview" />
-    <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"><Stat icon={<Check />} label="Admissions" value={String(attendance.checkedIn)} detail={`${today} today`} /><Stat icon={<Activity />} label="Admission rate" value={`${rate}%`} detail={`${attendance.checkedIn} of ${attendance.ticketsSold} sold tickets`} /><Stat icon={<CircleAlert />} label="Failed scans" value={String(failed)} detail="Today" /><Stat icon={<ScanLine />} label="Repeat scans" value={String(repeated)} detail="Already admitted · today" /></div>
-    <div className="grid gap-3 lg:grid-cols-2"><Card><CardHeader><CardTitle>Admissions by gate</CardTitle><CardDescription>Today&apos;s successful check-ins</CardDescription></CardHeader><CardContent>{gates.size ? <ul className="divide-y divide-border">{[...gates].sort((a, b) => b[1] - a[1]).map(([gate, value]) => <li key={gate} className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"><span className="truncate">{gate}</span><strong className="tabular-nums">{value}</strong></li>)}</ul> : <p className="text-sm text-muted-foreground">No admissions recorded today.</p>}</CardContent></Card><RecentCheckins rows={recent} timezone={event.timezone} /></div>
+    <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 lg:gap-4"><Stat icon={<Check />} label="Admissions" value={String(attendance.checkedIn)} detail={`${today} today`} /><Stat icon={<Activity />} label="Admission rate" value={`${rate}%`} detail={`${attendance.checkedIn} of ${attendance.ticketsSold} sold tickets`} /><Stat icon={<CircleAlert />} label="Failed scans" value={String(failed)} detail="Today" /><Stat icon={<ScanLine />} label="Repeat scans" value={String(repeated)} detail="Already admitted · today" /></div>
+    <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-5"><Card><CardHeader><CardTitle>Admissions by gate</CardTitle><CardDescription>Today&apos;s successful check-ins</CardDescription></CardHeader><CardContent>{gates.size ? <ul className="divide-y divide-border">{[...gates].sort((a, b) => b[1] - a[1]).map(([gate, value]) => <li key={gate} className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"><span className="truncate">{gate}</span><strong className="tabular-nums">{value}</strong></li>)}</ul> : <p className="text-sm text-muted-foreground">No admissions recorded today.</p>}</CardContent></Card><RecentCheckins rows={recent} timezone={event.timezone} /></div>
   </main>;
 }
 
 function RecentSales({ sales, title = "Recent sales" }: { sales: Awaited<ReturnType<typeof listSales>>["sales"]; title?: string }) {
-  return <Card><CardHeader className="flex flex-row items-center justify-between gap-2"><div><CardTitle>{title}</CardTitle><CardDescription>Latest recorded transactions</CardDescription></div><Link href="/sales" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary underline underline-offset-4">All sales <ArrowRight className="size-4" /></Link></CardHeader><CardContent>{sales.length ? <ul className="divide-y divide-border">{sales.map((sale) => <li key={sale.id}><Link href={`/sales/${sale.id}`} className="flex min-h-14 items-center justify-between gap-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="min-w-0"><span className="block truncate text-sm font-medium">{sale.customerName ?? sale.reference}</span><span className="block text-xs text-muted-foreground">{sale.reference} · {sale.status.replaceAll("_", " ")}</span></span><span className="shrink-0 text-sm font-semibold tabular-nums">{money(sale.totalUgx)}</span></Link></li>)}</ul> : <p className="text-sm text-muted-foreground">No sales recorded yet.</p>}</CardContent></Card>;
+  return <Card>
+    <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
+      <CardTitle className="min-w-0 truncate">{title}</CardTitle>
+      <Link href="/sales" className="col-start-2 row-start-1 inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-[12px] px-3 text-sm font-semibold text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        All sales <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
+      </Link>
+      <CardDescription className="col-span-2 row-start-2">Latest recorded transactions</CardDescription>
+    </CardHeader>
+    <CardContent>
+      {sales.length ? (
+        <ul className="divide-y divide-border">
+          {sales.map((sale) => (
+            <li key={sale.id}>
+              <Link href={`/sales/${sale.id}`} className="flex min-h-16 items-center justify-between gap-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-semibold">{sale.customerName ?? sale.reference}</span>
+                  <span className="block truncate text-sm text-muted-foreground">{sale.reference} · {sale.status.replaceAll("_", " ")}</span>
+                </span>
+                <span className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums">{money(sale.totalUgx)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="text-base text-muted-foreground">No sales recorded yet.</p>}
+    </CardContent>
+  </Card>;
 }
 
 function RecentCheckins({ rows, title = "Recent check-ins", timezone = "Africa/Kampala" }: { rows: Awaited<ReturnType<typeof listRecentCheckIns>>; title?: string; timezone?: string }) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle><CardDescription>Latest admitted tickets</CardDescription></CardHeader><CardContent>{rows.length ? <ul className="divide-y divide-border">{rows.map((row) => <li key={row.id} className="flex min-h-14 items-center justify-between gap-3 py-2"><span className="min-w-0"><span className="block truncate font-mono text-sm font-semibold tracking-wide">{row.serial}</span><span className="block truncate text-xs text-muted-foreground">{row.ticketTypeName} · {row.gate}</span></span><time className="shrink-0 text-xs text-muted-foreground">{new Intl.DateTimeFormat("en-UG", { hour: "2-digit", minute: "2-digit", timeZone: timezone }).format(new Date(row.checkedInAt))}</time></li>)}</ul> : <p className="text-sm text-muted-foreground">No tickets checked in yet.</p>}</CardContent></Card>;
+  return <Card><CardHeader><CardTitle>{title}</CardTitle><CardDescription>Latest admitted tickets</CardDescription></CardHeader><CardContent>{rows.length ? <ul className="divide-y divide-border">{rows.map((row) => <li key={row.id} className="flex min-h-14 items-center justify-between gap-3 py-2"><span className="min-w-0"><span className="block truncate font-mono text-sm font-semibold tracking-wide">{row.serial}</span><span className="block truncate text-xs text-muted-foreground">{row.ticketTypeName} · {row.gate}</span></span><time className="shrink-0 text-sm text-muted-foreground">{new Intl.DateTimeFormat("en-UG", { hour: "2-digit", minute: "2-digit", timeZone: timezone }).format(new Date(row.checkedInAt))}</time></li>)}</ul> : <p className="text-sm text-muted-foreground">No tickets checked in yet.</p>}</CardContent></Card>;
 }
 
 function RecentAttempts({ rows, timezone }: { rows: Awaited<ReturnType<typeof listScanAttempts>>; timezone: string }) {

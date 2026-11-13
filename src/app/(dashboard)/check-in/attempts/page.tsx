@@ -9,6 +9,7 @@ import { can } from "@/lib/permissions";
 import { scanAttemptQuerySchema } from "@/lib/validation/check-in";
 import { listEvents } from "@/server/services/events.service";
 import { listScanAttempts } from "@/server/services/check-in.service";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const instant = false;
 const date = (value: string) => new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Kampala" }).format(new Date(value));
@@ -22,11 +23,11 @@ export default async function ScanAttemptsPage({ searchParams }: { searchParams:
   const invalidFilters = Boolean(params.method && !["QR", "SERIAL"].includes(params.method)) || Boolean(params.resultCode && !["INVALID_QR", "UNKNOWN_SERIAL", "NOT_PAID", "TICKET_REVOKED", "ALREADY_USED", "ADMITTED", "ELIGIBLE"].includes(params.resultCode));
   const next = rows.length === 100 ? rows[rows.length - 1]?.attemptedAt : undefined;
   const activeCount = [params.eventId, params.method, params.resultCode].filter(Boolean).length;
-  return <div className="flex flex-col gap-4"><div><h1 className="text-2xl font-semibold tracking-tight">Scan attempts</h1><p className="mt-1 text-sm text-muted-foreground">Recent verification outcomes. QR token values are never stored.</p></div>
+  return <div className="flex flex-col gap-4"><PageHeader title="Scan attempts" description="Recent verification outcomes. QR token values are never stored." />
     {event && <FilterSheet activeCount={activeCount}><form className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:flex-wrap">
-      <label className="grid flex-1 gap-1 text-sm">Event<select name="eventId" defaultValue={event.id} className="min-h-12 rounded-md border border-input bg-background px-3 text-base">{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label className="grid flex-1 gap-1 text-sm">Method<select name="method" defaultValue={params.method ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All methods</option><option value="QR">QR</option><option value="SERIAL">Serial</option></select></label>
-      <label className="grid flex-1 gap-1 text-sm">Result<select name="resultCode" defaultValue={params.resultCode ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All results</option>{["INVALID_QR", "UNKNOWN_SERIAL", "NOT_PAID", "TICKET_REVOKED", "ALREADY_USED", "ADMITTED", "ELIGIBLE"].map((code) => <option key={code} value={code}>{code.replaceAll("_", " ")}</option>)}</select></label>
+      <label className="grid flex-1 gap-1 text-base">Event<select name="eventId" defaultValue={event.id} className="min-h-12 rounded-md border border-input bg-background px-3 text-base">{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label className="grid flex-1 gap-1 text-base">Method<select name="method" defaultValue={params.method ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All methods</option><option value="QR">QR</option><option value="SERIAL">Serial</option></select></label>
+      <label className="grid flex-1 gap-1 text-base">Result<select name="resultCode" defaultValue={params.resultCode ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All results</option>{["INVALID_QR", "UNKNOWN_SERIAL", "NOT_PAID", "TICKET_REVOKED", "ALREADY_USED", "ADMITTED", "ELIGIBLE"].map((code) => <option key={code} value={code}>{code.replaceAll("_", " ")}</option>)}</select></label>
       <button className="min-h-12 rounded-md border px-4 text-base">Apply</button>
     </form></FilterSheet>}
     {invalidFilters && <p className="rounded-lg border border-warning/50 bg-warning/10 p-3 text-base" role="status">Some filter values were invalid. Choose a valid method or result and apply again.</p>}

@@ -44,8 +44,8 @@ export function InstallHint({ role }: { role: "seller" | "verifier" }) {
   }
 
   return (
-    <aside className="flex items-center gap-2 border-b border-white/15 bg-brand-900 px-3 py-2 text-white" aria-label="Install app hint">
-      <Download className="size-4 shrink-0 text-gold-500" aria-hidden="true" />
+    <aside className="flex items-center gap-2 border-b border-border bg-card px-3 py-2 text-foreground" aria-label="Install app hint">
+      <Download className="size-4 shrink-0 text-primary" aria-hidden="true" />
       <p className="min-w-0 flex-1 text-xs leading-snug">
         Install GatePass for quick {role === "verifier" ? "gate scanning" : "ticket sales"} from your home screen.
       </p>

@@ -6,6 +6,7 @@ import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 import { listEvents } from "@/server/services/events.service";
 import { EventsTable } from "@/components/events/events-table";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const instant = false;
 
@@ -18,19 +19,7 @@ export default async function EventsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Events</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Configure dates, capacity, sales and admission windows.
-          </p>
-        </div>
-        {can(ctx.role, "event:create") ? (
-          <Button nativeButton={false} render={<Link href="/events/new" />}>
-            <Plus /> Create event
-          </Button>
-        ) : null}
-      </div>
+      <PageHeader title="Events" description="Configure dates, capacity, sales and admission windows." actions={can(ctx.role, "event:create") ? <Button nativeButton={false} render={<Link href="/events/new" />}><Plus /> Create event</Button> : undefined} />
 
       <EventsTable events={events} />
     </div>

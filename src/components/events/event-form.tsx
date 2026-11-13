@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { CalendarDays, Clock3, Loader2, Palette, ShieldCheck, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -162,13 +162,12 @@ export function EventForm({ mode, event }: EventFormProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Details</CardTitle>
+          <SectionHeading icon={Ticket} title="Event details" />
           <CardDescription>Name, venue and schedule.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3">
-          <details open className="rounded-lg border border-border p-3">
-            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Basics</summary>
-            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+        <CardContent className="grid gap-5">
+          <section className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Event name" htmlFor="event-name" error={error} className="sm:col-span-2">
             <Input
               id="event-name"
@@ -210,10 +209,10 @@ export function EventForm({ mode, event }: EventFormProps) {
             />
           </Field>
             </div>
-          </details>
-          <details open className="rounded-lg border border-border p-3">
-            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Dates, times and capacity</summary>
-            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+          </section>
+          <section className="grid gap-4 border-t border-border/70 pt-5">
+            <h3 className="flex items-center gap-2 text-base font-semibold"><span className="grid size-8 place-items-center rounded-lg bg-accent text-primary"><CalendarDays aria-hidden="true" className="size-4" /></span>Date, time and capacity</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Date" htmlFor="event-date" error={error}>
             <Input
               id="event-date"
@@ -253,7 +252,7 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
-          <p className="text-sm text-muted-foreground sm:col-span-2">
+          <p className="rounded-xl bg-muted/60 px-4 py-3 text-sm leading-relaxed text-muted-foreground sm:col-span-2">
             If the end time is earlier than the start time, it is treated as the following day.
           </p>
           <Field label="Maximum capacity (tickets)" htmlFor="event-capacity" error={error}>
@@ -288,22 +287,23 @@ export function EventForm({ mode, event }: EventFormProps) {
             </Field>
           ) : null}
             </div>
-          </details>
+          </section>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Sales and admission windows</CardTitle>
+          <SectionHeading icon={Clock3} title="Sales and admission windows" />
           <CardDescription>
             Times are local to the event timezone. Leave blank for no fixed
-            window — sales and admission still require explicit opening.
+            window — sales and admission still require explicit opening. If a
+            closing time is earlier on the same date, it is treated as the
+            following morning.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <details open className="rounded-lg border border-border p-3">
-            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Sales and admission windows</summary>
-            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+          <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Sales open" htmlFor="sales-opens" error={error}>
             <Input
               id="sales-opens"
@@ -340,22 +340,25 @@ export function EventForm({ mode, event }: EventFormProps) {
               disabled={saving}
             />
           </Field>
+          <p className="rounded-xl bg-muted/60 px-4 py-3 text-sm leading-relaxed text-muted-foreground sm:col-span-2">
+            Set the close date and time. If the close clock time is earlier on
+            the same date, it automatically means the following morning.
+          </p>
             </div>
-          </details>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Branding (optional)</CardTitle>
+          <SectionHeading icon={Palette} title="Branding" />
           <CardDescription>
             Shown on tickets and screens once printing is configured.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <details className="rounded-lg border border-border p-3">
-            <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Branding and organiser contact</summary>
-            <div className="grid gap-4 pt-2 sm:grid-cols-2">
+          <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Accent colour (#rrggbb)" htmlFor="event-accent" error={error}>
             <Input
               id="event-accent"
@@ -388,12 +391,12 @@ export function EventForm({ mode, event }: EventFormProps) {
             />
           </Field>
             </div>
-          </details>
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Scan-to-sell policies</CardTitle><CardDescription>Controls are enforced by the server when a seller looks up or confirms a ticket sale.</CardDescription></CardHeader>
+        <CardHeader><SectionHeading icon={ShieldCheck} title="Scan-to-sell policies" /><CardDescription>Controls are enforced by the server when a seller looks up or confirms a ticket sale.</CardDescription></CardHeader>
         <CardContent className="grid gap-3">
           <PolicyCheckbox checked={form.requireBuyerDetails} onChange={(checked) => set("requireBuyerDetails", checked)} title="Require buyer name and phone" description="Collect both details for every sale." disabled={saving} />
           <PolicyCheckbox checked={form.requireStockIssue} onChange={(checked) => set("requireStockIssue", checked)} title="Require ticket stock to be issued to the seller" description="Custody enforcement is completed in the seller stock phase." disabled={saving} />
@@ -414,16 +417,17 @@ export function EventForm({ mode, event }: EventFormProps) {
         </Card>
       )}
 
-      <div className="sticky bottom-16 z-10 flex justify-end gap-2 rounded-xl border bg-background/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur md:bottom-0">
+      <div className="sticky bottom-16 z-10 flex flex-col justify-end gap-2 rounded-2xl border border-border/80 bg-card/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-card backdrop-blur sm:flex-row md:bottom-0">
         <Button
           type="button"
           variant="outline"
+          className="w-full sm:w-auto"
           onClick={() => router.back()}
           disabled={saving}
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving} className="w-full sm:w-auto">
           {saving ? <Loader2 className="animate-spin" /> : null}
           {saving
             ? "Saving…"
@@ -437,7 +441,11 @@ export function EventForm({ mode, event }: EventFormProps) {
 }
 
 function PolicyCheckbox({ checked, onChange, title, description, disabled }: { checked: boolean; onChange: (checked: boolean) => void; title: string; description: string; disabled: boolean }) {
-  return <label className="flex min-h-12 items-start gap-3 rounded-lg border p-3"><input type="checkbox" className="mt-1 size-5 accent-brand-700" checked={checked} onChange={(event) => onChange(event.target.checked)} disabled={disabled} /><span><span className="block font-medium">{title}</span><span className="block text-sm text-muted-foreground">{description}</span></span></label>;
+  return <label className="flex min-h-14 items-start gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:bg-accent/30"><input type="checkbox" className="mt-1 size-5 accent-primary" checked={checked} onChange={(event) => onChange(event.target.checked)} disabled={disabled} /><span><span className="block font-semibold">{title}</span><span className="mt-1 block text-sm leading-relaxed text-muted-foreground">{description}</span></span></label>;
+}
+
+function SectionHeading({ icon: Icon, title }: { icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>; title: string }) {
+  return <CardTitle className="flex items-center gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-primary"><Icon aria-hidden={true} className="size-5" /></span><span>{title}</span></CardTitle>;
 }
 
 function Field({

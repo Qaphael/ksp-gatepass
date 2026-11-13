@@ -186,12 +186,26 @@ export default async function TicketDetailPage({
             Every printed or exported output of this ticket is traceable.
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto p-0">
+        <CardContent className="p-0">
           {ticket.printHistory.length === 0 ? (
             <p className="px-4 pb-4 text-sm text-muted-foreground">
               Never printed.
             </p>
           ) : (
+            <div>
+            <div className="grid gap-3 p-4 md:hidden">
+              {ticket.printHistory.map((print) => (
+                <article key={print.id} className="grid gap-2 rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium">{print.kind}</p>
+                    <span className="shrink-0 text-base tabular-nums">{print.ticketCount} tickets</span>
+                  </div>
+                  <time className="text-base text-muted-foreground">{formatTimestamp(print.createdAt)}</time>
+                  <p className="text-base text-muted-foreground">By {print.actorId ? `${print.actorId.slice(0, 8)}…` : "—"}</p>
+                </article>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -218,6 +232,8 @@ export default async function TicketDetailPage({
                 ))}
               </TableBody>
             </Table>
+            </div>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -229,12 +245,26 @@ export default async function TicketDetailPage({
             Security-relevant actions recorded against this ticket.
           </CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto p-0">
+        <CardContent className="p-0">
           {ticket.auditHistory.length === 0 ? (
             <p className="px-4 pb-4 text-sm text-muted-foreground">
               No recorded actions yet.
             </p>
           ) : (
+            <div>
+            <div className="grid gap-3 p-4 md:hidden">
+              {ticket.auditHistory.map((entry) => (
+                <article key={entry.id} className="grid gap-2 rounded-lg border p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0 break-words font-mono text-base font-medium">{entry.action}</span>
+                    <span className="shrink-0 text-base">{entry.outcome === "SUCCESS" ? "✓ Success" : "✕ Failure"}</span>
+                  </div>
+                  <time className="text-base text-muted-foreground">{formatTimestamp(entry.createdAt)}</time>
+                  <p className="break-words text-base text-muted-foreground">{entry.summary ? JSON.stringify(entry.summary) : "—"}</p>
+                </article>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -261,6 +291,8 @@ export default async function TicketDetailPage({
                 ))}
               </TableBody>
             </Table>
+            </div>
+            </div>
           )}
         </CardContent>
       </Card>

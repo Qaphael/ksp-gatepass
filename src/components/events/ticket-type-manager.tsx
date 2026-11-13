@@ -171,7 +171,8 @@ export function TicketTypeManager({
             <CardTitle>Ticket categories</CardTitle>
             <CardDescription>
               Prices are integer UGX. Quantities together may never exceed event
-              capacity.
+              capacity. An earlier closing time on the same date is treated as
+              the following morning.
             </CardDescription>
           </div>
           {editable ? (
@@ -183,7 +184,7 @@ export function TicketTypeManager({
                   </Button>
                 }
               />
-              <DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-2rem)] md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl">
+              <DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-[18px] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-3rem)] md:max-w-2xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[18px]">
                 <DialogHeader>
                   <DialogTitle>
                     {editing === null ? "Add ticket category" : "Edit ticket category"}
@@ -194,152 +195,64 @@ export function TicketTypeManager({
                       : `Editing “${editing.name}”.`}
                   </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
+                <form onSubmit={onSubmit} className="grid gap-5" noValidate>
                   <FormAlert error={error} />
-                  <details open className="rounded-lg border p-3">
-                    <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Basics</summary>
-                    <div className="grid gap-3 pt-2">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="tt-color">Category color</Label>
-                    <div className="flex items-center gap-3">
-                      <Input id="tt-color" type="color" className="h-12 w-16 p-1" value={form.color} onChange={(e) => set("color", e.target.value)} disabled={saving} />
-                      <span className="font-mono text-sm">{form.color}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">This color fills the ticket stub behind its configured text.</p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="tt-name">Name</Label>
-                    <Input
-                      id="tt-name"
-                      required
-                      value={form.name}
-                      onChange={(e) => set("name", e.target.value)}
-                      disabled={saving}
-                    />
-                    <FieldError error={error} field="name" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="tt-description">Description (optional)</Label>
-                    <Textarea
-                      id="tt-description"
-                      rows={2}
-                      value={form.description}
-                      onChange={(e) => set("description", e.target.value)}
-                      disabled={saving}
-                    />
-                    <FieldError error={error} field="description" />
-                  </div>
-                    </div>
-                  </details>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <details open className="sm:col-span-2 rounded-lg border p-3">
-                      <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Pricing and quantity policy</summary>
-                      <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="tt-price">Price (UGX)</Label>
-                      <Input
-                        id="tt-price"
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        step={1}
-                        required
-                        value={form.priceUgx}
-                        onChange={(e) => set("priceUgx", e.target.value)}
-                        disabled={saving}
-                      />
-                      <FieldError error={error} field="priceUgx" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="tt-allocation">Quantity limit (optional)</Label>
-                      <Input
-                        id="tt-allocation"
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        step={1}
-                        placeholder="No limit"
-                        value={form.allocationLimit}
-                        onChange={(e) => set("allocationLimit", e.target.value)}
-                        disabled={saving}
-                      />
-                      <FieldError error={error} field="allocationLimit" />
-                    </div>
+                  <section className="grid gap-4">
+                    <h3 className="text-base font-semibold">Category details</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="tt-name">Name</Label>
+                        <Input id="tt-name" required value={form.name} onChange={(e) => set("name", e.target.value)} disabled={saving} />
+                        <FieldError error={error} field="name" />
                       </div>
-                    </details>
-                    <details open className="sm:col-span-2 rounded-lg border p-3">
-                      <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Sales window</summary>
-                      <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="tt-sales-opens">Sales start (optional)</Label>
-                      <Input
-                        id="tt-sales-opens"
-                        type="datetime-local"
-                        value={form.salesOpensAtLocal}
-                        onChange={(e) => set("salesOpensAtLocal", e.target.value)}
-                        disabled={saving}
-                      />
-                      <FieldError error={error} field="salesOpensAtLocal" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="tt-sales-closes">Sales end (optional)</Label>
-                      <Input
-                        id="tt-sales-closes"
-                        type="datetime-local"
-                        value={form.salesClosesAtLocal}
-                        onChange={(e) => set("salesClosesAtLocal", e.target.value)}
-                        disabled={saving}
-                      />
-                      <FieldError error={error} field="salesClosesAtLocal" />
-                    </div>
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="tt-color">Category color</Label>
+                        <div className="flex items-center gap-3">
+                          <Input id="tt-color" type="color" className="h-12 w-16 p-1" value={form.color} onChange={(e) => set("color", e.target.value)} disabled={saving} />
+                          <span className="font-mono text-sm">{form.color}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Used behind configured ticket stub text.</p>
                       </div>
-                    </details>
-                    <details open className="sm:col-span-2 rounded-lg border p-3">
-                      <summary className="min-h-11 cursor-pointer py-2 text-base font-semibold">Admission and ticket presentation</summary>
-                      <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <Label>Status</Label>
-                      <Select
-                        value={form.status}
-                        onValueChange={(value) =>
-                          set("status", value as FormState["status"])
-                        }
-                      >
-                        <SelectTrigger className="w-full" disabled={saving}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ACTIVE">Active</SelectItem>
-                          <SelectItem value="INACTIVE">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="tt-print-label">Print label (optional)</Label>
-                      <Input
-                        id="tt-print-label"
-                        value={form.printLabel}
-                        onChange={(e) => set("printLabel", e.target.value)}
-                        disabled={saving}
-                      />
-                    </div>
+                      <div className="flex flex-col gap-2 sm:col-span-2">
+                        <Label htmlFor="tt-description">Description (optional)</Label>
+                        <Textarea id="tt-description" rows={2} value={form.description} onChange={(e) => set("description", e.target.value)} disabled={saving} />
+                        <FieldError error={error} field="description" />
                       </div>
-                      <label className="mt-3 flex min-h-11 items-center gap-3 text-base">
-                        <input type="checkbox" checked={form.permitsAdmission} onChange={(e) => set("permitsAdmission", e.target.checked)} disabled={saving} className="size-4" />
-                        This category permits admission
-                      </label>
-                    </details>
-                  </div>
+                    </div>
+                  </section>
+                  <section className="grid gap-4 border-t border-border/70 pt-4">
+                    <h3 className="text-base font-semibold">Pricing and quantity policy</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2"><Label htmlFor="tt-price">Price (UGX)</Label><Input id="tt-price" type="number" inputMode="numeric" min={0} step={1} required value={form.priceUgx} onChange={(e) => set("priceUgx", e.target.value)} disabled={saving} /><FieldError error={error} field="priceUgx" /></div>
+                      <div className="flex flex-col gap-2"><Label htmlFor="tt-allocation">Quantity limit (optional)</Label><Input id="tt-allocation" type="number" inputMode="numeric" min={1} step={1} placeholder="No limit" value={form.allocationLimit} onChange={(e) => set("allocationLimit", e.target.value)} disabled={saving} /><FieldError error={error} field="allocationLimit" /></div>
+                    </div>
+                  </section>
+                  <section className="grid gap-4 border-t border-border/70 pt-4">
+                    <h3 className="text-base font-semibold">Sales window</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2"><Label htmlFor="tt-sales-opens">Sales start (optional)</Label><Input id="tt-sales-opens" type="datetime-local" value={form.salesOpensAtLocal} onChange={(e) => set("salesOpensAtLocal", e.target.value)} disabled={saving} /><FieldError error={error} field="salesOpensAtLocal" /></div>
+                      <div className="flex flex-col gap-2"><Label htmlFor="tt-sales-closes">Sales end (optional)</Label><Input id="tt-sales-closes" type="datetime-local" value={form.salesClosesAtLocal} onChange={(e) => set("salesClosesAtLocal", e.target.value)} disabled={saving} /><FieldError error={error} field="salesClosesAtLocal" /></div>
+                    </div>
+                  </section>
+                  <section className="grid gap-4 border-t border-border/70 pt-4">
+                    <h3 className="text-base font-semibold">Admission and ticket presentation</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="flex flex-col gap-2"><Label>Status</Label><Select value={form.status} onValueChange={(value) => set("status", value as FormState["status"])}><SelectTrigger className="w-full" disabled={saving}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent></Select></div>
+                      <div className="flex flex-col gap-2"><Label htmlFor="tt-print-label">Print label (optional)</Label><Input id="tt-print-label" value={form.printLabel} onChange={(e) => set("printLabel", e.target.value)} disabled={saving} /></div>
+                    </div>
+                    <label className="flex min-h-12 items-center gap-3 rounded-[14px] border border-border/70 bg-muted/40 px-3 text-base"><input type="checkbox" checked={form.permitsAdmission} onChange={(e) => set("permitsAdmission", e.target.checked)} disabled={saving} className="size-4 accent-primary" />This category permits admission</label>
+                  </section>
                   <DialogFooter className="sticky bottom-0 gap-2 border-t bg-popover pt-3">
                     <Button
                       type="button"
                       variant="outline"
+                      className="w-full sm:w-auto"
                       onClick={() => setOpen(false)}
                       disabled={saving}
                     >
                       Cancel
                     </Button>
-                      <Button type="submit" className="min-h-12" disabled={saving}>
+                    <Button type="submit" className="min-h-12 w-full sm:w-auto" disabled={saving}>
                       {saving ? <Loader2 className="animate-spin" /> : null}
                       {saving ? "Saving…" : editing === null ? "Add category" : "Save"}
                     </Button>
@@ -352,13 +265,39 @@ export function TicketTypeManager({
       </CardHeader>
       <CardContent>
         {ticketTypes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             {editable
               ? "No ticket categories yet. Add one to start defining prices."
               : "No ticket categories configured yet."}
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div>
+          <div className="grid gap-3 md:hidden">
+            {ticketTypes.map((type) => (
+              <article key={type.id} className="grid gap-3 rounded-xl border bg-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <span aria-hidden="true" className="mt-1 size-3 shrink-0 rounded-full border" style={{ backgroundColor: type.color }} />
+                    <div className="min-w-0">
+                      <h3 className="break-words font-semibold">{type.name}</h3>
+                      {type.description ? <p className="mt-1 text-base text-muted-foreground">{type.description}</p> : null}
+                    </div>
+                  </div>
+                  {editable ? <Button variant="outline" size="icon" aria-label={`Edit ${type.name}`} onClick={() => openEdit(type)}><Pencil /></Button> : null}
+                </div>
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t pt-3 text-base">
+                  <div><dt className="text-muted-foreground">Price</dt><dd className="font-semibold tabular-nums">UGX {type.priceUgx.toLocaleString("en-UG")}</dd></div>
+                  <div><dt className="text-muted-foreground">Limit</dt><dd className="tabular-nums">{type.allocationLimit === null ? "No limit" : type.allocationLimit}</dd></div>
+                  <div className="col-span-2"><dt className="text-muted-foreground">Sales window</dt><dd>{type.salesOpensAtLocal && type.salesClosesAtLocal ? `${type.salesOpensAtLocal} – ${type.salesClosesAtLocal}` : "No scheduled window"}</dd></div>
+                </dl>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className={type.status === "ACTIVE" ? "border-transparent bg-emerald-600/10 text-emerald-700 dark:text-emerald-400" : "border-border bg-muted text-muted-foreground"}>{type.status === "ACTIVE" ? "Active" : "Inactive"}</Badge>
+                  {!type.permitsAdmission ? <Badge variant="outline" className="border-border bg-muted text-muted-foreground">No admission</Badge> : null}
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
@@ -430,6 +369,7 @@ export function TicketTypeManager({
                 ))}
               </tbody>
             </table>
+          </div>
           </div>
         )}
       </CardContent>

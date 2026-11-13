@@ -27,6 +27,8 @@ Short version of PRD section 7 and 9. Full detail is in `docs/PRD.md`.
 14. Already checked-in tickets cannot go through normal cancellation. Use the audited incident-resolution flow, and keep the original check-in in history.
 15. Draft sales do not consume permanent inventory. Tickets are allocated atomically at sale confirmation.
 
+Sales and admission windows use the event timezone. When a closing clock time is earlier than its opening time on the same local date, it means the following calendar morning. A close date that is explicitly earlier than its opening date remains invalid.
+
 ## Roles (least privilege)
 
 - Super Admin: sole protected `qaphael` account; full permissions, including ticket inventory generation. Its role cannot be assigned, changed, deactivated or deleted through team management, and database safeguards prevent another Super Admin.

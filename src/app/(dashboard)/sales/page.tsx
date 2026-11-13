@@ -11,6 +11,7 @@ import { FilterSheet } from "@/components/ui/filter-sheet";
 import { ResponsiveList } from "@/components/ui/responsive-list";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Money } from "@/components/ui/money";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const instant = false;
 
@@ -27,13 +28,10 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
   const [events, result] = await Promise.all([listEvents(ctx), listSales(ctx, query)]);
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-2xl font-semibold tracking-tight">Sales</h1><p className="mt-1 text-sm text-muted-foreground">Recorded transactions, outstanding balances and payment history.</p></div>
-        {can(ctx.role, "sale:create") ? <Button nativeButton={false} size="sm" className="min-h-11 text-base" render={<Link href="/sales/new" />}><Plus /> New sale</Button> : null}
-      </div>
+      <PageHeader title="Sales" description="Recorded transactions, outstanding balances and payment history." actions={can(ctx.role, "sale:create") ? <Button nativeButton={false} className="min-h-12 w-full sm:w-auto" render={<Link href="/sales/new" />}><Plus /> New sale</Button> : undefined} />
       <FilterSheet activeCount={[query.eventId, query.status].filter(Boolean).length}><form className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row">
-        <label className="grid flex-1 gap-1 text-sm">Event<select name="eventId" defaultValue={query.eventId ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All events</option>{events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
-        <label className="grid flex-1 gap-1 text-sm">Status<select name="status" defaultValue={query.status ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All statuses</option>{["PENDING_PAYMENT", "PARTIALLY_PAID", "PAID", "CANCELLED", "REFUNDED"].map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}</select></label>
+        <label className="grid flex-1 gap-1 text-base">Event<select name="eventId" defaultValue={query.eventId ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All events</option>{events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
+        <label className="grid flex-1 gap-1 text-base">Status<select name="status" defaultValue={query.status ?? ""} className="min-h-12 rounded-md border border-input bg-background px-3 text-base"><option value="">All statuses</option>{["PENDING_PAYMENT", "PARTIALLY_PAID", "PAID", "CANCELLED", "REFUNDED"].map((status) => <option key={status} value={status}>{status.replaceAll("_", " ")}</option>)}</select></label>
         <Button size="sm" variant="outline" className="min-h-12 text-base">Filter</Button>
       </form></FilterSheet>
       <ResponsiveList cards={result.sales.map((sale) => <Link key={sale.id} href={`/sales/${sale.id}`} className="block rounded-xl border border-border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

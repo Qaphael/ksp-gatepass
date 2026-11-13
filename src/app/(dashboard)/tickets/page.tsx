@@ -17,6 +17,7 @@ import { Serial } from "@/components/ui/serial";
 import { TicketStatusBadge } from "@/components/tickets/ticket-status-badge";
 import { ResponsiveList } from "@/components/ui/responsive-list";
 import type { TicketStatus } from "@/generated/prisma/client";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const instant = false;
 
@@ -95,17 +96,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Ticket inventory
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Search serials, filter by event, category or inventory status, and
-            open a ticket for its full history.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <PageHeader title="Ticket inventory" description="Search serials, filter by event, category or inventory status, and open a ticket for its full history." actions={<div className="flex w-full flex-wrap gap-2 sm:w-auto">
           {can(ctx.role, "inventory:export") && query.eventId ? (
             <Button
               size="sm"
@@ -122,8 +113,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
               <Plus /> Generate tickets
             </Button>
           ) : null}
-        </div>
-      </div>
+        </div>} />
 
       <FilterSheet activeCount={[query.eventId, query.status, query.ticketTypeId, query.search].filter(Boolean).length}><InventoryFilters
         events={events.map((event) => ({ id: event.id, name: event.name }))}

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { assertTimeZone, isLocalDateTime } from "@/lib/time";
+import { assertTimeZone, isLocalDateTime, rollOvernightClose } from "@/lib/time";
 
 const TIME_RE = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -56,6 +56,20 @@ function toMinutes(time: string): number {
 
 type EventRuleData = Partial<z.output<typeof eventBaseSchema>>;
 
+function normalizeEventWindows<T extends EventRuleData>(data: T) {
+  const normalized = { ...data } as T & {
+    salesClosesAtLocal?: string | null;
+    admissionClosesAtLocal?: string | null;
+  };
+  if (Object.hasOwn(data, "salesOpensAtLocal") && Object.hasOwn(data, "salesClosesAtLocal")) {
+    normalized.salesClosesAtLocal = rollOvernightClose(data.salesOpensAtLocal, data.salesClosesAtLocal);
+  }
+  if (Object.hasOwn(data, "admissionOpensAtLocal") && Object.hasOwn(data, "admissionClosesAtLocal")) {
+    normalized.admissionClosesAtLocal = rollOvernightClose(data.admissionOpensAtLocal, data.admissionClosesAtLocal);
+  }
+  return normalized;
+}
+
 /** PRD 5.3 validation rules 1 and 3 (also applied on partial update input). */
 function checkEventRules(data: EventRuleData, ctx: z.RefinementCtx): void {
   if (data.timezone !== undefined) {
@@ -87,7 +101,8 @@ function checkEventRules(data: EventRuleData, ctx: z.RefinementCtx): void {
       | string
       | null
       | undefined;
-    if (openValue && closeValue && Date.parse(closeValue) <= Date.parse(openValue)) {
+    const normalizedClose = rollOvernightClose(openValue, closeValue);
+    if (openValue && normalizedClose && Date.parse(normalizedClose) <= Date.parse(openValue)) {
       ctx.addIssue({
         code: "custom",
         message: "Closing time must be after opening time.",
@@ -104,11 +119,14 @@ function checkEventRules(data: EventRuleData, ctx: z.RefinementCtx): void {
   }
 }
 
-export const createEventSchema = eventBaseSchema.superRefine(checkEventRules);
+export const createEventSchema = eventBaseSchema
+  .superRefine(checkEventRules)
+  .transform(normalizeEventWindows);
 
 export const updateEventSchema = eventBaseSchema
   .partial()
-  .superRefine(checkEventRules);
+  .superRefine(checkEventRules)
+  .transform(normalizeEventWindows);
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;

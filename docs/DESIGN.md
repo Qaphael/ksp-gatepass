@@ -11,20 +11,24 @@ Authoritative design rules. Read before touching any UI. Mobile first: design at
 
 ## 2. Brand
 
-Deep green, gold and white (matches the printed ticket). Neat, calm, premium hotel feel. No gradients-for-decoration, no clutter.
+Warm cream, white and coral based on the supplied mobile reference, adapted to GatePass. The live camera preview can remain dark for image contrast; scanner controls use the same cream, white and coral system as the rest of the app. Admission outcomes retain their semantic success, error and warning colors. Gold remains a restrained ticket-brand accent. Keep the premium hotel feel, with no decorative gradients or clutter.
 
 See [BRAND.md](BRAND.md) for logo assets, usage rules and regeneration instructions.
 
 | Token | Start value | Use |
 | --- | --- | --- |
 | `--brand-900` | #0A2A20 | App bar, scanner chrome, dark surfaces |
-| `--brand-700` | #0F3D2E | Primary buttons, active nav |
-| `--brand-50` | #EEF4F0 | Tinted backgrounds |
+| `--brand-700` | #0F3D2E | Legacy ticket/brand detail |
+| `--brand-50` | #EEF4F0 | Legacy brand tinted backgrounds |
+| `--coral-700` | #BF4B2B | Primary actions and selected navigation (white text contrast) |
+| `--coral-50` | #FFF0E9 | Selected navigation and soft action accents |
 | `--gold-500` | #C8A24A | Accents, highlights, focus ring on dark, dividers |
-| `--ivory` | #FAF7F0 | Page background |
+| `--ivory` | #F7F1EA | Warm page background |
 | `--ink` | #14201B | Body text |
 
 Rules:
+- General and scanner control surfaces use warm cream canvases, white cards with squircle corners (about 14–18 px), restrained warm shadows, and coral primary actions. Keep semantic success/error/warning outcomes distinct. Primary actions and fields are squarcles; status chips may stay pill-shaped for quick scanning.
+- Navigation and product icons use a fine outlined stroke. Selected mobile tabs use a coral filled squircle with a white icon and label; desktop navigation keeps dark text on its light surface.
 - Gold is never body text on white or ivory (fails contrast). Gold text is allowed only on `--brand-900` or `--brand-700`. On light backgrounds gold is a fill or border with dark text.
 - Semantic colours are separate from brand. Success (admitted) is a clearly brighter green than the brand green so it is never confused with app chrome. Error is red, warning is amber. Never rely on colour alone: every state also has an icon and a word.
 - All text meets WCAG AA (4.5:1, 3:1 for large text). Check every pairing.

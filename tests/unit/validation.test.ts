@@ -126,6 +126,18 @@ describe("event validation (PRD 5.3)", () => {
     expect(result.success).toBe(false);
   });
 
+  it("moves earlier same-day sales and admission close times to the following day", () => {
+    const result = createEventSchema.parse({
+      ...validEvent,
+      salesOpensAtLocal: "2026-11-20T18:00",
+      salesClosesAtLocal: "2026-11-20T06:00",
+      admissionOpensAtLocal: "2026-11-20T18:00",
+      admissionClosesAtLocal: "2026-11-20T06:00",
+    });
+    expect(result.salesClosesAtLocal).toBe("2026-11-21T06:00");
+    expect(result.admissionClosesAtLocal).toBe("2026-11-21T06:00");
+  });
+
   it("rejects a window with only one side set", () => {
     const result = createEventSchema.safeParse({
       ...validEvent,
@@ -150,7 +162,9 @@ describe("event validation (PRD 5.3)", () => {
   });
 
   it("allows partial updates (only provided fields are required)", () => {
-    expect(updateEventSchema.safeParse({ name: "Renamed" }).success).toBe(true);
+    const parsed = updateEventSchema.safeParse({ name: "Renamed" });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) expect(Object.hasOwn(parsed.data, "salesClosesAtLocal")).toBe(false);
     expect(updateEventSchema.safeParse({}).success).toBe(true);
   });
 
@@ -187,5 +201,14 @@ describe("ticket type validation (PRD 5.4)", () => {
       salesOpensAtLocal: "2026-11-02T10:00",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("moves an earlier same-day category sales end to the following day", () => {
+    const parsed = createTicketTypeSchema.parse({
+      ...valid,
+      salesOpensAtLocal: "2026-11-20T18:00",
+      salesClosesAtLocal: "2026-11-20T06:00",
+    });
+    expect(parsed.salesClosesAtLocal).toBe("2026-11-21T06:00");
   });
 });

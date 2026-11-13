@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Pencil, Ticket } from "lucide-react";
+import { ArrowLeft, CalendarDays, Download, MapPin, Pencil, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -55,48 +55,64 @@ export default async function EventDetailPage({
     <div className="flex flex-col gap-6">
       <Link
         href="/events"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex min-h-11 items-center gap-2 self-start text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="size-4" /> Back to events
+        <ArrowLeft className="size-4" aria-hidden="true" /> Back to events
       </Link>
 
-      <div className={`grid items-start gap-5 ${event.branding.poster ? "md:grid-cols-[minmax(0,1fr)_minmax(16rem,24rem)]" : ""}`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{event.name}</h1>
-            <StatusBadge status={event.status} />
+      <section
+        aria-labelledby="event-title"
+        className={`overflow-hidden rounded-2xl border bg-card shadow-sm ${event.branding.poster ? "grid md:grid-cols-[minmax(0,1fr)_minmax(16rem,24rem)]" : ""}`}
+      >
+        <div className="flex min-w-0 flex-col gap-5 p-5 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={event.status} />
+                <OpenBadge open={event.salesOpen} label="Sales" />
+                <OpenBadge open={event.admissionOpen} label="Admission" />
+              </div>
+              <h1 id="event-title" className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+                {event.name}
+              </h1>
+            </div>
+            {can(ctx.role, "event:update") && eventEditable ? (
+              <Button variant="outline" size="sm" className="shrink-0">
+                <Pencil aria-hidden="true" /> Edit details below
+              </Button>
+            ) : null}
           </div>
+
+          <dl className="grid gap-3 border-t pt-4 text-sm sm:grid-cols-2">
+            <div className="flex min-w-0 items-start gap-3">
+              <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <div className="min-w-0"><dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Date and time</dt><dd className="mt-1 font-medium">{event.eventDate} · {formatEventTimeRange(event.startTime, event.endTime)}</dd></div>
+            </div>
+            <div className="flex min-w-0 items-start gap-3">
+              <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <div className="min-w-0"><dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Venue</dt><dd className="mt-1 font-medium">{event.venue}{event.address ? `, ${event.address}` : ""}</dd></div>
+            </div>
+          </dl>
+
           {event.status === "DRAFT" && can(ctx.role, "event:update") ? (
-            <div className="mt-3">
+            <div className="border-t pt-4">
+              <p className="mb-3 text-sm text-muted-foreground">This event is still a draft. Publish it when the details are ready.</p>
               <EventActions
                 event={event}
                 permissions={{ publish: true, openSales: false, closeSales: false, openAdmission: false, closeAdmission: false, complete: false, archive: false }}
               />
             </div>
           ) : null}
-          <p className="mt-1 text-sm text-muted-foreground">
-            {event.eventDate} · {formatEventTimeRange(event.startTime, event.endTime)} ·{" "}
-            {event.venue}
-            {event.address ? `, ${event.address}` : ""}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <OpenBadge open={event.salesOpen} label="Sales" />
-            <OpenBadge open={event.admissionOpen} label="Admission" />
-          </div>
         </div>
-        {can(ctx.role, "event:update") && eventEditable ? (
-          <Button variant="outline" size="sm">
-            <Pencil /> Edit details below
-          </Button>
+        {event.branding.poster ? (
+          <aside className="min-w-0 border-t bg-muted/20 p-3 md:border-l md:border-t-0 md:p-4">
+            <EventPoster poster={event.branding.poster} variant="display" className="max-h-[28rem] rounded-xl lg:max-h-[20rem]" />
+            <a href={`${event.branding.poster.displayUrl}&download=1`} className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium text-primary underline underline-offset-4">
+              <Download className="size-4" aria-hidden="true" /> Download poster
+            </a>
+          </aside>
         ) : null}
-        </div>
-        {event.branding.poster && <aside className="min-w-0">
-          <EventPoster poster={event.branding.poster} variant="display" className="max-h-[70dvh] md:hidden" />
-          <EventPoster poster={event.branding.poster} variant="banner" className="hidden md:block" />
-          <a href={`${event.branding.poster.displayUrl}&download=1`} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
-        </aside>}
-      </div>
+      </section>
 
       <section aria-labelledby="event-controls-heading" className="rounded-xl border bg-card p-4 sm:p-5">
         <h2 id="event-controls-heading" className="mb-3 text-base font-semibold">Sales and admission controls</h2>

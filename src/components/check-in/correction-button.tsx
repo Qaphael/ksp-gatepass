@@ -1,21 +1,31 @@
 "use client";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export function CorrectionButton({ checkInId }: { checkInId: string }) {
-  const [busy, setBusy] = useState(false);
-  const correct = async () => {
-    const confirmedTicketSerial = window.prompt("Enter the ticket serial to confirm the affected record:");
-    if (!confirmedTicketSerial) return;
-    const reason = window.prompt("Reason for recording this check-in correction:");
-    if (!reason) return;
-    setBusy(true);
-    try {
-      const response = await fetch(`/api/v1/check-in/${checkInId}/correction`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirmedTicketSerial, reason }) });
-      if (!response.ok) throw new Error("Correction could not be recorded.");
-      window.location.reload();
-    } catch (error) { window.alert(error instanceof Error ? error.message : "Correction failed."); }
-    finally { setBusy(false); }
-  };
-  return <Button size="sm" variant="outline" disabled={busy} onClick={() => void correct()}>{busy ? "Saving…" : "Record correction"}</Button>;
+  const router = useRouter();
+  return <ConfirmSheet
+    trigger={<Button size="sm" variant="outline" className="min-h-12">Record correction</Button>}
+    title="Record check-in correction?"
+    description="This adds a correction to the admission history. The original check-in remains in the audit trail."
+    confirmationLabel="Confirm the ticket serial"
+    confirmationPlaceholder="KSP-00001"
+    reasonLabel="Reason (required)"
+    reasonPlaceholder="Explain why this admission is being corrected"
+    confirmLabel="Record correction"
+    destructive
+    onConfirm={async (reason, confirmedTicketSerial) => {
+      const response = await fetch(`/api/v1/check-in/${checkInId}/correction`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ confirmedTicketSerial, reason }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message ?? "Correction could not be recorded.");
+      toast.success("Check-in correction recorded.");
+      router.refresh();
+    }}
+  />;
 }

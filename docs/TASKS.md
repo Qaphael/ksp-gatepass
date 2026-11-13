@@ -1,5 +1,49 @@
 # Tasks
 
+## Desktop sidebar and overnight event windows
+
+- [x] Make the desktop sidebar explicitly use a readable light surface and foreground, independent of color-scheme variables.
+- [x] Accept same-day earlier closing clock times as the next local calendar day for event sales/admission and ticket-category sales windows; reject dates that are still chronologically before opening.
+- [x] Explain overnight rollover in the event form and verify it with focused validation coverage, typecheck and lint.
+
+Plan: inspect current sidebar tokens/lockup contrast and event/ticket-type time validation; explicitly pair sidebar surface and text colors; add one shared local-calendar rollover for window end values at the validation boundary; document the form rule and cover next-morning plus genuinely earlier-date cases. Keep all roles, actions, business checks and stored instants unchanged except the intended overnight interpretation.
+
+## Reference fidelity expansion
+
+- [x] Restyle the event creation form sections, nested cards, fields, helper text and sticky actions as a coherent set.
+- [x] Apply the same raised-card, squircle field and control rhythm to sale, ticket, team, stock, template and raw native form controls.
+- [x] Match the reference's fine outlined icon treatment and filled coral selected bottom tab while retaining icon meaning and navigation actions.
+- [x] Inspect route components for direct card/input markup that bypasses the shared UI primitives; shared selectors now cover these native fields and manual card surfaces.
+
+The route source audit found direct native field markup in Sales, Reports, Audit, Attendance, Scan Attempts, Scan-to-sell, Stock, Sale detail actions, Ticket templates, Ticket inventory, Branding, Ticket categories, and Event forms. Shared input styling now catches native text/date/select controls across those routes; shared surface styling catches standalone white card markup. Checkboxes, radio controls and ticket artwork controls retain purpose-specific presentation.
+
+Plan: use the design reference as a visual target, audit direct markup (not only shared primitives), fix the event form first, then apply the established treatment to remaining workflows and navigation, and re-review both desktop and phone layouts. Do not remove or alter any existing action or product capability.
+
+Shape refinement: reduced the shared radius scale to squarcles, applied it to standard and raw form controls, and reduced oversized rounded areas while retaining status chips. Lucide product icons use a lighter outline; the active mobile tab now uses the reference's coral fill. Focused event validation suite passes 25 tests for overnight windows and existing event rules; typecheck, lint and diff checks pass. Dev server restarted and `/login` returned HTTP 200.
+
+The restarted local server reports the existing dev-database schema is missing `TicketType.color` (P2022). No migration or reset was run as part of the UI task. Authenticated event/ticket data screens may show a server error until the local schema is brought up to date.
+
+## Reference-driven visual redesign
+
+- [x] Define a shared warm-cream, white-card and coral-accent visual system based on the supplied mobile reference; preserve semantic outcome colors.
+- [x] Reshape the app shell, headings, cards, forms, lists and navigation so the reference's spacing and rounded surfaces apply across existing routes.
+- [x] Review and update dashboards, events, sales, tickets, check-in, stock, team, reports, audit and account pages; preserve workflows and permissions.
+- [x] Run typecheck, lint and live UI checks; update `docs/DESIGN.md` and record physical-device follow-up.
+
+Implemented shared palette, rounded-card surfaces and raised bottom navigation; carried the palette into the scanner shell, stock actions, account profile and verifier dashboard. Camera viewport stays dark for image contrast; admission results keep semantic colors. Typecheck/lint pass; the live `/login` route returns HTTP 200. Protected pages still need a signed-in visual pass and Android touch/camera review.
+
+Plan: inspect the existing design tokens and shared components; translate the reference into accessible shared tokens and reusable surfaces; then apply those patterns through the shell and route groups; review at phone widths and run the repository checks. The image guides visual style only; it does not add product features or supersede GatePass business rules.
+
+## Full-page mobile UI/UX audit
+
+- [x] Audit the app shell, account/auth, dashboards, events, sales, tickets, check-in, stock, team, reports and audit pages against the account-page pattern and `docs/DESIGN.md` (source audit; browser limitation recorded in `docs/MOBILE-UI-AUDIT.md`).
+- [x] Fix shared layout issues first (page headings, mobile list density, touch targets, sheets and safe areas) without changing API or business behavior.
+- [x] Fix remaining route-specific mobile issues, especially detail/history tables and dense admin controls.
+- [x] Run typecheck and lint.
+- [ ] Inspect authenticated pages in the browser at phone widths and verify touch/camera/safe-area behavior on an Android phone (sign-in and physical device still required).
+
+Audit plan: 1) inspect every route and shared interactive component; 2) record issues by severity in `docs/MOBILE-UI-AUDIT.md`; 3) implement reusable fixes, then route-specific fixes; 4) review the resulting diff and checks. No business logic, API contracts or permissions are in scope.
+
 ## Super Administrator access boundary
 
 - [x] Establish `qaphael` as the sole protected Super Administrator through the guarded migration
@@ -115,6 +159,15 @@ Event name and details · categories, prices, quantities · serial prefix and fo
 
 ## Design prompts
 
+- [x] Mobile-native review: add global touch/viewport safeguards, retain 16px form text, enlarge bottom navigation targets to 56px, and pad the sign-in shell around device safe areas; real-device verification remains required.
+- [x] Remove the persistent event selector from the app shell; keep event selection on event-specific screens and filters.
+- [x] Event detail header: group event status, title, schedule, venue, draft publishing action and poster into a responsive summary card.
+- [x] Mobile navigation: use compact icon-only tabs with accessible labels, place Stock in More, and align tab and bar corners as a consistent squircle control.
+- [x] Shared card surfaces: standardize outer and inset card corners as squarcles; reflow the dashboard Recent sales heading and keep its action and row details from wrapping.
+- [x] Desktop consistency pass: remove broad nested-card styling, increase desktop card breathing room, keep dashboard grids shrink-safe, and constrain oversized event artwork.
+- [x] Audit, reports and dialogs UI: restructure audit records for readable desktop columns and mobile detail cards; standardize filter panels, table/input treatments, modal forms, headers, footers, surfaces, squircle corners, restrained modal scrollbars, and the team form's field groups and role labels.
+- [x] Team modal sizing: use the full safe viewport height on phones, a wider centered desktop dialog, and defer the authenticated dashboard layout to request time to avoid prerendering session timestamps.
+
 - [x] Prompt 1 — Design foundations (tokens, type, primitives, preview)
 - [x] Prompt 2 — App shell and role-aware navigation (mobile tabs, desktop sidebar, event switcher, Admin More sheet, role landing routes)
 - [x] Prompt 3 — Lists, tables and filters (responsive cards, mobile filter sheets, pagination, and shared loading/error states)
@@ -192,3 +245,5 @@ Prompt T6 implementation: added database-enforced active ticket custody, stock i
 Prompt T7 implementation: added the seller My Stock screen; admin stock issue by QR scan, serial list, range, or category quantity; audited issue-slip PDFs with signature lines; returns/losses, explicit close-out blocking and confirmation, remittance record/reversal controls, and the five seller reconciliation/stock/template reports. Added role-scoped stock reports and formula-safe CSV/PDF export through the existing report pipeline. Duplicate gate results show buyer details only when returned by the audited supervisor/admin service; verifier responses remain unchanged. `pnpm exec tsc --noEmit`, focused ESLint, production build, and 11 PostgreSQL integration tests pass. Build retains the existing authenticated-route `HANGING_PROMISE_REJECTION` warnings; Vitest reports its existing 10-second shutdown timeout after tests pass. Physical device, print and privacy-at-gate release checks remain open.
 
 Receipt PDF link fix: corrected the scan-to-sell success screen to open the implemented `/api/v1/sales/:id/receipt.pdf` endpoint; the old link omitted the API prefix and returned 404.
+
+Stock page enum compatibility: the staff recipient lookup now compares the PostgreSQL role enum as text, so databases that have not yet applied the `SUPER_ADMIN` role migration do not fail with an invalid enum value. The local database still has the two Super Admin migrations pending; the guarded migration requires the documented active `qaphael` account to be bootstrapped before it can be applied.

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { EventForm } from "@/components/events/event-form";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const instant = false;
 
@@ -20,13 +21,7 @@ export default async function NewEventPage() {
       >
         <ArrowLeft className="size-4" /> Back to events
       </Link>
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Create event</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Dates, capacity and admission policy can be adjusted later — changes
-          are recorded in the audit log.
-        </p>
-      </div>
+      <PageHeader title="Create event" description="Dates, capacity and admission policy can be adjusted later — changes are recorded in the audit log." />
       <EventForm mode="create" />
     </div>
   );

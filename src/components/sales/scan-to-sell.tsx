@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BadgeCheck, Ban, CalendarOff, CalendarX, Clock, QrCode, SearchX, ShieldBan, Tags, TicketX, Trash2, UserRound, UserRoundX, Wifi, WifiOff, type LucideIcon } from "lucide-react";
 import { QrCamera } from "@/components/scanner/qr-camera";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { formatUGX } from "@/components/ui/money";
 import { normalizeUgandaPhone } from "@/lib/phone/uganda";
@@ -172,7 +172,7 @@ export function ScanToSell({ events, initialEventId }: Props) {
       {notice && <div role="status" aria-live="polite" className={`flex items-start gap-3 rounded-xl border p-3 ${toneClasses[notice.tone]}`}>
         {ResultIcon ? <ResultIcon className="mt-0.5 size-6 shrink-0" aria-hidden="true" /> : null}<div><p className="font-semibold">{notice.state ? SALE_LOOKUP_PRESENTATION[notice.state].label : "Lookup issue"}</p><p className="text-base">{notice.message}</p></div>
       </div>}
-      <section className="rounded-xl border bg-card p-4" aria-labelledby="cart-heading"><div className="flex items-center justify-between gap-3"><h2 id="cart-heading" className="text-lg font-semibold">Ticket cart</h2><span className="text-base text-muted-foreground">{cart.length} {cart.length === 1 ? "ticket" : "tickets"}</span></div>
+      <section className="rounded-2xl border border-border/70 bg-card p-4" aria-labelledby="cart-heading"><div className="flex items-center justify-between gap-3"><h2 id="cart-heading" className="text-lg font-semibold">Ticket cart</h2><span className="text-base text-muted-foreground">{cart.length} {cart.length === 1 ? "ticket" : "tickets"}</span></div>
         {cart.length === 0 ? <p className="py-5 text-center text-base text-muted-foreground">Scan a ticket QR to add it to this sale.</p> : <ul className="mt-2 divide-y">{cart.map((ticket) => {
           const Icon = ticket.entryMethod === "MANUAL" ? QrCode : BadgeCheck;
           return <li key={ticket.serial} className="flex min-w-0 items-center gap-3 py-3"><Icon className="size-5 shrink-0 text-success-foreground" aria-hidden="true" /><div className="min-w-0 flex-1"><p className="truncate font-mono text-base font-semibold tracking-wide">{ticket.serial}</p><p className="truncate text-base text-muted-foreground">{ticket.ticketTypeName} · {formatUGX(ticket.priceUgx)}</p></div><span className={`shrink-0 rounded-full border px-2 py-1 text-sm font-semibold ${ticket.entryMethod === "MANUAL" ? toneClasses.warning : toneClasses.success}`}>{ticket.entryMethod === "MANUAL" ? "Manual" : "Ready"}</span><Button type="button" size="icon" variant="ghost" aria-label={`Remove ticket ${ticket.serial}`} className="shrink-0" onClick={() => setCart((current) => removeCartTicket(current, ticket.serial))}><Trash2 aria-hidden="true" /></Button></li>;
@@ -190,11 +190,11 @@ export function ScanToSell({ events, initialEventId }: Props) {
       {error && <p role="alert" className="rounded-lg border border-danger/40 bg-danger/10 p-3 text-base text-danger-foreground">{error}</p>}
       <footer className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-20 rounded-xl border bg-background/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur lg:bottom-0"><div className="mb-3 flex items-center justify-between gap-3 text-base"><span>Total</span><strong className="tabular-nums">{formatUGX(total)}</strong></div><Button type="submit" size="xl" className="w-full" disabled={!serverOnline || busySale || busyLookup || cart.length === 0}>{busySale ? "Confirming sale…" : busyLookup ? "Checking ticket…" : "Confirm sale"}</Button></footer>
     </>}
-    <Dialog open={manualOpen} onOpenChange={setManualOpen}><DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 rounded-b-none rounded-t-2xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-2rem)] md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl">
+    <Dialog open={manualOpen} onOpenChange={setManualOpen}><DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 rounded-b-none rounded-t-[18px] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-2rem)] md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[18px]">
       <DialogHeader><DialogTitle>Manual ticket entry</DialogTitle><DialogDescription>This ticket will be marked as manually entered and recorded that way in the sale audit.</DialogDescription></DialogHeader>
       <label className="grid gap-1 text-base font-medium">Ticket serial<Input autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} value={manualSerial} onChange={(e) => setManualSerial(e.target.value.toUpperCase())} placeholder="KSP-00001" /></label>
       {error && <p role="alert" className="text-base text-danger-foreground">{error}</p>}
-      <Button type="button" size="xl" className="w-full" disabled={!serverOnline || busyLookup || !manualSerial.trim()} onClick={() => { setError(""); void lookup({ serial: manualSerial.trim().toUpperCase(), entryMethod: "MANUAL" }); }}>{busyLookup ? "Looking up…" : "Look up serial"}</Button>
+      <DialogFooter className="border-t-0 bg-transparent pt-1 sm:justify-start"><Button type="button" size="xl" className="w-full" disabled={!serverOnline || busyLookup || !manualSerial.trim()} onClick={() => { setError(""); void lookup({ serial: manualSerial.trim().toUpperCase(), entryMethod: "MANUAL" }); }}>{busyLookup ? "Looking up…" : "Look up serial"}</Button></DialogFooter>
     </DialogContent></Dialog>
   </form>;
 }

@@ -3,6 +3,7 @@ import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 import { listUsers, type UserDto } from "@/server/services/users.service";
 import { TeamManager } from "@/components/team/team-manager";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const instant = false;
 
@@ -15,12 +16,7 @@ export default async function TeamPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Accounts are deactivated, never deleted, so history stays intact.
-        </p>
-      </div>
+      <PageHeader title="Team" description="Accounts are deactivated, never deleted, so history stays intact." />
       <TeamManager users={users} currentUserId={ctx.userId} canManage={can(ctx.role, "user:manage")} />
     </div>
   );
