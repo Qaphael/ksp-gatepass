@@ -102,6 +102,7 @@ export class TestClient {
 }
 
 export const CREDENTIALS = {
+  superadmin: { identifier: "qaphael", password: "SuperAdminTest!Pass1234" },
   admin: { identifier: "admin", password: "AdminTest!Pass1234" },
   seller: { identifier: "seller", password: "SellerTest!Pass1234" },
   verifier: { identifier: "verifier", password: "VerifierTest!Pass1234" },

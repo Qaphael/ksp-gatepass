@@ -273,10 +273,11 @@ export function TeamManager({
 
       <ResponsiveList cards={users.length === 0 ? <Card><CardContent className="p-6 text-base text-muted-foreground">No team members yet. Add a member to get started.</CardContent></Card> : users.map((user) => {
         const isSelf = user.id === currentUserId;
+        const isSuperAdmin = user.role === "SUPER_ADMIN";
         return <article key={user.id} className="rounded-xl border bg-card p-4">
           <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{user.displayName}{isSelf ? " (you)" : ""}</p><p className="truncate text-sm text-muted-foreground">@{user.username}</p>{user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}</div><Badge variant="outline" className={user.active ? "border-success/40 bg-success/10 text-success-foreground" : "border-border bg-muted text-muted-foreground"}>{user.active ? "✓ Active" : "○ Deactivated"}</Badge></div>
-          <div className="mt-3 flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Role</span>{canManage && !isSelf ? <Select value={user.role} onValueChange={(value) => void onChangeRole(user, value as Role)} disabled={busyUserId === user.id}><SelectTrigger className="min-h-11 w-40" aria-label={`Role for ${user.displayName}`}><SelectValue /></SelectTrigger><SelectContent>{ROLE_VALUES.map((role) => <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>)}</SelectContent></Select> : <span className="text-base">{ROLE_LABELS[user.role]}</span>}</div>
-          {canManage && user.active && !isSelf && <Button className="mt-3 min-h-11 w-full" variant="outline" disabled={busyUserId === user.id} onClick={() => void onDeactivate(user)}>{busyUserId === user.id ? <Loader2 className="animate-spin" /> : <UserMinus />}Deactivate</Button>}
+          <div className="mt-3 flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Role</span>{canManage && !isSelf && !isSuperAdmin ? <Select value={user.role} onValueChange={(value) => void onChangeRole(user, value as Role)} disabled={busyUserId === user.id}><SelectTrigger className="min-h-11 w-40" aria-label={`Role for ${user.displayName}`}><SelectValue /></SelectTrigger><SelectContent>{ROLE_VALUES.map((role) => <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>)}</SelectContent></Select> : <span className="text-base">{ROLE_LABELS[user.role]}{isSuperAdmin ? " · protected" : ""}</span>}</div>
+          {canManage && user.active && !isSelf && !isSuperAdmin && <Button className="mt-3 min-h-11 w-full" variant="outline" disabled={busyUserId === user.id} onClick={() => void onDeactivate(user)}>{busyUserId === user.id ? <Loader2 className="animate-spin" /> : <UserMinus />}Deactivate</Button>}
         </article>;
       })} table={<Card>
         <CardContent className="overflow-x-auto p-0">
@@ -293,6 +294,7 @@ export function TeamManager({
             <tbody className="divide-y">
               {users.map((user) => {
                 const isSelf = user.id === currentUserId;
+                const isSuperAdmin = user.role === "SUPER_ADMIN";
                 return (
                   <tr key={user.id} className={user.active ? "" : "opacity-60"}>
                     <td className="p-3">
@@ -303,7 +305,7 @@ export function TeamManager({
                     </td>
                     <td className="p-3">@{user.username}</td>
                     <td className="p-3">
-                      {canManage && !isSelf ? (
+                      {canManage && !isSelf && !isSuperAdmin ? (
                         <Select
                           value={user.role}
                           onValueChange={(value) =>
@@ -323,7 +325,7 @@ export function TeamManager({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <span>{ROLE_LABELS[user.role]}</span>
+                        <span>{ROLE_LABELS[user.role]}{isSuperAdmin ? " · protected" : ""}</span>
                       )}
                     </td>
                     <td className="p-3">
@@ -342,7 +344,7 @@ export function TeamManager({
                       ) : null}
                     </td>
                     <td className="p-3 text-right">
-                      {canManage && user.active && !isSelf ? (
+                      {canManage && user.active && !isSelf && !isSuperAdmin ? (
                         <Button
                           variant="ghost"
                           size="sm"

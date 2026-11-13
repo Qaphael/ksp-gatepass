@@ -87,7 +87,9 @@ Use role-based access control (RBAC). Hiding a button in the interface is not se
 
 ### 3.1 Roles
 
-**Administrator** — full event operations and configuration. Creates events and ticket types, generates tickets, manages users, records or reverses payments, cancels tickets, reviews audit logs, exports reports and manages exceptional corrections.
+**Super Administrator** — sole protected account for full event operations and configuration, including ticket generation. The initial Super Administrator is established by the protected migration/setup process and cannot be created, promoted, demoted or deactivated through team management.
+
+**Administrator** — day-to-day event operations and configuration. Creates events and ticket types, manages users, records or reverses payments, cancels tickets, reviews audit logs, exports reports and manages exceptional corrections. Administrators cannot generate ticket inventory or assign the Super Administrator role.
 
 **Ticket seller** — sales and assigned payment recording. Creates sales, allocates available tickets, records permitted payment receipts, prints or reprints authorised tickets and views their own sales. Cannot alter prices, create users, erase payment history or perform privileged ticket corrections.
 
@@ -102,18 +104,18 @@ Use role-based access control (RBAC). Hiding a button in the interface is not se
 | View event dashboard | Yes | Own sales | Attendance view | Yes |
 | Create/edit event | Yes | No | No | No |
 | Create ticket categories | Yes | No | No | No |
-| Generate ticket inventory | Yes | No | No | No |
+| Generate ticket inventory | Super Admin only | No | No | No |
 | Create a sale | Yes | Yes | No | No |
 | Record permitted payment | Yes | Yes | No | Optional, if explicitly granted |
 | Reverse/refund payment | Yes | No | No | No |
 | Scan and check in tickets | Yes | No | Yes | Yes |
 | Cancel/revoke ticket | Yes | No | No | No |
 | Perform exceptional correction | Yes | No | No | Only if explicitly granted |
-| Manage users and roles | Yes | No | No | No |
+| Manage day-to-day users and roles (no Super Admin assignment) | Yes | No | No | No |
 | Export full reports | Yes | Own permitted reports | No | Summary only |
 | View audit log | Yes | No | No | Limited, if granted |
 
-All permissions must be checked against the authenticated server-side user. Never trust a role, user ID, event ID or seller identity supplied by the browser without validating it.
+All permissions must be checked against the authenticated server-side user. Never trust a role, user ID, event ID or seller identity supplied by the browser without validating it. Exactly one Super Administrator is protected at the database and application layers.
 
 ## 4. Information architecture and navigation
 

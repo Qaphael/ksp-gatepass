@@ -16,7 +16,7 @@ export default async function StockPage({searchParams}:{searchParams:Promise<Sea
  if(!event) return <div><h1 className="text-2xl font-semibold">My stock</h1><p className="mt-3 rounded-lg border border-dashed p-6">No event is available yet.</p></div>;
  const [sellers,staff,statement,remittances,ticketTypes]=await Promise.all([
   own?Promise.resolve([]):prisma.user.findMany({where:{role:"SELLER",active:true},select:{id:true,displayName:true},orderBy:{displayName:"asc"}}),
-  own?Promise.resolve([]):prisma.user.findMany({where:{active:true,role:{in:["ADMIN","SUPERVISOR"]}},select:{id:true,displayName:true},orderBy:{displayName:"asc"}}),
+  own?Promise.resolve([]):prisma.user.findMany({where:{active:true,role:{in:["ADMIN","SUPER_ADMIN","SUPERVISOR"]}},select:{id:true,displayName:true},orderBy:{displayName:"asc"}}),
   own?getSellerStockStatement(ctx,ctx.userId,{eventId:event.id}):Promise.resolve(null),
   own?Promise.resolve([]):prisma.remittance.findMany({where:{eventId:event.id},include:{seller:{select:{displayName:true}},reversal:{select:{id:true}}},orderBy:{recordedAt:"desc"},take:100}),
   can(ctx.role,"stock:manage")?prisma.ticketType.findMany({where:{eventId:event.id,status:"ACTIVE"},select:{id:true,name:true},orderBy:{name:"asc"}}):Promise.resolve([]),

@@ -99,11 +99,11 @@ function money(value: number): string {
   return `UGX ${new Intl.NumberFormat("en-UG", { maximumFractionDigits: 0 }).format(value)}`;
 }
 
-function EmptyDashboard({ role }: { role: "ADMIN" | "SELLER" | "VERIFIER" | "SUPERVISOR" }) {
+function EmptyDashboard({ role }: { role: "SUPER_ADMIN" | "ADMIN" | "SELLER" | "VERIFIER" | "SUPERVISOR" }) {
   return <section className="mx-auto flex min-h-[55dvh] max-w-lg flex-col justify-center gap-4 text-center">
     <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-700"><CalendarDaysIcon /></div>
     <div><h1 className="text-2xl font-semibold">No event is ready</h1><p className="mt-2 text-base text-muted-foreground">An administrator needs to configure an event before your {ROLE_LABELS[role].toLowerCase()} dashboard can show event activity.</p></div>
-    {role === "ADMIN" && <Button nativeButton={false} render={<Link href="/events/new" />}>Create event <ArrowRight /></Button>}
+    {(role === "ADMIN" || role === "SUPER_ADMIN") && <Button nativeButton={false} render={<Link href="/events/new" />}>Create event <ArrowRight /></Button>}
   </section>;
 }
 

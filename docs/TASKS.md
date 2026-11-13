@@ -1,5 +1,15 @@
 # Tasks
 
+## Super Administrator access boundary
+
+- [x] Establish `qaphael` as the sole protected Super Administrator through the guarded migration
+- [x] Retain day-to-day administrator permissions while restricting inventory generation to Super Admin
+- [x] Protect Super Admin assignment, role changes and deactivation at API/service/database layers
+- [x] Verify direct batch-generation API denial, team protections, typecheck, lint and focused tests
+- [ ] Deploy only through successful GitHub Actions CI and verify the deployed commit and health
+
+Implementation verification: `SUPER_ADMIN` has the complete permission set; regular `ADMIN` retains day-to-day permissions without `inventory:generate`. The `qaphael` promotion is preserved in the original role migration, and a guarded follow-up migration fails on missing/inactive `qaphael` or conflicting Super Admin accounts, enforces uniqueness, and protects the account from role change, deactivation and deletion. Full suite passes 25 files / 189 tests; typecheck and lint pass. Fresh-schema migration plus the focused permission/team/database-protection test passes on a separate scratch database. The build retains the existing authenticated-route `HANGING_PROMISE_REJECTION` warnings; Vitest reports its known Vite shutdown timeout after the tests pass.
+
 Source: PRD section 14 (delivery plan) and section 13 (acceptance tests). Tick items only when implemented **and** tested. Update at the end of every work session.
 
 ## Phase 1 — Foundation and authentication

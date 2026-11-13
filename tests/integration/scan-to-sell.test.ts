@@ -10,7 +10,7 @@ let verifier: TestClient;
 let supervisor: TestClient;
 
 beforeAll(async () => {
-  [admin, seller, verifier, supervisor] = await Promise.all([loginAs("admin"), loginAs("seller"), loginAs("verifier"), loginAs("supervisor")]);
+  [admin, seller, verifier, supervisor] = await Promise.all([loginAs("superadmin"), loginAs("seller"), loginAs("verifier"), loginAs("supervisor")]);
 });
 
 const postKey = (client: TestClient, url: string, data: unknown, key = unique("scan-sale")) => client.json(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(data) });

@@ -25,7 +25,7 @@ const MAX_PIXELS = 40_000_000;
 const BASE_KEY = /^[A-Za-z0-9_-]{32}$/;
 
 function requireAdmin(ctx: AuthContext) {
-  if (ctx.role !== "ADMIN") throw forbidden("Only administrators can manage event branding.");
+  if (ctx.role !== "ADMIN" && ctx.role !== "SUPER_ADMIN") throw forbidden("Only administrators can manage event branding.");
 }
 
 function sniffInputFormat(input: Buffer): "jpeg" | "png" | "webp" {

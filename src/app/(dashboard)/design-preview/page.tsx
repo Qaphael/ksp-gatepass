@@ -30,7 +30,7 @@ const colorTokens = [
 
 export default async function DesignPreviewPage() {
   const ctx = await getSessionContext();
-  if (!ctx || ctx.role !== "ADMIN") notFound();
+  if (!ctx || (ctx.role !== "ADMIN" && ctx.role !== "SUPER_ADMIN")) notFound();
 
   return (
     <div className="mx-auto w-full max-w-[360px] space-y-6">

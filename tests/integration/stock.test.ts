@@ -11,7 +11,7 @@ let supervisor: TestClient;
 let verifier: TestClient;
 
 beforeAll(async () => {
-  [admin, seller, supervisor, verifier] = await Promise.all([loginAs("admin"), loginAs("seller"), loginAs("supervisor"), loginAs("verifier")]);
+  [admin, seller, supervisor, verifier] = await Promise.all([loginAs("superadmin"), loginAs("seller"), loginAs("supervisor"), loginAs("verifier")]);
   sellerId = (await prisma.user.findUniqueOrThrow({ where: { username: "seller" } })).id;
 });
 

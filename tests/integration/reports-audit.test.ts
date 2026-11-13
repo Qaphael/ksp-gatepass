@@ -3,7 +3,7 @@ import { loginAs, unique, type TestClient } from "../helpers/client";
 import { prisma } from "../helpers/db";
 
 let admin: TestClient; let seller: TestClient; let supervisor: TestClient;
-beforeAll(async () => { [admin, seller, supervisor] = await Promise.all([loginAs("admin"), loginAs("seller"), loginAs("supervisor")]); });
+beforeAll(async () => { [admin, seller, supervisor] = await Promise.all([loginAs("superadmin"), loginAs("seller"), loginAs("supervisor")]); });
 const postKey = (client: TestClient, url: string, data: unknown, key: string) => client.json(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(data) });
 
 async function fixture() {

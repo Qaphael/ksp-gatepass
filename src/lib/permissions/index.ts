@@ -66,7 +66,7 @@ export const PERMISSIONS = [
 
 export type Permission = (typeof PERMISSIONS)[number];
 
-const ADMIN_ALL: readonly Permission[] = PERMISSIONS;
+const ADMIN_ALL: readonly Permission[] = PERMISSIONS.filter((p) => p !== "inventory:generate");
 
 const SELLER: readonly Permission[] = [
   "dashboard:view",
@@ -110,6 +110,7 @@ const SUPERVISOR: readonly Permission[] = [
 ];
 
 const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
+  SUPER_ADMIN: PERMISSIONS,
   ADMIN: ADMIN_ALL,
   SELLER: SELLER,
   VERIFIER: VERIFIER,
@@ -117,6 +118,7 @@ const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
 };
 
 const ROLE_PERMISSION_SETS: Record<Role, ReadonlySet<Permission>> = {
+  SUPER_ADMIN: new Set(ROLE_PERMISSIONS.SUPER_ADMIN),
   ADMIN: new Set(ROLE_PERMISSIONS.ADMIN),
   SELLER: new Set(ROLE_PERMISSIONS.SELLER),
   VERIFIER: new Set(ROLE_PERMISSIONS.VERIFIER),

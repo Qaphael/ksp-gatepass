@@ -40,7 +40,7 @@ export interface TicketTemplateDto {
 }
 
 function requireTemplatePermission(ctx: AuthContext): void {
-  if (ctx.role !== "ADMIN") throw forbidden("Only administrators can manage ticket templates.");
+  if (ctx.role !== "ADMIN" && ctx.role !== "SUPER_ADMIN") throw forbidden("Only administrators can manage ticket templates.");
   requirePermission(ctx.role, "template:manage");
 }
 function isUniqueViolation(error: unknown): boolean {
@@ -446,7 +446,7 @@ export async function confirmTicketTemplateCalibration(
 }
 
 export async function getTicketTemplateArtwork(ctx: AuthContext, templateId: string): Promise<{ data: Buffer; format: "png" | "jpeg" }> {
-  const canManageTemplates = ctx.role === "ADMIN";
+  const canManageTemplates = ctx.role === "ADMIN" || ctx.role === "SUPER_ADMIN";
   if (!canManageTemplates) requirePermission(ctx.role, "inventory:read");
   const row = await prisma.ticketTemplate.findUnique({ where: { id: templateId }, select: { assetStorageKey: true, status: true } });
   if (!row || (!canManageTemplates && row.status !== "ACTIVE") || !SAFE_ARTWORK_KEY.test(row.assetStorageKey)) throw notFound("Ticket artwork not found.");

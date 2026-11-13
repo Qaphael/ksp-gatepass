@@ -227,7 +227,7 @@ export async function createSale(
   requirePermission(ctx.role, "sale:create");
   if (input.discountUgx) requirePermission(ctx.role, "sale:discount");
   const bulk = "items" in input;
-  if (bulk && ctx.role !== "ADMIN") throw forbidden("Quantity-based ticket sales are restricted to administrators.");
+  if (bulk && ctx.role !== "ADMIN" && ctx.role !== "SUPER_ADMIN") throw forbidden("Quantity-based ticket sales are restricted to administrators.");
   const key = checkKey(rawKey);
   if (!key) throw conflict("Sale creation requires an Idempotency-Key.");
   const requestHash = hash(input);
@@ -281,7 +281,7 @@ export async function createSale(
           entryMethod: ("token" in entry ? "SCAN" : "MANUAL") as SaleEntryMethod,
         }));
         if (new Set(entries.map((entry) => `${entry.byToken ? "t:" : "s:"}${entry.identity}`)).size !== entries.length) throw conflict("A ticket can appear only once in a sale.");
-        if (entries.some((entry) => entry.entryMethod === "MANUAL") && !(ctx.role === "ADMIN" || (ctx.role === "SELLER" && event.allowSellerManualSale))) {
+        if (entries.some((entry) => entry.entryMethod === "MANUAL") && !(ctx.role === "ADMIN" || ctx.role === "SUPER_ADMIN" || (ctx.role === "SELLER" && event.allowSellerManualSale))) {
           throw forbidden("Manual serial sales are not enabled for this seller.");
         }
         const resolved: Array<{ id: string; entryMethod: SaleEntryMethod }> = [];
@@ -341,7 +341,7 @@ export async function createSale(
         try { customerPhoneNormalized = normalizeUgandaPhone(input.customerPhone); }
         catch (error) { throw validationError(error instanceof Error ? error.message : "Enter a valid Ugandan mobile number."); }
       }
-      if (!bulk && ctx.role !== "ADMIN" && event.requireFullPaymentAtSale && (input.initialPayment?.amountUgx ?? 0) < totalUgx) {
+        if (!bulk && ctx.role !== "ADMIN" && ctx.role !== "SUPER_ADMIN" && event.requireFullPaymentAtSale && (input.initialPayment?.amountUgx ?? 0) < totalUgx) {
         throw conflict("Full payment is required before a seller can confirm this physical ticket sale.");
       }
 
@@ -437,7 +437,7 @@ export async function createSale(
         discountUgx,
         ...(discountUgx > 0 ? { discountReason: input.discountReason } : {}),
       });
-      if (!bulk && event.requireStockIssue && (ctx.role === "ADMIN" || ctx.role === "SUPERVISOR")) {
+      if (!bulk && event.requireStockIssue && (ctx.role === "ADMIN" || ctx.role === "SUPER_ADMIN" || ctx.role === "SUPERVISOR")) {
         await auditInTransaction(tx, ctx, "stock.sale.override", "sale", sale.id, event.id, {
           serials: scannedSerials,
           note: "Admin or supervisor sale bypassed the seller stock custody requirement.",

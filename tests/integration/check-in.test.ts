@@ -5,7 +5,7 @@ import { prisma } from "../helpers/db";
 
 let admin: TestClient;
 let seller: TestClient;
-beforeAll(async () => { admin = await loginAs("admin"); seller = await loginAs("seller"); });
+beforeAll(async () => { admin = await loginAs("superadmin"); seller = await loginAs("seller"); });
 const keyed = (client: TestClient, url: string, data: unknown, key: string) => client.json(url, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": key }, body: JSON.stringify(data) });
 
 async function soldTicket(paid = true) {

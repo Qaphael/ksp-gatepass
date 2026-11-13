@@ -9,11 +9,13 @@ import {
 const ALL = PERMISSIONS as readonly string[];
 
 describe("permissions matrix (PRD 3.2)", () => {
-  it("grants administrators every permission", () => {
+  it("grants Super Admin every permission and reserves ticket generation", () => {
+    for (const permission of PERMISSIONS) expect(can("SUPER_ADMIN", permission), permission).toBe(true);
+    expect(permissionsForRole("SUPER_ADMIN")).toHaveLength(PERMISSIONS.length);
     for (const permission of PERMISSIONS) {
-      expect(can("ADMIN", permission), permission).toBe(true);
+      expect(can("ADMIN", permission), permission).toBe(permission !== "inventory:generate");
     }
-    expect(permissionsForRole("ADMIN")).toHaveLength(PERMISSIONS.length);
+    expect(can("ADMIN", "inventory:generate")).toBe(false);
   });
 
   it("sellers can sell and print, but never manage users or events", () => {
@@ -121,7 +123,7 @@ describe("permissions matrix (PRD 3.2)", () => {
 
   it("denies unknown permissions for every role (default deny)", () => {
     const bogus = "event:delete" as Permission;
-    for (const role of ["ADMIN", "SELLER", "VERIFIER", "SUPERVISOR"] as const) {
+    for (const role of ["SUPER_ADMIN", "ADMIN", "SELLER", "VERIFIER", "SUPERVISOR"] as const) {
       expect(can(role, bogus), role).toBe(false);
     }
     expect(ALL).not.toContain("event:delete");

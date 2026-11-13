@@ -298,7 +298,7 @@ export async function printBatch(
 
 /** Generates the calibration PDF. Physical print confirmation is a separate audited POST. */
 export async function renderTicketTemplateCalibration(ctx: AuthContext, templateId: string, requestedTicketTypeId?: string): Promise<PrintJob> {
-  if (ctx.role !== "ADMIN") throw forbidden("Only administrators can print ticket template calibration sheets.");
+  if (ctx.role !== "ADMIN" && ctx.role !== "SUPER_ADMIN") throw forbidden("Only administrators can print ticket template calibration sheets.");
   requirePermission(ctx.role, "template:manage");
   const template = await prisma.ticketTemplate.findUnique({ where: { id: templateId }, select: PRINT_TEMPLATE_SELECT });
   if (!template) throw notFound("Ticket template not found.");

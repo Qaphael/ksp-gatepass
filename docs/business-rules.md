@@ -29,7 +29,8 @@ Short version of PRD section 7 and 9. Full detail is in `docs/PRD.md`.
 
 ## Roles (least privilege)
 
-- Admin: everything.
+- Super Admin: sole protected `qaphael` account; full permissions, including ticket inventory generation. Its role cannot be assigned, changed, deactivated or deleted through team management, and database safeguards prevent another Super Admin.
+- Admin: all day-to-day administration except ticket inventory generation and Super Admin assignment.
 - Seller: create sales, record permitted payments, print or reprint authorised tickets, own sales only.
 - Verifier: scan, serial lookup, confirm check-in. No sales, payments, or duplicate override.
 - Supervisor: monitoring, failed scans, summaries. Exceptions only if explicitly granted and audited.

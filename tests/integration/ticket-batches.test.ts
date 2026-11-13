@@ -10,6 +10,7 @@ import { createActiveTicketTemplate } from "../helpers/active-ticket-template";
  */
 
 let admin: TestClient;
+let regularAdmin: TestClient;
 let seller: TestClient;
 let verifier: TestClient;
 let supervisor: TestClient;
@@ -62,7 +63,8 @@ interface GenerateBody {
 }
 
 beforeAll(async () => {
-  admin = await loginAs("admin");
+  admin = await loginAs("superadmin");
+  regularAdmin = await loginAs("admin");
   seller = await loginAs("seller");
   verifier = await loginAs("verifier");
   supervisor = await loginAs("supervisor");
@@ -326,6 +328,9 @@ describe("batch permissions (direct API calls)", () => {
       expect((await client.get(`/api/v1/ticket-batches?eventId=${eventId}`)).status).toBe(403);
       expect((await client.get(`/api/v1/ticket-batches/${batchId}`)).status).toBe(403);
     }
+
+    expect((await regularAdmin.post("/api/v1/ticket-batches", payload)).status).toBe(403);
+    expect((await regularAdmin.get(`/api/v1/ticket-batches?eventId=${eventId}`)).status).toBe(200);
 
     // Printing is different: sellers hold ticket:print by the role matrix,
     // verifiers and supervisors do not.

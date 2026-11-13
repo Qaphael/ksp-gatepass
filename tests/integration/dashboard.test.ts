@@ -14,7 +14,7 @@ let sellerCtx: DashboardContext;
 let verifierCtx: VerifierContext;
 
 beforeAll(async () => {
-  admin = await loginAs("admin");
+  admin = await loginAs("superadmin");
   await loginAs("seller");
   const seller = await prisma.user.findUniqueOrThrow({ where: { username: "seller" } });
   sellerCtx = { sessionId: "dashboard-test", userId: seller.id, username: seller.username, displayName: seller.displayName, role: "SELLER", expiresAt: new Date(Date.now() + 60_000) };

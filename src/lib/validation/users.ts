@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { passwordSchema } from "./auth";
 
-export const ROLE_VALUES = ["ADMIN", "SELLER", "VERIFIER", "SUPERVISOR"] as const;
+export const ROLE_VALUES = ["SUPER_ADMIN", "ADMIN", "SELLER", "VERIFIER", "SUPERVISOR"] as const;
 
 const usernameSchema = z
   .string()

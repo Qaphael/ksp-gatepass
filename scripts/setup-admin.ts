@@ -1,5 +1,5 @@
 /**
- * One-time initial administrator setup.
+ * One-time initial Super Administrator setup.
  *
  * Usage: `pnpm setup:admin` (run on the server, interactive terminal only).
  *
@@ -82,7 +82,7 @@ async function main(): Promise<void> {
   }
 
   const existingAdmin = await prisma.user.findFirst({
-    where: { role: "ADMIN" },
+    where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
     select: { username: true },
   });
   if (existingAdmin) {
@@ -104,6 +104,9 @@ async function main(): Promise<void> {
     if (!displayName) fail("Display name is required.");
 
     username = (await rl.question("Username: ")).trim().toLowerCase();
+    if (username !== "qaphael") {
+      fail("The initial Super Administrator username must be qaphael.");
+    }
     if (!USERNAME_RE.test(username) || username.length > 50) {
       fail(
         "Username must be 1-50 characters: letters, numbers, dots, dashes, underscores.",
@@ -130,12 +133,12 @@ async function main(): Promise<void> {
 
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.create({
-    data: { displayName, username, role: "ADMIN", passwordHash },
+    data: { displayName, username, role: "SUPER_ADMIN", passwordHash },
   });
   await prisma.auditLog.create({
     data: {
       actorId: null,
-      action: "setup.admin.create",
+      action: "setup.super-admin.create",
       targetType: "user",
       targetId: user.id,
       summary: { username: user.username, via: "setup-cli" },
@@ -143,7 +146,7 @@ async function main(): Promise<void> {
   });
 
   console.log(
-    `\nAdministrator @${user.username} created. Sign in at /login and change the password after first use.\n`,
+    `\nSuper Administrator @${user.username} created. Sign in at /login and change the password after first use.\n`,
   );
 }
 

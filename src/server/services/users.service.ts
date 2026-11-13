@@ -43,6 +43,7 @@ export async function createUser(
   input: CreateUserInput,
 ): Promise<UserDto> {
   requirePermission(ctx.role, "user:manage");
+  if (input.role === "SUPER_ADMIN") throw conflict("The sole Super Administrator cannot be assigned through team management.");
 
   const usernameTaken = await prisma.user.findUnique({
     where: { username: input.username },
@@ -93,6 +94,8 @@ export async function updateUser(
 
   const existing = await prisma.user.findUnique({ where: { id: userId } });
   if (!existing) throw notFound("User not found.");
+  if (existing.role === "SUPER_ADMIN") throw conflict("The Super Administrator account is protected from role changes.");
+  if (input.role === "SUPER_ADMIN") throw conflict("A second Super Administrator cannot be created.");
 
   // Prevent an admin from demoting themselves out of administrative access.
   if (input.role !== undefined && input.role !== existing.role && userId === ctx.userId) {
@@ -150,6 +153,7 @@ export async function deactivateUser(
   }
   const existing = await prisma.user.findUnique({ where: { id: userId } });
   if (!existing) throw notFound("User not found.");
+  if (existing.role === "SUPER_ADMIN") throw conflict("The Super Administrator account cannot be deactivated.");
   if (!existing.active) return toUserDto(existing); // idempotent
 
   const user = await prisma.user.update({

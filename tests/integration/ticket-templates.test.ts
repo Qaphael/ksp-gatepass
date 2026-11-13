@@ -48,7 +48,7 @@ async function firstPdfPageContent(data: ArrayBuffer): Promise<string> {
 
 beforeAll(async () => {
   [admin, seller, verifier, supervisor] = await Promise.all([
-    loginAs("admin"), loginAs("seller"), loginAs("verifier"), loginAs("supervisor"),
+    loginAs("superadmin"), loginAs("seller"), loginAs("verifier"), loginAs("supervisor"),
   ]);
   const created = await admin.post("/api/v1/events", {
     name: unique("Template event"), venue: "KSP Hotel Gulu", eventDate: "2026-12-12",

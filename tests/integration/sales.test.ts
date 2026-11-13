@@ -6,7 +6,7 @@ let admin: TestClient;
 let seller: TestClient;
 
 beforeAll(async () => {
-  admin = await loginAs("admin");
+  admin = await loginAs("superadmin");
   seller = await loginAs("seller");
 });
 

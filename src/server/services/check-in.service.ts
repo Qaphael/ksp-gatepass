@@ -278,7 +278,7 @@ export async function verifySerial(ctx: AuthContext, input: VerifySerialInput): 
 }
 
 function maySeeBuyerAtGate(ctx: AuthContext): boolean {
-  return ctx.role === "ADMIN" || ctx.role === "SUPERVISOR";
+  return ctx.role === "ADMIN" || ctx.role === "SUPER_ADMIN" || ctx.role === "SUPERVISOR";
 }
 
 async function revealBuyerOnDuplicate(ctx: AuthContext, eventId: string, ticket: EligibilityTicket | null, result: EligibilityResult, tx?: Prisma.TransactionClient): Promise<EligibilityResult> {

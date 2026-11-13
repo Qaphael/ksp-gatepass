@@ -10,7 +10,7 @@
  */
 import "./_safe-stack";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, renameSync, rmSync } from "node:fs";
 import os from "node:os";
 import { syncBuiltinESMExports } from "node:module";
 import path from "node:path";
@@ -95,16 +95,48 @@ async function ensureTestDatabase(): Promise<void> {
   }
 }
 
-function migrateTestDatabase(): void {
-  execFileSync(
+async function migrateTestDatabase(): Promise<void> {
+  const migrationName = "20261113100000_super_admin_guards";
+  const migrationPath = path.join(root, "prisma", "migrations", migrationName);
+  const stagingDir = mkdtempSync(path.join(root, ".gatepass-migrations-"));
+  const stagedMigration = path.join(stagingDir, migrationName);
+  const env = { ...process.env, DATABASE_URL: testDatabaseUrl };
+  const applyMigrations = () => execFileSync(
     process.execPath,
     ["node_modules/prisma/build/index.js", "migrate", "deploy"],
-    {
-      cwd: root,
-      stdio: "inherit",
-      env: { ...process.env, DATABASE_URL: testDatabaseUrl },
-    },
+    { cwd: root, stdio: "inherit", env },
   );
+
+  process.env.DATABASE_URL = testDatabaseUrl;
+  const { prisma } = await import("../src/lib/db/client");
+  try {
+    const applied = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
+      `SELECT EXISTS (SELECT 1 FROM "_prisma_migrations" WHERE migration_name = '${migrationName}') AS exists`,
+    ).catch(() => [{ exists: false }]);
+    if (applied[0]?.exists || !existsSync(migrationPath)) {
+      applyMigrations();
+      return;
+    }
+
+    // Production intentionally requires @qaphael to exist before this guarded
+    // migration. Bootstrap the disposable CI database through prior migrations,
+    // add an unusable test ADMIN row, then apply the real guard migration.
+    renameSync(migrationPath, stagedMigration);
+    try {
+      applyMigrations();
+      const passwordHash = `test-only-${crypto.randomUUID()}`;
+      await prisma.user.create({
+        data: { username: "qaphael", displayName: "Test Super Admin", role: "ADMIN", passwordHash },
+      });
+    } finally {
+      renameSync(stagedMigration, migrationPath);
+      rmSync(stagingDir, { recursive: true, force: true });
+    }
+    applyMigrations();
+  } finally {
+    await prisma.$disconnect();
+    rmSync(stagingDir, { recursive: true, force: true });
+  }
 }
 
 function buildApp(): void {
@@ -160,6 +192,7 @@ async function seedTestUsers(): Promise<void> {
     const { prisma } = await import("../src/lib/db/client");
 
     const users = [
+      { username: "qaphael", displayName: "Test Super Admin", role: "SUPER_ADMIN" as const, password: "SuperAdminTest!Pass1234" },
       { username: "admin", displayName: "Test Admin", role: "ADMIN" as const, password: "AdminTest!Pass1234" },
       { username: "seller", displayName: "Test Seller", role: "SELLER" as const, password: "SellerTest!Pass1234" },
       { username: "verifier", displayName: "Test Verifier", role: "VERIFIER" as const, password: "VerifierTest!Pass1234" },
@@ -168,6 +201,13 @@ async function seedTestUsers(): Promise<void> {
 
     for (const user of users) {
       const passwordHash = await hashPassword(user.password);
+      if (user.username === "qaphael") {
+        await prisma.user.update({
+          where: { username: user.username },
+          data: { passwordHash, active: true, displayName: user.displayName, role: user.role },
+        });
+        continue;
+      }
       await prisma.user.upsert({
         where: { username: user.username },
         create: {
@@ -198,7 +238,7 @@ export default async function setup(): Promise<void> {
   console.log("[setup] ensuring test database…");
   await ensureTestDatabase();
   console.log("[setup] applying migrations…");
-  migrateTestDatabase();
+  await migrateTestDatabase();
   console.log("[setup] building app…");
   buildApp();
   console.log("[setup] starting server…");

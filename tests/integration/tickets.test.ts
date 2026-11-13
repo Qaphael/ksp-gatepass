@@ -10,6 +10,7 @@ import { createActiveTicketTemplate } from "../helpers/active-ticket-template";
  */
 
 let admin: TestClient;
+let regularAdmin: TestClient;
 let seller: TestClient;
 let verifier: TestClient;
 let supervisor: TestClient;
@@ -25,7 +26,8 @@ function newPrefix(): string {
 }
 
 beforeAll(async () => {
-  admin = await loginAs("admin");
+  admin = await loginAs("superadmin");
+  regularAdmin = await loginAs("admin");
   seller = await loginAs("seller");
   verifier = await loginAs("verifier");
   supervisor = await loginAs("supervisor");
@@ -142,6 +144,17 @@ describe("inventory list and detail", () => {
       `${process.env.TEST_BASE_URL ?? "http://127.0.0.1:3100"}/api/v1/tickets`,
     );
     expect(anonymous.status).toBe(401);
+  });
+
+  it("denies regular administrator ticket generation through the direct API", async () => {
+    const result = await regularAdmin.post("/api/v1/ticket-batches", {
+      eventId,
+      ticketTypeId: (await admin.get(`/api/v1/events/${eventId}/ticket-types`)).body.ticketTypes[0].id,
+      quantity: 1,
+      serialPrefix: newPrefix(),
+    });
+    expect(result.status).toBe(403);
+    expect(result.body.error.code).toBe("FORBIDDEN");
   });
 });
 

@@ -6,6 +6,7 @@ import {
   uniqueIp,
   type JsonResult,
 } from "../helpers/client";
+import { prisma } from "../helpers/db";
 
 /**
  * RBAC must be enforced on the server for every direct API call. Hiding a
@@ -207,6 +208,35 @@ describe("admin", () => {
 
     const audit = await admin.get("/api/v1/events");
     expect(audit.status).toBe(200);
+  });
+
+  it("cannot assign the protected Super Admin role", async () => {
+    const create = await admin.post("/api/v1/users", {
+      displayName: "Attempted Super Admin",
+      username: unique("superadminattempt"),
+      role: "SUPER_ADMIN",
+      password: "TeamMate!Password1234",
+    });
+    expect(create.status).toBe(409);
+    expect(create.body.error.code).toBe("CONFLICT");
+
+    const member = await admin.post("/api/v1/users", {
+      displayName: "Role target",
+      username: unique("roletarget"),
+      role: "SELLER",
+      password: "TeamMate!Password1234",
+    });
+    expect(member.status).toBe(201);
+    const promote = await admin.patch(`/api/v1/users/${member.body.user.id}`, { role: "SUPER_ADMIN" });
+    expect(promote.status).toBe(409);
+    expect(promote.body.error.code).toBe("CONFLICT");
+
+    const soleSuperAdmin = await prisma.user.findUniqueOrThrow({ where: { username: "qaphael" } });
+    expect((await admin.patch(`/api/v1/users/${soleSuperAdmin.id}`, { role: "ADMIN" })).status).toBe(409);
+    expect((await admin.post(`/api/v1/users/${soleSuperAdmin.id}/deactivate`)).status).toBe(409);
+    await expect(prisma.user.update({ where: { id: soleSuperAdmin.id }, data: { role: "ADMIN" } })).rejects.toThrow();
+    await expect(prisma.user.update({ where: { id: soleSuperAdmin.id }, data: { active: false } })).rejects.toThrow();
+    await expect(prisma.user.delete({ where: { id: soleSuperAdmin.id } })).rejects.toThrow();
   });
 
   it("rejects a duplicate username with 409", async () => {
