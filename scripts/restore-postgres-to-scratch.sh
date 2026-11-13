@@ -14,7 +14,7 @@ fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
-docker compose exec -T db pg_restore --list - < "$ARCHIVE" >/dev/null
+docker compose exec -T db pg_restore --list < "$ARCHIVE" >/dev/null
 docker compose exec -T db createdb --username=postgres "$RESTORE_DATABASE"
 docker compose exec -T db pg_restore --exit-on-error --no-owner --no-acl --username=postgres --dbname="$RESTORE_DATABASE" - < "$ARCHIVE"
 EVENT_COUNT="$(docker compose exec -T db psql --no-psqlrc --tuples-only --no-align --username=postgres --dbname="$RESTORE_DATABASE" --command='SELECT count(*) FROM "Event"')"

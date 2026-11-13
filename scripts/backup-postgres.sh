@@ -23,7 +23,7 @@ trap 'rm -f "$TEMP" "$BRANDING_TEMP"' EXIT
 
 cd "$ROOT_DIR"
 docker compose exec -T db sh -c 'pg_dump --format=custom --no-owner --no-acl --username="$POSTGRES_USER" "$POSTGRES_DB"' > "$TEMP"
-docker compose exec -T db pg_restore --list - < "$TEMP" >/dev/null
+docker compose exec -T db pg_restore --list < "$TEMP" >/dev/null
 docker compose exec -T app tar -C /var/lib/ksp-gatepass -czf - branding > "$BRANDING_TEMP"
 tar -tzf "$BRANDING_TEMP" >/dev/null
 mv "$TEMP" "$FINAL"
