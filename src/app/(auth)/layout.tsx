@@ -19,7 +19,7 @@ export default async function AuthLayout({
       <div className="text-center">
         <Link href="/" className="inline-flex flex-col items-center gap-3">
           <LogoMark className="size-16 text-primary" />
-          <span className="text-xl font-semibold tracking-tight">KSP GatePass</span>
+          <span className="text-xl font-semibold">KSP GatePass</span>
         </Link>
         <p className="mt-1 text-sm text-muted-foreground">
           Ticket sales and gate verification

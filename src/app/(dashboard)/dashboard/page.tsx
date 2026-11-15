@@ -117,14 +117,14 @@ function DashboardHeading({ event, eyebrow = "Event overview" }: { event: EventD
       <a href={`${event.branding.poster.displayUrl}&download=1`} className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
     </>}
     <div className="flex min-w-0 items-center gap-3">
-      <div className="min-w-0"><p className="text-sm font-medium text-muted-foreground">{eyebrow}</p><h1 className="truncate text-2xl font-semibold tracking-tight">{event.name}</h1><p className="truncate text-sm text-muted-foreground">{event.eventDate} · {event.venue}</p></div>
+      <div className="min-w-0"><p className="text-sm font-medium text-muted-foreground">{eyebrow}</p><h1 className="truncate text-2xl font-semibold">{event.name}</h1><p className="truncate text-sm text-muted-foreground">{event.eventDate} · {event.venue}</p></div>
       <div className="ml-auto flex shrink-0 flex-col items-end gap-1"><StatusBadge status={event.status} /><OpenBadge open={event.admissionOpen} label="Admission" /></div>
     </div>
   </div>;
 }
 
 function Stat({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail?: string }) {
-  return <Card className="min-w-0"><CardContent className="p-4"><div className="flex items-center gap-2.5"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-primary *:size-4">{icon}</span><span className="min-w-0 text-sm font-semibold text-muted-foreground">{label}</span></div><p className="mt-3 break-words text-xl font-bold tabular-nums tracking-tight sm:text-2xl">{value}</p>{detail && <p className="mt-1 text-sm leading-snug text-muted-foreground">{detail}</p>}</CardContent></Card>;
+  return <Card className="min-w-0"><CardContent className="p-4"><div className="flex items-center gap-2.5"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-primary *:size-4">{icon}</span><span className="min-w-0 text-sm font-semibold text-muted-foreground">{label}</span></div><p className="mt-3 break-words text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>{detail && <p className="mt-1 text-sm leading-snug text-muted-foreground">{detail}</p>}</CardContent></Card>;
 }
 
 function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: EventDto; stats: { sold: number; paidUgx: number; outstandingUgx: number; checkedIn: number; remaining: number; capacity: number; today: number }; sales: Awaited<ReturnType<typeof listSales>>["sales"]; checkins: Awaited<ReturnType<typeof listRecentCheckIns>>; alerts: { balances: number; failed: number; revoked: number; configuration: boolean } }) {
@@ -166,7 +166,7 @@ function VerifierDashboard({ event, count, day, recent, attempts }: { event: Eve
   return <main className="mx-auto flex w-full max-w-xl flex-col gap-4 sm:gap-6">
     <DashboardHeading event={event} eyebrow="Gate overview" />
     <DashboardConnection eventId={event.id} />
-    <Card className="border-border/70 bg-card"><CardContent className="flex flex-col gap-4 p-5 sm:p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-full bg-success text-success-foreground"><Check aria-hidden="true" className="size-5" /></span><div><p className="text-base font-semibold">Successful check-ins · {day}</p><p className="mt-1 text-4xl font-bold tabular-nums">{count}</p></div></div><Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-16 w-full justify-center"><ScanLine aria-hidden="true" />Scan ticket</Button><Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center"><ClipboardList aria-hidden="true" />Enter serial</Button></CardContent></Card>
+    <Card className="border-border/70 bg-card"><CardContent className="flex flex-col gap-4 p-5 sm:p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-full bg-success text-success-foreground"><Check aria-hidden="true" className="size-5" /></span><div><p className="text-base font-semibold">Successful check-ins · {day}</p><p className="mt-1 text-4xl font-semibold tabular-nums">{count}</p></div></div><Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-16 w-full justify-center"><ScanLine aria-hidden="true" />Scan ticket</Button><Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center"><ClipboardList aria-hidden="true" />Enter serial</Button></CardContent></Card>
     <RecentAttempts rows={attempts} timezone={event.timezone} />
     <RecentCheckins rows={recent} timezone={event.timezone} />
   </main>;
@@ -204,7 +204,7 @@ function RecentSales({ sales, title = "Recent sales" }: { sales: Awaited<ReturnT
                   <span className="block truncate text-base font-semibold">{sale.customerName ?? sale.reference}</span>
                   <span className="block truncate text-sm text-muted-foreground">{sale.reference} · {sale.status.replaceAll("_", " ")}</span>
                 </span>
-                <span className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums">{money(sale.totalUgx)}</span>
+                <span className="shrink-0 whitespace-nowrap text-base font-semibold tabular-nums">{money(sale.totalUgx)}</span>
               </Link>
             </li>
           ))}

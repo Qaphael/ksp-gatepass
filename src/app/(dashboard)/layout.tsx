@@ -50,7 +50,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
           <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-5">
-            <div className="flex min-w-0 items-center gap-2 lg:hidden"><Link href={landing} aria-label="KSP GatePass home" className="flex min-h-11 shrink-0 items-center gap-2"><LogoMark className="size-8 text-brand-900" /><span className="text-base font-bold tracking-tight">KSP GatePass</span></Link></div>
+            <div className="flex min-w-0 items-center gap-2 lg:hidden"><Link href={landing} aria-label="KSP GatePass home" className="flex min-h-11 shrink-0 items-center gap-2"><LogoMark className="size-8 text-brand-900" /><span className="text-base font-bold">KSP GatePass</span></Link></div>
             <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="truncate text-sm font-medium">KSP GatePass</span></div>
             <span data-connection-indicator-slot="" className="ml-auto size-2 shrink-0" aria-hidden="true" />
             <UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} />

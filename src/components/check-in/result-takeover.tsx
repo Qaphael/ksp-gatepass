@@ -55,7 +55,7 @@ export function ResultTakeover({ result, onDismiss, onConfirm, busy, canConfirm 
   return <div role="alert" aria-live="assertive" aria-atomic="true" className={`fixed inset-0 z-[70] flex min-h-dvh flex-col items-center justify-center overflow-y-auto px-5 py-8 text-center ${colors}`}>
     {!admitted && <button type="button" aria-label="Dismiss result" onClick={onDismiss} className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex size-12 items-center justify-center rounded-full border border-current/30" ><X aria-hidden="true" /></button>}
     <Icon aria-hidden="true" className="mb-5 size-24 stroke-[2.5] sm:size-32" />
-    <p className="text-3xl font-black tracking-wide sm:text-5xl">{presentation.label}</p>
+    <p className="text-3xl font-semibold sm:text-5xl">{presentation.label}</p>
     <p className="mt-4 max-w-2xl text-xl font-semibold leading-snug sm:text-2xl">{presentation.reason}</p>
     {result.ticket && <div className="mt-8 w-full max-w-xl rounded-2xl border border-current/25 bg-white/40 p-5 text-left sm:p-7">
       <p className="text-lg font-semibold">{result.ticket.ticketTypeName}</p>

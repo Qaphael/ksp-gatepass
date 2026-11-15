@@ -37,8 +37,8 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
       <Outcome outcome={entry.outcome} />
     </div>
     <dl className="mt-4 grid gap-3 border-t border-border/70 pt-3 text-sm sm:grid-cols-2">
-      <div className="min-w-0"><dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Actor</dt><dd className="mt-1 truncate font-medium">{entry.actor?.displayName ?? (entry.actorId ? "Inactive account" : "Unauthenticated")}</dd><dd className="text-muted-foreground">{entry.actorRole ?? "No role"}</dd></div>
-      <div className="min-w-0"><dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Target and event</dt><dd className="mt-1 break-words font-medium">{entry.targetType ?? "No target"}</dd>{entry.targetId ? <dd className="break-all font-mono text-xs text-muted-foreground">{entry.targetId}</dd> : null}<dd className="break-words text-muted-foreground">{entry.eventName ?? "No event"}</dd></div>
+      <div className="min-w-0"><dt className="text-xs font-semibold text-muted-foreground">Actor</dt><dd className="mt-1 truncate font-medium">{entry.actor?.displayName ?? (entry.actorId ? "Inactive account" : "Unauthenticated")}</dd><dd className="text-muted-foreground">{entry.actorRole ?? "No role"}</dd></div>
+      <div className="min-w-0"><dt className="text-xs font-semibold text-muted-foreground">Target and event</dt><dd className="mt-1 break-words font-medium">{entry.targetType ?? "No target"}</dd>{entry.targetId ? <dd className="break-all font-mono text-xs text-muted-foreground">{entry.targetId}</dd> : null}<dd className="break-words text-muted-foreground">{entry.eventName ?? "No event"}</dd></div>
     </dl>
     <details className="group mt-3 overflow-hidden rounded-[12px] bg-muted/60 text-sm">
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 font-medium marker:hidden [&::-webkit-details-marker]:hidden">Change summary<ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" /></summary>

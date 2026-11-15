@@ -42,7 +42,7 @@ export function BrandLockup({
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <LogoMark className={cn("size-8 text-primary", markClassName)} />
-      <span className={cn("font-semibold tracking-tight", textClassName)}>KSP GatePass</span>
+      <span className={cn("font-semibold", textClassName)}>KSP GatePass</span>
     </span>
   );
 }

@@ -165,7 +165,7 @@ export function TeamManager({
                 <FormAlert error={error} />
                 <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
                   <section className="grid content-start gap-4">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground"><UserRound className="size-4 text-primary" aria-hidden="true" />Personal details</h3>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><UserRound className="size-4 text-primary" aria-hidden="true" />Personal details</h3>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="user-name">Full name</Label>
                       <Input id="user-name" required autoComplete="name" value={form.displayName} onChange={(e) => set("displayName", e.target.value)} disabled={saving} />
@@ -183,7 +183,7 @@ export function TeamManager({
                     </div>
                   </section>
                   <section className="grid content-start gap-4 border-t border-border/70 pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground"><ShieldCheck className="size-4 text-primary" aria-hidden="true" />Sign-in access</h3>
+                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><ShieldCheck className="size-4 text-primary" aria-hidden="true" />Sign-in access</h3>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="user-role">Role</Label>
                       <Select value={form.role} onValueChange={(value) => set("role", value as Role)}>
@@ -230,7 +230,7 @@ export function TeamManager({
         const isSelf = user.id === currentUserId;
         const isSuperAdmin = user.role === "SUPER_ADMIN";
         return <article key={user.id} className="rounded-2xl border border-border/70 bg-card p-4">
-          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{user.displayName}{isSelf ? " (you)" : ""}</p><p className="truncate text-sm text-muted-foreground">@{user.username}</p>{user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}</div><Badge variant="outline" className={user.active ? "border-success/40 bg-success/10 text-success-foreground" : "border-border bg-muted text-muted-foreground"}>{user.active ? "✓ Active" : "○ Deactivated"}</Badge></div>
+          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{user.displayName}{isSelf ? " (you)" : ""}</p><p className="truncate text-sm text-muted-foreground">@{user.username}</p>{user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}</div><Badge variant="outline" className={user.active ? "border-success/40 bg-success/10 text-success-foreground" : "border-border bg-muted text-muted-foreground"}>{user.active ? "Active" : "Deactivated"}</Badge></div>
           <div className="mt-3 flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Role</span>{canManage && !isSelf && !isSuperAdmin ? <Select value={user.role} onValueChange={(value) => void onChangeRole(user, value as Role)} disabled={busyUserId === user.id}><SelectTrigger className="min-h-11 w-40" aria-label={`Role for ${user.displayName}`}><SelectValue>{ROLE_LABELS[user.role]}</SelectValue></SelectTrigger><SelectContent>{ROLE_VALUES.map((role) => <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>)}</SelectContent></Select> : <span className="text-base">{ROLE_LABELS[user.role]}{isSuperAdmin ? " · protected" : ""}</span>}</div>
           {canManage && user.active && !isSelf && !isSuperAdmin && <Button className="mt-3 min-h-11 w-full" variant="outline" disabled={busyUserId === user.id} onClick={() => void onDeactivate(user)}>{busyUserId === user.id ? <Loader2 className="animate-spin" /> : <UserMinus />}Deactivate</Button>}
         </article>;

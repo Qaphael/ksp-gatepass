@@ -72,7 +72,7 @@ export default async function EventDetailPage({
                 <OpenBadge open={event.salesOpen} label="Sales" />
                 <OpenBadge open={event.admissionOpen} label="Admission" />
               </div>
-              <h1 id="event-title" className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+              <h1 id="event-title" className="text-3xl font-semibold leading-tight sm:text-4xl">
                 {event.name}
               </h1>
             </div>
@@ -86,11 +86,11 @@ export default async function EventDetailPage({
           <dl className="grid gap-3 border-t pt-4 text-sm sm:grid-cols-2">
             <div className="flex min-w-0 items-start gap-3">
               <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <div className="min-w-0"><dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Date and time</dt><dd className="mt-1 font-medium">{event.eventDate} · {formatEventTimeRange(event.startTime, event.endTime)}</dd></div>
+              <div className="min-w-0"><dt className="text-xs font-medium text-muted-foreground">Date and time</dt><dd className="mt-1 font-medium">{event.eventDate} · {formatEventTimeRange(event.startTime, event.endTime)}</dd></div>
             </div>
             <div className="flex min-w-0 items-start gap-3">
               <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <div className="min-w-0"><dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Venue</dt><dd className="mt-1 font-medium">{event.venue}{event.address ? `, ${event.address}` : ""}</dd></div>
+              <div className="min-w-0"><dt className="text-xs font-medium text-muted-foreground">Venue</dt><dd className="mt-1 font-medium">{event.venue}{event.address ? `, ${event.address}` : ""}</dd></div>
             </div>
           </dl>
 

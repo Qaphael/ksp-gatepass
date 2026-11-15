@@ -92,13 +92,13 @@ export function CheckInScanner({ eventId, eventName, events = [], mode = "camera
 
   return <section className="-mx-4 -my-5 flex min-h-[calc(100dvh_-_8rem)] flex-col overflow-hidden bg-background text-foreground sm:-mx-6 lg:my-0 lg:min-h-[calc(100dvh_-_8rem)]">
     <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border px-4 py-2 sm:px-6">
-      <div className="min-w-0"><p className="truncate text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{mode === "manual" ? "Manual check-in" : "Gate scanner"}</p><p className="truncate text-base font-semibold">{eventName}</p></div>
+      <div className="min-w-0"><p className="truncate text-xs font-semibold text-muted-foreground">{mode === "manual" ? "Manual check-in" : "Gate scanner"}</p><p className="truncate text-base font-semibold">{eventName}</p></div>
       <div className={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold ${serverOnline ? "border-success/50 bg-success text-success-foreground" : "border-warning/60 bg-warning text-warning-foreground"}`} role="status" aria-label={serverOnline ? "Server connected" : "Server connection unavailable"}>
         {serverOnline ? <Wifi className="size-4" aria-hidden="true" /> : <WifiOff className="size-4" aria-hidden="true" />}{serverOnline ? "Connected" : "Connecting…"}
       </div>
     </header>
     {mode === "camera" && showInstallHint ? <InstallHint role="verifier" /> : null}
-    {!serverOnline && <div role="alert" className="sticky top-0 z-20 flex min-h-12 items-center justify-center gap-2 bg-warning px-3 text-center text-base font-black text-warning-foreground">OFFLINE — CHECK-IN UNAVAILABLE</div>}
+    {!serverOnline && <div role="alert" className="sticky top-0 z-20 flex min-h-12 items-center justify-center gap-2 bg-warning px-3 text-center text-base font-bold text-warning-foreground">OFFLINE — CHECK-IN UNAVAILABLE</div>}
     <div className="flex flex-wrap items-end gap-3 border-b border-border bg-card/70 px-4 py-3 sm:px-6">
       {events.length > 1 && <form className="grid min-w-0 flex-1 gap-1 text-base font-semibold" key={eventId}><label htmlFor="scan-event">Event</label><div className="flex gap-2"><select id="scan-event" name="eventId" defaultValue={eventId} className="min-h-12 min-w-0 flex-1 rounded-control border border-input bg-card px-3 text-base text-foreground">{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><Button type="submit" size="lg" variant="outline">Open</Button></div></form>}
       <label className="grid min-w-0 flex-1 gap-1 text-base font-semibold">Gate
