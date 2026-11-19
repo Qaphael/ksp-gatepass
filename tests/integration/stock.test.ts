@@ -184,6 +184,29 @@ describe("seller stock operations", () => {
     expect(retry.body.closeout.id).toBe(closed.body.closeout.id);
   });
 
+  it("accepts an unpadded serial range and reports serials missing from the range", async () => {
+    const data = await fixture(3);
+    const [first, middle, last] = data.tickets;
+    const prefix = first.serial.slice(0, first.serial.lastIndexOf("-"));
+    const start = Number(first.serial.slice(first.serial.lastIndexOf("-") + 1));
+    const end = Number(last.serial.slice(last.serial.lastIndexOf("-") + 1));
+
+    // The operator types natural numbers; padded serials must still match.
+    const unpadded = await postKey(admin, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "RANGE", serialFrom: `${prefix}-${start}`, serialTo: `${prefix}-${end}` } });
+    expect(unpadded.status, JSON.stringify(unpadded.body)).toBe(201);
+    expect(unpadded.body.issue.serials).toEqual([first.serial, middle.serial, last.serial]);
+
+    const none = await postKey(admin, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "RANGE", serialFrom: `${prefix}-${end + 1}`, serialTo: `${prefix}-${end + 3}` } });
+    expect(none.status).toBe(404);
+
+    const partial = await postKey(admin, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "RANGE", serialFrom: `${prefix}-${end}`, serialTo: `${prefix}-${end + 2}` } });
+    expect(partial.status).toBe(409);
+    expect(partial.body.error.message).toContain("do not exist");
+
+    const inverted = await postKey(admin, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "RANGE", serialFrom: `${prefix}-10`, serialTo: `${prefix}-9` } });
+    expect(inverted.status).toBe(422);
+  });
+
   it("supports unissued-only range and quantity selection and denies stock operations by role", async () => {
     const data = await fixture(3);
     const range = await postKey(admin, "/api/v1/stock/issues", { eventId: data.eventId, sellerId, selection: { kind: "RANGE", serialFrom: data.tickets[0].serial, serialTo: data.tickets[1].serial } });

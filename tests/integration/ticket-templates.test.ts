@@ -24,9 +24,14 @@ function uploadForm(data: Buffer, config = placeholderTicketTemplateConfig(), na
   return form;
 }
 
-async function createTemplate(data?: Buffer, client = admin, key = unique("create"), name = unique("Ticket template")) {
+function measuredConfig() {
+  const base = placeholderTicketTemplateConfig();
+  return { ...base, qr: { ...base.qr, xMm: 151.5 } };
+}
+
+async function createTemplate(data?: Buffer, client = admin, key = unique("create"), name = unique("Ticket template"), config = placeholderTicketTemplateConfig()) {
   return client.json(`/api/v1/events/${eventId}/ticket-templates`, {
-    method: "POST", headers: { "idempotency-key": key }, body: uploadForm(data ?? await sampleArtwork(), placeholderTicketTemplateConfig(), name),
+    method: "POST", headers: { "idempotency-key": key }, body: uploadForm(data ?? await sampleArtwork(), config, name),
   });
 }
 
@@ -64,7 +69,7 @@ describe("ticket template model and artwork API", () => {
     expect(result.status).toBe(201);
     expect(result.body.template.status).toBe("DRAFT");
     expect(result.body.template.version).toBe(1);
-    expect(result.body.template.zonesArePlaceholder).toBe(false);
+    expect(result.body.template.zonesArePlaceholder).toBe(true);
     expect(JSON.stringify(result.body)).not.toContain("assetStorageKey");
 
     const url = result.body.template.artworkUrl as string;
@@ -159,7 +164,7 @@ describe("ticket template model and artwork API", () => {
     expect(failedPlaceholder.status).toBe(409);
     expect(failedPlaceholderBody.error.message).toContain("Measured");
 
-    const template = await createTemplate(await sampleArtwork(), admin);
+    const template = await createTemplate(await sampleArtwork(), admin, unique("create"), unique("Ticket template"), measuredConfig());
     const id = template.body.template.id as string;
     const adminUser = await prisma.user.findUniqueOrThrow({ where: { username: "admin" }, select: { id: true } });
     await prisma.ticketTemplate.update({ where: { id }, data: { calibrationPrintedAt: new Date(), calibrationPrintedById: adminUser.id } });

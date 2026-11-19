@@ -21,3 +21,37 @@ export function formatSerial(prefix: string, number: number): string {
 export function isSerialFormat(value: string): boolean {
   return /^[A-Z0-9][A-Z0-9-]{0,11}-\d{5,9}$/.test(value);
 }
+
+export interface SerialRange {
+  prefix: string;
+  from: number;
+  to: number;
+}
+
+/**
+ * Parses an inclusive range typed by a human. `KSP-1` … `KSP-500` and
+ * `KSP-00001` … `KSP-00500` describe the same numeric range, so the padding an
+ * operator happens to type never changes the tickets that get selected.
+ */
+export function parseSerialRange(serialFrom: string, serialTo: string): SerialRange | null {
+  const from = parseSerialNumber(serialFrom);
+  const to = parseSerialNumber(serialTo);
+  if (!from || !to || from.prefix !== to.prefix || from.number > to.number) return null;
+  return { prefix: from.prefix, from: from.number, to: to.number };
+}
+
+/** Canonical serials for an inclusive range, using the shared padding rule. */
+export function expandSerialRange(range: SerialRange): string[] {
+  const serials: string[] = [];
+  for (let number = range.from; number <= range.to; number += 1) serials.push(formatSerial(range.prefix, number));
+  return serials;
+}
+
+function parseSerialNumber(value: string): { prefix: string; number: number } | null {
+  // The prefix may itself contain dashes, so split on the last dash.
+  const match = /^([A-Z0-9][A-Z0-9-]{0,11})-(\d{1,9})$/.exec(value.trim().toUpperCase());
+  if (!match) return null;
+  const number = Number(match[2]);
+  if (!Number.isSafeInteger(number) || number > SERIAL_NUMBER_MAX) return null;
+  return { prefix: match[1], number };
+}

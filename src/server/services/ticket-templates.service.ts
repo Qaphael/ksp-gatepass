@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/client";
 import { ensureTicketTemplateStorage, readTicketTemplateArtwork, removeTicketTemplateArtwork, writeTicketTemplateArtwork } from "@/lib/ticket-template-storage";
 import { sanitizeAuditData } from "@/lib/audit";
 import type { TicketTemplateConfig } from "@/lib/validation/ticket-templates";
-import { ticketTemplateConfigSchema, placeholderTicketTemplateConfig } from "@/lib/validation/ticket-templates";
+import { isPlaceholderTemplateConfig, ticketTemplateConfigSchema, placeholderTicketTemplateConfig } from "@/lib/validation/ticket-templates";
 import { conflict, forbidden, notFound, requirePermission, validationError } from "./errors";
 
 export const TICKET_TEMPLATE_MAX_BYTES = 40 * 1024 * 1024;
@@ -212,7 +212,7 @@ export async function createTicketTemplate(
         id, seriesId: id, eventId, ticketTypeId: input.ticketTypeId ?? null, name: input.name,
         version: 1, assetStorageKey: key, assetChecksum: artwork.checksum,
         assetWidthPx: artwork.width, assetHeightPx: artwork.height, ...configParts(config),
-        status: "DRAFT", zonesArePlaceholder: false,
+        status: "DRAFT", zonesArePlaceholder: isPlaceholderTemplateConfig(config),
       }, select: LIST_SELECT });
       await tx.ticketTemplateMutation.create({ data: { actorId: ctx.userId, eventId, operation: "create", idempotencyKey, requestHash, templateId: saved.id } });
       await writeAudit(tx, ctx, "ticket-template.artwork.upload", saved, { name: saved.name, version: saved.version, width: artwork.width, height: artwork.height, format: artwork.format });
@@ -265,7 +265,7 @@ export async function patchTicketTemplate(
         assetStorageKey: nextKey, assetChecksum: checksum,
         assetWidthPx: artwork?.width ?? current.assetWidthPx, assetHeightPx: artwork?.height ?? current.assetHeightPx,
         ...configParts(config), status: "DRAFT",
-        zonesArePlaceholder: current.zonesArePlaceholder && !input.config,
+        zonesArePlaceholder: isPlaceholderTemplateConfig(config),
       }, select: LIST_SELECT });
       await tx.ticketTemplateMutation.create({ data: { actorId: ctx.userId, eventId: current.eventId, operation: "patch", idempotencyKey, requestHash, templateId: saved.id } });
       await writeAudit(tx, ctx, "ticket-template.version.create", saved, { name, version: saved.version, priorVersion: current.version });

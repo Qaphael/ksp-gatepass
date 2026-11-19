@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { buildCsv, csvCell } from "../../src/lib/csv";
 import { generateQrToken, hashQrToken } from "../../src/lib/qr/tokens";
-import { formatSerial, isSerialFormat } from "../../src/lib/serial";
+import { formatSerial, isSerialFormat, expandSerialRange, parseSerialRange } from "../../src/lib/serial";
 
 describe("serial numbers", () => {
   it("formats with the configured prefix and 5-digit padding", () => {
@@ -18,6 +18,26 @@ describe("serial numbers", () => {
     expect(isSerialFormat("KSP-1")).toBe(false);
     expect(isSerialFormat("ksp-00001")).toBe(false);
     expect(isSerialFormat("")).toBe(false);
+  });
+
+  it("parses a human range by number, not by string", () => {
+    // Padding the operator types must not change the tickets selected.
+    expect(parseSerialRange("KSP-1", "KSP-500")).toEqual({ prefix: "KSP", from: 1, to: 500 });
+    expect(parseSerialRange("KSP-00001", "KSP-00500")).toEqual({ prefix: "KSP", from: 1, to: 500 });
+    expect(parseSerialRange(" ksp-00001 ", "KSP-00500")).toEqual({ prefix: "KSP", from: 1, to: 500 });
+    // 10 → 9 is a numeric inversion, even though "KSP-10" < "KSP-9" as strings.
+    expect(parseSerialRange("KSP-10", "KSP-9")).toBeNull();
+    expect(parseSerialRange("KSP-1", "VIP-500")).toBeNull();
+    expect(parseSerialRange("KSP-1", "KSP-500-00001")).toBeNull();
+    expect(parseSerialRange("", "KSP-500")).toBeNull();
+  });
+
+  it("expands a range to canonical padded serials", () => {
+    const range = parseSerialRange("KSP-1", "KSP-3");
+    expect(range && expandSerialRange(range)).toEqual(["KSP-00001", "KSP-00002", "KSP-00003"]);
+    // A single serial range still yields that serial.
+    const single = parseSerialRange("KSP-7", "KSP-7");
+    expect(single && expandSerialRange(single)).toEqual(["KSP-00007"]);
   });
 });
 

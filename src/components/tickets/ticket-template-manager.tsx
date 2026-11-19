@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiFetch } from "@/lib/api-client";
-import { QR_MODULE_COUNT, QR_MIN_MODULE_SIZE_MM, QR_MIN_PRINTED_SIZE_MM, TEMPLATE_A4_SCALE, placeholderTicketTemplateConfig, type TicketTemplateConfig } from "@/lib/validation/ticket-templates";
+import { QR_MODULE_COUNT, QR_MIN_MODULE_SIZE_MM, QR_MIN_PRINTED_SIZE_MM, TEMPLATE_A4_SCALE, isPlaceholderTemplateConfig, placeholderTicketTemplateConfig, templateConfigKey, type TicketTemplateConfig } from "@/lib/validation/ticket-templates";
 
 type Template = { id: string; seriesId: string; eventId: string; ticketTypeId: string | null; name: string; version: number; artworkUrl: string; assetWidthPx: number; assetHeightPx: number; config: unknown; status: "DRAFT" | "ACTIVE" | "RETIRED"; zonesArePlaceholder: boolean; confirmedAt: string | null; calibrationPrintedAt: string | null; printBatchCount: number; createdAt: string };
 type TicketTypeOption = { id: string; name: string; color: string };
@@ -38,13 +38,17 @@ export function TicketTemplateManager({ eventId, initialTemplates, ticketTypes }
   const printedQr = activeConfig.qr.sizeMm * TEMPLATE_A4_SCALE;
   const moduleSize = printedQr / (QR_MODULE_COUNT + 8);
   const qrReady = printedQr >= QR_MIN_PRINTED_SIZE_MM && moduleSize >= QR_MIN_MODULE_SIZE_MM;
-  const hasUnsavedChanges = Boolean(selected && JSON.stringify(config) !== JSON.stringify(selected.config));
-  const allMeasured = Boolean(selected && !selected.zonesArePlaceholder && !hasUnsavedChanges && JSON.stringify(config) !== JSON.stringify(placeholderTicketTemplateConfig()));
+  const hasUnsavedChanges = Boolean(selected && templateConfigKey(config) !== templateConfigKey(selected.config));
+  const allMeasured = Boolean(selected && !selected.zonesArePlaceholder && !hasUnsavedChanges && !isPlaceholderTemplateConfig(config));
 
   function selectTemplate(template: Template) {
-    setSelectedId(template.id); setName(template.name); setConfig(initialConfig(template.config)); if (template.ticketTypeId) setCalibrationTicketTypeId(template.ticketTypeId); setError(""); setNotice("");
+    setSelectedId(template.id); setName(template.name); setConfig(initialConfig(template.config)); if (template.ticketTypeId) setCalibrationTicketTypeId(template.ticketTypeId); setCalibrationPrintId(""); setError(""); setNotice("");
   }
-  function updateConfig(mutator: (current: TicketTemplateConfig) => TicketTemplateConfig) { setConfig((current) => mutator(current)); }
+  function updateConfig(mutator: (current: TicketTemplateConfig) => TicketTemplateConfig) {
+    // Any edit invalidates a calibration sheet generated for the saved version.
+    setCalibrationPrintId((current) => (current ? "" : current));
+    setConfig((current) => mutator(current));
+  }
   function updateField(zone: "bottomStrip" | "stub", key: typeof keys[number], fieldKey: "enabled" | "xMm" | "yMm" | "maxWidthMm" | "sizePt" | "color" | "weight" | "align", value: string | boolean | number) {
     updateConfig((current) => {
       const fields = current[zone].fields.slice();
@@ -91,13 +95,13 @@ export function TicketTemplateManager({ eventId, initialTemplates, ticketTypes }
     setTemplates(remaining); setDeleteTarget(null); setNotice("Unprinted template version deleted.");
     if (selectedId === deleteTarget.id) {
       if (remaining[0]) selectTemplate(remaining[0]);
-      else { setSelectedId(""); setName(""); setConfig(placeholderTicketTemplateConfig()); }
+      else { setSelectedId(""); setName(""); setConfig(placeholderTicketTemplateConfig()); setCalibrationPrintId(""); }
     }
     router.refresh(); setBusy(false);
   }
   function importMeasurements() {
     setError("");
-    try { const parsed = JSON.parse(importText) as TicketTemplateConfig; if (parsed.schemaVersion !== 1 || !parsed.qr || !parsed.bottomStrip || !parsed.stub || parsed.trim?.widthMm !== 210 || parsed.trim?.heightMm !== 59) throw new Error("JSON must contain the version 1 template measurements for a 210 × 59 mm ticket."); setConfig(parsed); setNotice("Measurement values loaded into the editor. Save to create a version."); }
+    try { const parsed = JSON.parse(importText) as TicketTemplateConfig; if (parsed.schemaVersion !== 1 || !parsed.qr || !parsed.bottomStrip || !parsed.stub || parsed.trim?.widthMm !== 210 || parsed.trim?.heightMm !== 59) throw new Error("JSON must contain the version 1 template measurements for a 210 × 59 mm ticket."); setConfig(parsed); setCalibrationPrintId(""); setNotice("Measurement values loaded into the editor. Save to create a version."); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Could not read measurement JSON."); }
   }
   function calibrationPath(template: Template): string {
@@ -122,7 +126,7 @@ export function TicketTemplateManager({ eventId, initialTemplates, ticketTypes }
 
   return <div className="grid gap-5 lg:grid-cols-[minmax(15rem,0.75fr)_minmax(0,2fr)]">
     <section className="flex flex-col gap-3">
-      <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Versions</h2><Button type="button" size="sm" variant="outline" onClick={() => { setSelectedId(""); setName(""); setConfig(placeholderTicketTemplateConfig()); setFile(null); setError(""); }}><Plus /> New</Button></div>
+      <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">Versions</h2><Button type="button" size="sm" variant="outline" onClick={() => { setSelectedId(""); setName(""); setConfig(placeholderTicketTemplateConfig()); setFile(null); setCalibrationPrintId(""); setError(""); }}><Plus /> New</Button></div>
       {templates.length ? templates.map((template) => <div key={template.id} className={`flex items-stretch gap-2 rounded-xl border p-2 ${template.id === selectedId ? "border-primary bg-primary/5" : "bg-card"}`}><button type="button" onClick={() => selectTemplate(template)} className="min-h-16 min-w-0 flex-1 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="flex items-center justify-between gap-2 font-medium"><span className="truncate">{template.name} · v{template.version}</span><span className="rounded-full bg-muted px-2 py-0.5 text-xs">{template.status}</span></span><span className="mt-1 block text-sm text-muted-foreground">{template.zonesArePlaceholder ? "Placeholder zones" : "Measured zones"} · {template.calibrationPrintedAt ? "Calibration recorded" : "No calibration print"}</span></button>{template.status !== "ACTIVE" && template.printBatchCount === 0 ? <Button type="button" variant="ghost" size="icon" disabled={busy} className="size-11 shrink-0 self-center text-destructive" aria-label={`Delete ${template.name} version ${template.version}`} title="Delete unused template version" onClick={() => setDeleteTarget(template)}><Trash2 /></Button> : <span className="flex max-w-20 items-center text-center text-[11px] leading-tight text-muted-foreground">{template.status === "ACTIVE" ? "Active" : "Print history"}</span>}</div>) : <div className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No ticket templates yet. Upload your ticket artwork to begin.</div>}
       <div className="rounded-xl border bg-muted/30 p-4 text-sm"><p className="font-medium">Measurement sheet</p><p className="mt-1 text-muted-foreground">Measure from the top-left trim edge. Artwork is 210 × 59 mm plus bleed. Placeholder values cannot be activated for production. The guide is in docs/TICKET-ZONES-MEASUREMENT.md.</p></div>
     </section>

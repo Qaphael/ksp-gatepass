@@ -5,8 +5,9 @@ import { can, type Permission } from "@/lib/permissions";
 import { prisma } from "@/lib/db/client";
 import { hashQrToken } from "@/lib/qr/tokens";
 import { sanitizeAuditData } from "@/lib/audit";
+import { expandSerialRange, parseSerialRange } from "@/lib/serial";
 import type { RemittanceCreateInput, RemittanceReverseInput, StockCloseoutInput, StockIssueInput, StockLossInput, StockReturnInput, StockStatementQuery } from "@/lib/validation/stock";
-import { conflict, forbidden, notFound, requirePermission } from "./errors";
+import { conflict, forbidden, notFound, requirePermission, validationError } from "./errors";
 
 type Tx = Prisma.TransactionClient;
 type StockActor = Pick<AuthContext, "userId" | "role" | "displayName">;
@@ -127,9 +128,15 @@ export async function issueStock(ctx: AuthContext, input: StockIssueInput, rawKe
         await lockTickets(tx, tickets.map((ticket) => ticket.id));
         tickets = await tx.ticket.findMany({ where: { id: { in: tickets.map((ticket) => ticket.id) } }, select: { id: true, serial: true, eventId: true, ticketTypeId: true, status: true }, orderBy: { serial: "asc" } });
       } else {
-        tickets = await tx.ticket.findMany({ where: { eventId: input.eventId, serial: { gte: input.selection.serialFrom, lte: input.selection.serialTo } }, select: { id: true, serial: true, eventId: true, ticketTypeId: true, status: true }, orderBy: { serial: "asc" }, take: 501 });
+        const range = parseSerialRange(input.selection.serialFrom, input.selection.serialTo);
+        if (!range) throw validationError("Enter a range like KSP-00001 to KSP-00500 using one serial prefix.");
+        if (range.to - range.from + 1 > 500) throw conflict("Issue no more than 500 tickets at a time.");
+        const serials = expandSerialRange(range);
+        tickets = await tx.ticket.findMany({ where: { eventId: input.eventId, serial: { in: serials } }, select: { id: true, serial: true, eventId: true, ticketTypeId: true, status: true }, orderBy: { serial: "asc" } });
         if (!tickets.length) throw notFound("No tickets were found in that serial range for this event.");
-        if (tickets.length > 500) throw conflict("Issue no more than 500 tickets at a time.");
+        if (tickets.length !== serials.length) {
+          throw conflict(`${serials.length - tickets.length} serial(s) in that range do not exist for this event. Check the start and end serial.`);
+        }
         await lockTickets(tx, tickets.map((ticket) => ticket.id));
         tickets = await tx.ticket.findMany({ where: { id: { in: tickets.map((ticket) => ticket.id) } }, select: { id: true, serial: true, eventId: true, ticketTypeId: true, status: true }, orderBy: { serial: "asc" } });
       }

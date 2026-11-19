@@ -142,3 +142,22 @@ export function placeholderTicketTemplateConfig(): TicketTemplateConfig {
     fonts: { primary: "primary", mono: "mono" },
   };
 }
+
+/**
+ * Key-order-independent serialisation. Configs round-trip through a Postgres
+ * `jsonb` column, which reorders object keys, so plain `JSON.stringify`
+ * comparisons report false "unsaved changes" after a reload.
+ */
+export function templateConfigKey(value: unknown): string {
+  if (Array.isArray(value)) return "[" + value.map(templateConfigKey).join(",") + "]";
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return "{" + Object.keys(record).sort().map((key) => JSON.stringify(key) + ":" + templateConfigKey(record[key])).join(",") + "}";
+  }
+  return JSON.stringify(value) ?? "null";
+}
+
+/** True when the config is still the unmeasured placeholder, so production activation must stay blocked. */
+export function isPlaceholderTemplateConfig(value: unknown): boolean {
+  return templateConfigKey(value) === templateConfigKey(placeholderTicketTemplateConfig());
+}
