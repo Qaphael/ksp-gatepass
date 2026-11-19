@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}body{min-height:max(884px,100dvh);}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "error-container": "#93000a", "surface": "#0e141a", "primary-container": "#5e6ad2", "outline-variant": "#454652", "secondary-fixed": "#6bfcb8", "on-tertiary-fixed": "#281900", "inverse-primary": "#4854bb", "on-primary-fixed": "#000965", "on-tertiary-fixed-variant": "#5f4100", "surface-variant": "#30353d", "on-secondary-fixed-variant": "#005234", "on-secondary-fixed": "#002112", "surface-container-highest": "#30353d", "on-error-container": "#ffdad6", "inverse-on-surface": "#2c3138", "on-surface-variant": "#c6c5d5", "tertiary-fixed": "#ffdeab", "secondary": "#4adf9d", "background": "#0e141a", "secondary-fixed-dim": "#4adf9d", "error": "#ffb4ab", "tertiary": "#ffba33", "inverse-surface": "#dee3ec", "on-primary-fixed-variant": "#2e3aa2", "on-tertiary": "#422c00", "outline": "#908f9e", "surface-container-high": "#252a32", "on-primary": "#121f8b", "on-error": "#690005", "tertiary-fixed-dim": "#ffba33", "on-secondary": "#003823", "tertiary-container": "#996b00", "secondary-container": "#01ba7c", "primary": "#bdc2ff", "surface-dim": "#0e141a", "surface-bright": "#343a41", "on-primary-container": "#fdfaff", "on-tertiary-container": "#fffaf8", "on-background": "#dee3ec", "surface-container": "#1b2027", "surface-tint": "#bdc2ff", "surface-container-lowest": "#090f15", "primary-fixed-dim": "#bdc2ff", "on-surface": "#dee3ec", "surface-container-low": "#171c23", "on-secondary-container": "#00432a", "primary-fixed": "#dfe0ff" }, borderRadius: { DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem" }, spacing: { "space-md": "1rem", "gutter": "1rem", "space-lg": "1.5rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-xl": "2rem", "margin": "1rem" }, fontFamily: { "headline-xl": ["Geist"], "body-lg": ["Geist"], "headline-lg": ["Geist"], "label-mono-md": ["JetBrains Mono"], "headline-md": ["Geist"], "body-md": ["Geist"], "body-sm": ["Geist"], "label-mono-sm": ["JetBrains Mono"], "label-mono-lg": ["JetBrains Mono"], "headline-sm": ["Geist"] }, fontSize: { "headline-xl": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "600" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg": ["24px", { lineHeight: "30px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-mono-md": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label-mono-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "500" }], "label-mono-lg": ["16px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-sm": ["16px", { lineHeight: "22px", letterSpacing: "-0.005em", fontWeight: "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="KSP GatePass Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/ALJJyrD2WKylT-EoiGTNwkzyiwhNZ5kve8k_GMcmYU-SQaem-5ef17Xk8FanxBveSk6VU0EchDGOgBLYCCuYA6E7CoA8EW6jQVBQ3eTWQyi5_z-BO-cFpzdiwoSU0TkQaAiJdDCFl7_tg6y6JpmrpEFrh_u-wKMuGtWPZt2jxcTcb-0xZu1LvH3KecdpmljTt5wYl3wDyeIYlMZP3vxneb5NQm1nk3X2vdd-a0nK0FZ1esYu"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface truncate">KSP GatePass</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant truncate">• OpDesk</span></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0 animate-pulse"></span><span class="font-label-mono-sm text-label-mono-sm text-secondary truncate">Online · Hardware Sync OK</span></div></div></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-surface-container-high"><span class="material-symbols-outlined text-[14px] text-tertiary">event</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface">Gulu Summer Gala 2025</span></div><div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0 border border-outline-variant/30"><span class="material-symbols-outlined text-primary text-[18px]">verified_user</span></div></div></div></header><main class="flex flex-col relative w-full px-margin pt-16 pb-20 bg-surface flex-grow"><div class="flex flex-col w-full pb-8 space-y-space-md">
+<!-- Top Navigation & Context Row -->
+<div class="flex flex-col gap-space-xs pt-1">
+<div class="flex items-center justify-between">
+<a class="inline-flex items-center gap-1.5 text-on-surface-variant hover:text-primary transition-colors py-1 group" href="#">
+<span class="material-symbols-outlined text-[16px] text-primary transition-transform group-hover:-translate-x-0.5">arrow_back</span>
+<span class="font-label-mono-sm text-label-mono-sm">Events Hub</span>
+</a>
+<div class="flex items-center gap-1.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface-variant">
+<span class="material-symbols-outlined text-[12px] text-outline">location_on</span>
+<span class="font-label-mono-sm text-label-mono-sm">Gulu Main Arena</span>
+</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-secondary/15 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-mono-sm text-label-mono-sm tracking-wide">LIVE EVENT</span>
+</span>
+</div>
+</div>
+<!-- Event Title Block -->
+<div class="bg-surface-container rounded-xl p-space-md shadow-sm relative overflow-hidden">
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between gap-space-sm relative z-10">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5 mb-1">
+<span class="px-1.5 py-0.5 rounded-lg bg-surface-container-high text-primary font-label-mono-sm text-label-mono-sm">KSP Hotel Gulu</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">•</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Gate Desk 02</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight leading-snug">
+            KSP Gulu Annual Music Festival
+          </h1>
+<p class="font-label-mono-sm text-label-mono-sm text-on-surface-variant mt-1.5 flex items-center gap-1.5 flex-wrap">
+<span class="inline-flex items-center gap-1 text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-tertiary">schedule</span>
+              Sat, 18 Oct 2025 · 14:00 – 04:00 EAT
+            </span>
+<span>•</span>
+<span class="bg-surface-container-highest px-1.5 py-0.5 rounded-lg text-outline">EVT-2025-08</span>
+</p>
+</div>
+<button class="w-9 h-9 flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all shrink-0 active:scale-95" title="Event Settings">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+<!-- Quick Action Buttons -->
+<div class="grid grid-cols-2 gap-space-sm mt-space-md pt-space-sm">
+<button class="h-11 px-space-md rounded-xl bg-primary-container text-on-primary-container font-headline-sm text-headline-sm flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-transform" id="add-tier-btn">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Add Ticket Tier</span>
+</button>
+<button class="h-11 px-space-md rounded-xl bg-surface-container-high text-on-surface font-headline-sm text-headline-sm flex items-center justify-center gap-1.5 hover:bg-surface-bright active:scale-[0.98] transition-all" id="export-btn">
+<span class="material-symbols-outlined text-[18px] text-outline">ios_share</span>
+<span>Export Audit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Realtime Flash Notice banner -->
+<div class="bg-surface-container-low px-space-md py-2.5 rounded-xl flex items-center justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-secondary text-[16px] shrink-0">sensors</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">
+        Node: <span class="font-label-mono-sm text-on-surface font-medium">GULU-SRV-01</span> · Handheld sync sub-second (42ms)
+      </p>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary bg-secondary/10 px-2 py-0.5 rounded-lg shrink-0">SYNCED</span>
+</div>
+<!-- KPI Metric Strip (2x2 Grid) -->
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Card 1: Gross Revenue -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">Gross Target</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary">payments</span>
+</div>
+<div class="my-2">
+<div class="font-label-mono-lg text-label-mono-lg font-semibold text-on-surface">UGX 35,000,000</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary font-medium">54.6%</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">(UGX 19.1M)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 54.6%"></div>
+</div>
+</div>
+<!-- Card 2: Capacity -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">Capacity Cap</span>
+<span class="material-symbols-outlined text-[16px] text-primary">groups</span>
+</div>
+<div class="my-2">
+<div class="font-label-mono-lg text-label-mono-lg font-semibold text-on-surface">500 Total</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-primary font-medium">76.4%</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">(382 Sold)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 76.4%"></div>
+</div>
+</div>
+<!-- Card 3: Admittance Rate -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">Admittance</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">how_to_reg</span>
+</div>
+<div class="my-2">
+<div class="font-label-mono-lg text-label-mono-lg font-semibold text-secondary">214 Admitted</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary font-medium">56.0%</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">of 382 sold</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 56%"></div>
+</div>
+</div>
+<!-- Card 4: Turnstile Status -->
+<div class="bg-surface-container rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant uppercase tracking-wider">Gate Turnstiles</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">meeting_room</span>
+</div>
+<div class="my-2">
+<div class="font-label-mono-lg text-label-mono-lg font-semibold text-on-surface">4 Online</div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-body-sm text-body-sm text-secondary">Gates A &amp; B active</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<span class="px-1.5 py-0.5 rounded-lg bg-surface-container-highest font-label-mono-sm text-label-mono-sm text-on-surface">A1</span>
+<span class="px-1.5 py-0.5 rounded-lg bg-surface-container-highest font-label-mono-sm text-label-mono-sm text-on-surface">A2</span>
+<span class="px-1.5 py-0.5 rounded-lg bg-surface-container-highest font-label-mono-sm text-label-mono-sm text-on-surface">B1</span>
+<span class="px-1.5 py-0.5 rounded-lg bg-surface-container-highest font-label-mono-sm text-label-mono-sm text-on-surface">B2</span>
+</div>
+</div>
+</div>
+<!-- Section: Ticket Tiers & Pricing Configuration -->
+<div class="flex flex-col space-y-space-sm pt-2">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">confirmation_number</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Ticket Tiers &amp; Pricing</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">3 Categories</span>
+</div>
+<!-- Tier Card 1: VIP Gold Access -->
+<div class="bg-surface-container rounded-xl p-space-md shadow-sm transition-all hover:bg-surface-container-high group">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">VIP Gold Access</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-tertiary/15 text-tertiary font-label-mono-sm text-label-mono-sm font-semibold">
+<span class="material-symbols-outlined text-[12px]">workspace_premium</span>
+              ACTIVE · 100 CAP
+            </span>
+</div>
+<p class="font-label-mono-lg text-label-mono-lg text-primary font-bold mt-1">
+            UGX 100,000
+          </p>
+</div>
+<div class="text-right shrink-0">
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface">85 Sold <span class="text-outline">/ 15 Left</span></div>
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary">85.0% Allocated</span>
+</div>
+</div>
+<!-- Capacity Progress Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 my-3 overflow-hidden">
+<div class="bg-tertiary h-full rounded-full transition-all duration-500" style="width: 85%"></div>
+</div>
+<!-- Rule & Gate Attributes -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-on-surface-variant mb-space-md font-body-sm text-body-sm">
+<div class="flex items-center gap-2 bg-surface-container-low p-2 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-secondary">sensor_door</span>
+<span class="truncate">Gate A FastTrack + VIP Lounge</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low p-2 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-outline">timer</span>
+<span>Anti-Passback: <strong class="text-on-surface font-medium">Strict (90s window)</strong></span>
+</div>
+</div>
+<!-- Action Buttons Row -->
+<div class="flex items-center gap-2">
+<button class="flex-1 h-9 px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-headline-sm text-headline-sm flex items-center justify-center gap-1 text-[13px] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[15px]">edit</span>
+<span>Edit Tier</span>
+</button>
+<button class="flex-1 h-9 px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-primary font-label-mono-sm text-label-mono-sm flex items-center justify-center gap-1 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[15px]">inventory_2</span>
+<span>Manage Batch #04</span>
+</button>
+</div>
+</div>
+<!-- Tier Card 2: Regular Arena Pass -->
+<div class="bg-surface-container rounded-xl p-space-md shadow-sm transition-all hover:bg-surface-container-high group">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Regular Arena Pass</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-secondary/15 text-secondary font-label-mono-sm text-label-mono-sm font-semibold">
+<span class="material-symbols-outlined text-[12px]">confirmation_number</span>
+              ACTIVE · 300 CAP
+            </span>
+</div>
+<p class="font-label-mono-lg text-label-mono-lg text-primary font-bold mt-1">
+            UGX 50,000
+          </p>
+</div>
+<div class="text-right shrink-0">
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface">260 Sold <span class="text-outline">/ 40 Left</span></div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">86.6% Allocated</span>
+</div>
+</div>
+<!-- Capacity Progress Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 my-3 overflow-hidden">
+<div class="bg-secondary h-full rounded-full transition-all duration-500" style="width: 86.6%"></div>
+</div>
+<!-- Rule & Gate Attributes -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-on-surface-variant mb-space-md font-body-sm text-body-sm">
+<div class="flex items-center gap-2 bg-surface-container-low p-2 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-secondary">sensor_door</span>
+<span class="truncate">Gate B Arena Turnstiles #01 &amp; #02</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low p-2 rounded-lg">
+<span class="material-symbols-outlined text-[16px] text-outline">timer</span>
+<span>Anti-Passback: <strong class="text-on-surface font-medium">Strict (90s window)</strong></span>
+</div>
+</div>
+<!-- Action Buttons Row -->
+<div class="flex items-center gap-2">
+<button class="flex-1 h-9 px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-headline-sm text-headline-sm flex items-center justify-center gap-1 text-[13px] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[15px]">edit</span>
+<span>Edit Tier</span>
+</button>
+<button class="flex-1 h-9 px-3 rounded-xl bg-surface-container-high hover:bg-surface-bright text-primary font-label-mono-sm text-label-mono-sm flex items-center justify-center gap-1 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[15px]">inventory_2</span>
+<span>Manage Batch #02</span>
+</button>
+</div>
+</div>
+<!-- Tier Card 3: Early Bird General (Sold Out) -->
+<div class="bg-surface-container/60 rounded-xl p-space-md shadow-sm">
+<div class="flex items-start justify-between gap-2">
+<div>
+<div class="flex items-center gap-2 flex-wrap">
+<h3 class="font-headline-sm text-headline-sm text-on-surface/80 font-medium">Early Bird General</h3>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-variant text-outline font-label-mono-sm text-label-mono-sm font-semibold">
+<span class="material-symbols-outlined text-[12px]">lock</span>
+              SOLD OUT · 100 CAP
+            </span>
+</div>
+<p class="font-label-mono-lg text-label-mono-lg text-outline font-bold mt-1">
+            UGX 35,000
+          </p>
+</div>
+<div class="text-right shrink-0">
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">100 Sold <span class="text-outline">/ 0 Left</span></div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">100% Completed</span>
+</div>
+</div>
+<!-- Full Bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 my-3 overflow-hidden">
+<div class="bg-outline-variant h-full rounded-full" style="width: 100%"></div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant mb-space-sm font-body-sm text-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-outline">sensor_door</span>
+<span>Gate B Arena Only</span>
+</div>
+<button class="h-8 px-3 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[14px]">visibility</span>
+<span>View Batch #01</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section: Operational Rules & Gate Policy -->
+<div class="flex flex-col space-y-space-sm pt-2">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">policy</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Operational Rules &amp; Gate Policy</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+        Enforced
+      </span>
+</div>
+<div class="bg-surface-container rounded-xl p-space-md shadow-sm space-y-space-md">
+<!-- Rule 1: Anti-Passback Guard -->
+<div class="flex items-start justify-between gap-space-md pb-space-sm">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 mt-0.5 text-primary">
+<span class="material-symbols-outlined text-[18px]">security_update_good</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface">Anti-Passback Guard</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Strict 90s lockout on turnstiles to prevent physical pass-back</p>
+</div>
+</div>
+<!-- Custom UI Toggle -->
+<label class="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+<input checked="" class="sr-only peer" id="toggle-antipassback" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<!-- Rule 2: Offline Sync Mesh -->
+<div class="flex items-start justify-between gap-space-md py-space-sm bg-surface-container-low p-2.5 rounded-xl">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-secondary/15 flex items-center justify-center shrink-0 text-secondary">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface">Offline Sync Mesh</span>
+<span class="font-label-mono-sm text-label-mono-sm px-1.5 rounded-lg bg-secondary/10 text-secondary">ARMED</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Local Node <strong class="text-on-surface font-label-mono-sm font-semibold">GULU-SRV-01</strong> · Max 500 offline passes buffered</p>
+</div>
+</div>
+<button class="shrink-0 text-outline hover:text-on-surface p-1">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<!-- Rule 3: Supervisor Pin Requirement -->
+<div class="flex items-start justify-between gap-space-md pt-space-xs">
+<div class="flex items-start gap-2.5 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0 mt-0.5 text-tertiary">
+<span class="material-symbols-outlined text-[18px]">pin</span>
+</div>
+<div class="min-w-0">
+<div class="font-headline-sm text-headline-sm text-on-surface">Supervisor PIN Override</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Required for manual turnstile overrides and cash entry voiding</p>
+</div>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary bg-tertiary/10 px-2 py-1 rounded-lg shrink-0">4-DIGIT PIN</span>
+</div>
+</div>
+</div>
+<!-- Section: Assigned Staff & Sellers -->
+<div class="flex flex-col space-y-space-sm pt-2">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">badge</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Assigned Staff &amp; Sellers</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">3 Active Users</span>
+</div>
+<div class="bg-surface-container rounded-xl overflow-hidden shadow-sm">
+<!-- Staff 1: Denis O. -->
+<div class="p-space-md flex items-center justify-between gap-space-sm hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest text-primary flex items-center justify-center font-headline-sm text-headline-sm shrink-0">
+            DO
+          </div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Denis O.</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant bg-surface-container-high px-1.5 py-0.2 rounded-lg">Booth #2</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 truncate">
+              50 Passes assigned · 42 redeemed
+            </p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<div class="font-label-mono-md text-label-mono-md font-semibold text-secondary">UGX 4,200,000</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Collected</span>
+</div>
+</div>
+<div class="h-[1px] bg-surface-container-high w-full"></div>
+<!-- Staff 2: Okello David -->
+<div class="p-space-md flex items-center justify-between gap-space-sm hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-surface-container-highest text-secondary flex items-center justify-center font-headline-sm text-headline-sm shrink-0">
+            OD
+          </div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Okello David</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant bg-surface-container-high px-1.5 py-0.2 rounded-lg">Gate A POS</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 truncate">
+              35 Passes assigned · 30 redeemed
+            </p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<div class="font-label-mono-md text-label-mono-md font-semibold text-secondary">UGX 3,000,000</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Collected</span>
+</div>
+</div>
+<div class="h-[1px] bg-surface-container-high w-full"></div>
+<!-- Staff 3: qaphael (Super Admin) -->
+<div class="p-space-md flex items-center justify-between gap-space-sm hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-headline-sm text-headline-sm shrink-0">
+            QA
+          </div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">qaphael</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary bg-primary/10 px-1.5 py-0.2 rounded-lg font-semibold">SUPER ADMIN</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 truncate">
+              Full Administrative &amp; Vault Access
+            </p>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="inline-flex items-center gap-1 font-label-mono-sm text-label-mono-sm text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-lg">
+<span class="material-symbols-outlined text-[14px] text-secondary">verified</span>
+            Root Auth
+          </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Venue Quick Specs & Location Metadata Footer Strip -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl space-y-2 mt-2">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-mono-sm text-label-mono-sm">VENUE SPEC</span>
+<span class="font-label-mono-sm text-label-mono-sm">AFRICA/KAMPALA (EAT)</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-outline">hotel</span>
+<span>KSP Hotel &amp; Conference Centre, Gulu</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">MESH VERIFIED</span>
+</div>
+</div>
+</div>
+<script>
+  // Interactive micro-toast for quick action confirmations
+  document.getElementById('export-btn')?.addEventListener('click', function() {
+    const originalText = this.innerHTML;
+    this.innerHTML = '<span class="material-symbols-outlined text-[18px] text-secondary">check</span><span>Exporting CSV...</span>';
+    setTimeout(() => {
+      this.innerHTML = originalText;
+    }, 1800);
+  });
+
+  document.getElementById('add-tier-btn')?.addEventListener('click', function() {
+    alert("KSP GatePass: Tier creation modal activated for Event EVT-2025-08.");
+  });
+
+  const toggleAP = document.getElementById('toggle-antipassback');
+  toggleAP?.addEventListener('change', function() {
+    console.log("Anti-Passback rule status toggled:", this.checked);
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.35)]" data-active-classes="text-primary bg-surface-container-high font-semibold"><div class="h-16 px-space-xs grid grid-cols-5 items-center"><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="scanner" href="#"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span class="font-label-mono-sm text-label-mono-sm">Scan</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="manual-serial-gate-entry" href="#"><span class="material-symbols-outlined text-[20px]">pin</span><span class="font-label-mono-sm text-label-mono-sm">Manual</span></a><a aria-current="page" class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors text-primary bg-surface-container-high font-semibold" data-path="event-configuration" href="#"><span class="material-symbols-outlined text-[20px]">event_available</span><span class="font-label-mono-sm text-label-mono-sm">Events</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="hardware-printer-settings" href="#"><span class="material-symbols-outlined text-[20px]">print</span><span class="font-label-mono-sm text-label-mono-sm">Hardware</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="reconciliation-reporting" href="#"><span class="material-symbols-outlined text-[20px]">query_stats</span><span class="font-label-mono-sm text-label-mono-sm">Reconcile</span></a></div></nav></body></html>

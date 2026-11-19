@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}body{min-height:max(884px,100dvh);}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "error-container": "#93000a", "surface": "#0e141a", "primary-container": "#5e6ad2", "outline-variant": "#454652", "secondary-fixed": "#6bfcb8", "on-tertiary-fixed": "#281900", "inverse-primary": "#4854bb", "on-primary-fixed": "#000965", "on-tertiary-fixed-variant": "#5f4100", "surface-variant": "#30353d", "on-secondary-fixed-variant": "#005234", "on-secondary-fixed": "#002112", "surface-container-highest": "#30353d", "on-error-container": "#ffdad6", "inverse-on-surface": "#2c3138", "on-surface-variant": "#c6c5d5", "tertiary-fixed": "#ffdeab", "secondary": "#4adf9d", "background": "#0e141a", "secondary-fixed-dim": "#4adf9d", "error": "#ffb4ab", "tertiary": "#ffba33", "inverse-surface": "#dee3ec", "on-primary-fixed-variant": "#2e3aa2", "on-tertiary": "#422c00", "outline": "#908f9e", "surface-container-high": "#252a32", "on-primary": "#121f8b", "on-error": "#690005", "tertiary-fixed-dim": "#ffba33", "on-secondary": "#003823", "tertiary-container": "#996b00", "secondary-container": "#01ba7c", "primary": "#bdc2ff", "surface-dim": "#0e141a", "surface-bright": "#343a41", "on-primary-container": "#fdfaff", "on-tertiary-container": "#fffaf8", "on-background": "#dee3ec", "surface-container": "#1b2027", "surface-tint": "#bdc2ff", "surface-container-lowest": "#090f15", "primary-fixed-dim": "#bdc2ff", "on-surface": "#dee3ec", "surface-container-low": "#171c23", "on-secondary-container": "#00432a", "primary-fixed": "#dfe0ff" }, borderRadius: { DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem" }, spacing: { "space-md": "1rem", "gutter": "1rem", "space-lg": "1.5rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-xl": "2rem", "margin": "1rem" }, fontFamily: { "headline-xl": ["Geist"], "body-lg": ["Geist"], "headline-lg": ["Geist"], "label-mono-md": ["JetBrains Mono"], "headline-md": ["Geist"], "body-md": ["Geist"], "body-sm": ["Geist"], "label-mono-sm": ["JetBrains Mono"], "label-mono-lg": ["JetBrains Mono"], "headline-sm": ["Geist"] }, fontSize: { "headline-xl": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "600" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg": ["24px", { lineHeight: "30px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-mono-md": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label-mono-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "500" }], "label-mono-lg": ["16px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-sm": ["16px", { lineHeight: "22px", letterSpacing: "-0.005em", fontWeight: "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="KSP GatePass Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/ALJJyrD2WKylT-EoiGTNwkzyiwhNZ5kve8k_GMcmYU-SQaem-5ef17Xk8FanxBveSk6VU0EchDGOgBLYCCuYA6E7CoA8EW6jQVBQ3eTWQyi5_z-BO-cFpzdiwoSU0TkQaAiJdDCFl7_tg6y6JpmrpEFrh_u-wKMuGtWPZt2jxcTcb-0xZu1LvH3KecdpmljTt5wYl3wDyeIYlMZP3vxneb5NQm1nk3X2vdd-a0nK0FZ1esYu"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface truncate">KSP GatePass</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant truncate">• OpDesk</span></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0 animate-pulse"></span><span class="font-label-mono-sm text-label-mono-sm text-secondary truncate">Online · Hardware Sync OK</span></div></div></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-surface-container-high"><span class="material-symbols-outlined text-[14px] text-tertiary">event</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface">Gulu Summer Gala 2025</span></div><div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0 border border-outline-variant/30"><span class="material-symbols-outlined text-primary text-[18px]">verified_user</span></div></div></div></header><main class="flex flex-col relative w-full px-margin pt-16 pb-20 bg-surface flex-grow"><div class="flex flex-col w-full gap-space-lg">
+<!-- Operational Context Header -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded-lg bg-surface-container-high text-primary">
+<span class="material-symbols-outlined text-[15px]">account_balance</span>
+</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary uppercase tracking-wider">Accounting &amp; Vault Desk</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-secondary/10 text-secondary font-label-mono-sm text-label-mono-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+        LEDGER LIVE
+      </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Reconciliation &amp; Reports</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Shift closure audits, mobile money settlements &amp; safe vault remittances · KSP Gulu Annual Music Festival</p>
+</div>
+<!-- Telemetry Bar -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs p-space-sm rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[16px]">sync_saved_locally</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface font-semibold">RECONCILIATION ENGINE</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">· SHIFT #01 ACTIVE</span>
+</div>
+<div class="flex items-center gap-space-sm font-label-mono-sm text-label-mono-sm text-outline">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+        15:45:00 EAT
+      </span>
+<span>•</span>
+<span>Africa/Kampala</span>
+<span>•</span>
+<span class="text-secondary font-semibold">Synced</span>
+</div>
+</div>
+<!-- Filter & Export Control Matrix -->
+<div class="flex flex-col gap-space-sm p-space-md rounded-lg bg-surface-container">
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-space-sm">
+<div class="flex flex-col sm:flex-row items-start sm:items-center gap-space-sm">
+<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-high text-on-surface font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-tertiary text-[16px]">calendar_today</span>
+<span>Today (18 Oct 2025) · Full Event</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container-high text-on-surface font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-primary text-[16px]">layers</span>
+<span>Shift 1 &amp; 2 Combined</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-highest text-on-surface hover:text-primary transition-colors font-label-mono-sm text-label-mono-sm" id="btnExportCsv">
+<span class="material-symbols-outlined text-[16px]">csv</span>
+<span>Export CSV</span>
+</button>
+<button class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-highest text-on-surface hover:text-primary transition-colors font-label-mono-sm text-label-mono-sm" id="btnExportPdf">
+<span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+<span>Audit PDF</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Master Financial Audit Summary (4-Card Metric Grid) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm">
+<!-- Card 1: Gross Revenue -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container justify-between gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-outline uppercase tracking-wider">Gross Recorded</span>
+<span class="font-label-mono-lg text-headline-sm text-on-surface font-bold mt-1">UGX 19,100,000</span>
+</div>
+<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">382 passes sold</span>
+<span class="font-label-mono-sm text-label-mono-sm text-primary">100% Volume</span>
+</div>
+</div>
+<!-- Card 2: Cash Handed to Safe -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container justify-between gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-outline uppercase tracking-wider">Safe Remittance</span>
+<span class="font-label-mono-lg text-headline-sm text-secondary font-bold mt-1">UGX 7,800,000</span>
+</div>
+<div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Physically locked in vault</span>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">Verified @qaphael</span>
+</div>
+</div>
+<!-- Card 3: Mobile Money -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container justify-between gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-outline uppercase tracking-wider">MTN &amp; Airtel MoMo</span>
+<span class="font-label-mono-lg text-headline-sm text-tertiary font-bold mt-1">UGX 9,850,000</span>
+</div>
+<div class="w-8 h-8 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">phonelink_ring</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Auto-cleared via API</span>
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary">Direct Escrow</span>
+</div>
+</div>
+<!-- Card 4: Outstanding Cash In Hand -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container justify-between gap-space-md">
+<div class="flex items-start justify-between">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-outline uppercase tracking-wider">Cash With Sellers</span>
+<span class="font-label-mono-lg text-headline-sm text-error font-bold mt-1">UGX 1,450,000</span>
+</div>
+<div class="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[18px]">pending_actions</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-xs">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant truncate">Denis 600K · Okello 850K</span>
+<span class="font-label-mono-sm text-label-mono-sm text-error">Pending Vault</span>
+</div>
+</div>
+</div>
+<!-- Payment Channel Breakdown -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Payment Channel Liquidity Breakdown</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Real-time settlement share across merchant SIM aggregators &amp; on-ground cashiers</p>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Target: UGX 19,100,000</span>
+</div>
+<!-- Multi-segment Stacked Bar -->
+<div class="flex flex-col gap-space-xs">
+<div class="w-full h-3 rounded bg-surface-container-lowest flex overflow-hidden p-0.5">
+<div class="h-full bg-tertiary transition-all duration-500" style="width: 42.9%;" title="MTN Mobile Money: 42.9%"></div>
+<div class="h-full bg-error transition-all duration-500" style="width: 8.6%;" title="Airtel Money: 8.6%"></div>
+<div class="h-full bg-secondary transition-all duration-500" style="width: 40.8%;" title="Safe Vault Remittance: 40.8%"></div>
+<div class="h-full bg-outline-variant transition-all duration-500" style="width: 7.7%;" title="Seller Balances: 7.7%"></div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-space-xs">
+<!-- MTN Item -->
+<div class="flex flex-col p-space-sm rounded-lg bg-surface-container-low gap-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded bg-tertiary"></span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface">MTN MoMo</span>
+</div>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-semibold">UGX 8,200,000</span>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">42.9% (164 trx)</span>
+</div>
+<!-- Airtel Item -->
+<div class="flex flex-col p-space-sm rounded-lg bg-surface-container-low gap-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded bg-error"></span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface">Airtel Money</span>
+</div>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-semibold">UGX 1,650,000</span>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">8.6% (33 trx)</span>
+</div>
+<!-- Cash in Safe Item -->
+<div class="flex flex-col p-space-sm rounded-lg bg-surface-container-low gap-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded bg-secondary"></span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface">Physical Cash (Safe)</span>
+</div>
+<span class="font-label-mono-md text-label-mono-md text-secondary font-semibold">UGX 7,800,000</span>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">40.8% (Remitted)</span>
+</div>
+<!-- Float With Cashiers -->
+<div class="flex flex-col p-space-sm rounded-lg bg-surface-container-low gap-1">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded bg-outline-variant"></span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface">Seller In-Hand</span>
+</div>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-semibold">UGX 1,450,000</span>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">7.7% (2 Cashiers)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Seller Remittance & Safe Reconciliation -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Cashier Remittance &amp; Safe Ledger</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Individual teller accountability, physical envelopes handed into hotel vault</p>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/10 text-secondary font-label-mono-sm text-label-mono-sm self-start sm:self-center">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+<span>Zero Discrepancy Flagged</span>
+</div>
+</div>
+<!-- Cashier 1 -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container-low gap-space-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-label-mono-md font-bold">
+            DO
+          </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-body-md text-on-surface font-semibold">Denis O.</span>
+<span class="px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-mono-sm text-label-mono-sm">Booth #2 (VIP Box)</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">POS Terminal #GP-04 · Bag Tag #KSP-882</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs self-start sm:self-auto">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary/10 text-secondary font-label-mono-sm text-label-mono-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">done_all</span>
+            UGX 0 (Balanced)
+          </span>
+</div>
+</div>
+<!-- Breakdown Subgrid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Tickets Sold</span>
+<p class="font-label-mono-md text-label-mono-md text-on-surface font-semibold mt-0.5">42 passes</p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Total Value Sold</span>
+<p class="font-label-mono-md text-label-mono-md text-on-surface font-semibold mt-0.5">UGX 4,200,000</p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">Remitted to Safe</span>
+<p class="font-label-mono-md text-label-mono-md text-secondary font-semibold mt-0.5">UGX 3,600,000</p>
+<span class="font-label-mono-sm text-label-mono-sm text-outline block text-[10px]">Signed by @qaphael</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary">Cash in Hand</span>
+<p class="font-label-mono-md text-label-mono-md text-tertiary font-semibold mt-0.5">UGX 600,000</p>
+<span class="font-label-mono-sm text-label-mono-sm text-outline block text-[10px]">Pending Safe Box #1</span>
+</div>
+</div>
+</div>
+<!-- Cashier 2 -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container-low gap-space-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-label-mono-md font-bold">
+            OD
+          </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-body-md text-on-surface font-semibold">Okello David</span>
+<span class="px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-mono-sm text-label-mono-sm">Gate A Main POS</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-outline">POS Terminal #GP-01 · Bag Tag #KSP-883</span>
+</div>
+</div>
+<div class="flex items-center gap-space-xs self-start sm:self-auto">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary/10 text-secondary font-label-mono-sm text-label-mono-sm font-semibold">
+<span class="material-symbols-outlined text-[14px]">done_all</span>
+            UGX 0 (Balanced)
+          </span>
+</div>
+</div>
+<!-- Breakdown Subgrid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-xs pt-space-xs">
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Tickets Sold</span>
+<p class="font-label-mono-md text-label-mono-md text-on-surface font-semibold mt-0.5">30 passes</p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Total Value Sold</span>
+<p class="font-label-mono-md text-label-mono-md text-on-surface font-semibold mt-0.5">UGX 3,000,000</p>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">Remitted to Safe</span>
+<p class="font-label-mono-md text-label-mono-md text-secondary font-semibold mt-0.5">UGX 2,150,000</p>
+<span class="font-label-mono-sm text-label-mono-sm text-outline block text-[10px]">Signed by @qaphael</span>
+</div>
+<div class="p-space-sm rounded-lg bg-surface-container">
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary">Cash in Hand</span>
+<p class="font-label-mono-md text-label-mono-md text-tertiary font-semibold mt-0.5">UGX 850,000</p>
+<span class="font-label-mono-sm text-label-mono-sm text-outline block text-[10px]">Active Shift Drawer</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Gate Turnstile Ingress vs Sales Parity -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Gate Turnstile Ingress vs. Sales Parity</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Real-time scan counter cross-referenced with issued serials to detect ticket tampering or tailgate entries</p>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-high text-primary font-label-mono-sm text-label-mono-sm self-start sm:self-center">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+<span>Anti-Passback Active</span>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<!-- Tier 1: VIP Gold -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container-low gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded bg-tertiary"></span>
+<span class="font-body-md text-on-surface font-semibold">VIP Gold Access</span>
+</div>
+<span class="px-2 py-0.5 rounded-lg bg-secondary/10 text-secondary font-label-mono-sm text-label-mono-sm">0 Fraud Attempts</span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Turnstile Scans</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">54 Admitted</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Total Sold</span>
+<span class="font-headline-sm text-headline-sm text-on-surface-variant">85 Sold</span>
+</div>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-tertiary transition-all duration-500" style="width: 63.5%;"></div>
+</div>
+<div class="flex items-center justify-between font-label-mono-sm text-label-mono-sm text-on-surface-variant pt-1">
+<span>63.5% capacity scanned</span>
+<span class="text-tertiary">31 pending entry</span>
+</div>
+</div>
+<!-- Tier 2: Regular Arena -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container-low gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded bg-primary"></span>
+<span class="font-body-md text-on-surface font-semibold">Regular Arena</span>
+</div>
+<span class="px-2 py-0.5 rounded-lg bg-error/10 text-error font-label-mono-sm text-label-mono-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">block</span>
+            2 Blocked Re-entries
+          </span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Turnstile Scans</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">160 Admitted</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-label-mono-sm text-label-mono-sm text-outline">Total Sold</span>
+<span class="font-headline-sm text-headline-sm text-on-surface-variant">297 Sold</span>
+</div>
+</div>
+<div class="w-full h-2 rounded bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-primary transition-all duration-500" style="width: 53.8%;"></div>
+</div>
+<div class="flex items-center justify-between font-label-mono-sm text-label-mono-sm text-on-surface-variant pt-1">
+<span>53.8% capacity scanned</span>
+<span class="text-primary">137 pending entry</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Super Admin Shift Sign-off & Lock -->
+<div class="flex flex-col p-space-md rounded-lg bg-surface-container-high gap-space-md">
+<div class="flex items-start gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-primary/20 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+</div>
+<div class="flex flex-col">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Super Admin Shift Sign-off &amp; Safe Lock</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Authorized personnel: <strong class="text-on-surface">@qaphael (Lead Auditor)</strong>. Finalizing freezes the shift ledger, generates immutable cryptographic hashes, and marks safe envelope drops as complete.
+        </p>
+</div>
+</div>
+<!-- PIN and Lock Row -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm pt-space-xs">
+<div class="flex items-center gap-2 px-space-sm py-2 rounded-lg bg-surface-container text-on-surface">
+<span class="material-symbols-outlined text-outline text-[18px]">key</span>
+<input autocomplete="off" class="bg-transparent font-label-mono-lg text-label-mono-lg tracking-widest text-on-surface focus:outline-none w-32 placeholder:text-outline/50" id="adminPinInput" maxlength="4" placeholder="4-Digit PIN" type="password"/>
+</div>
+<button class="flex items-center justify-center gap-2 px-space-lg py-3 rounded-lg bg-primary-container text-on-primary-container font-headline-sm text-headline-sm hover:opacity-95 active:scale-[0.99] transition-all" id="btnLockShift">
+<span class="material-symbols-outlined text-[18px]">lock_reset</span>
+<span>Confirm Safe Deposit &amp; Lock Shift Ledger</span>
+</button>
+</div>
+<div class="hidden flex items-center gap-2 p-space-sm rounded-lg bg-secondary/10 text-secondary font-label-mono-sm text-label-mono-sm" id="lockConfirmationMessage">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Shift #01 ledger successfully sealed at 15:45:00 EAT by @qaphael. Audit manifest recorded.</span>
+</div>
+</div>
+</div>
+<script>
+  (function initReconciliationDesk() {
+    const pinInput = document.getElementById('adminPinInput');
+    const lockBtn = document.getElementById('btnLockShift');
+    const msgBox = document.getElementById('lockConfirmationMessage');
+    const btnCsv = document.getElementById('btnExportCsv');
+    const btnPdf = document.getElementById('btnExportPdf');
+
+    if (lockBtn && pinInput && msgBox) {
+      lockBtn.addEventListener('click', function() {
+        const val = pinInput.value.trim();
+        if (val.length === 4) {
+          lockBtn.disabled = true;
+          lockBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          msgBox.classList.remove('hidden');
+          pinInput.value = '';
+          pinInput.disabled = true;
+        } else {
+          pinInput.focus();
+          pinInput.classList.add('text-error');
+          setTimeout(() => {
+            pinInput.classList.remove('text-error');
+          }, 800);
+        }
+      });
+    }
+
+    if (btnCsv) {
+      btnCsv.addEventListener('click', function() {
+        const originalText = btnCsv.innerHTML;
+        btnCsv.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Exporting...</span>';
+        setTimeout(() => {
+          btnCsv.innerHTML = '<span class="material-symbols-outlined text-[16px] text-secondary">check</span><span>Downloaded</span>';
+          setTimeout(() => {
+            btnCsv.innerHTML = originalText;
+          }, 2000);
+        }, 600);
+      });
+    }
+
+    if (btnPdf) {
+      btnPdf.addEventListener('click', function() {
+        const originalText = btnPdf.innerHTML;
+        btnPdf.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Generating...</span>';
+        setTimeout(() => {
+          btnPdf.innerHTML = '<span class="material-symbols-outlined text-[16px] text-secondary">check</span><span>Ready (840 KB)</span>';
+          setTimeout(() => {
+            btnPdf.innerHTML = originalText;
+          }, 2000);
+        }, 750);
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.35)]" data-active-classes="text-primary bg-surface-container-high font-semibold"><div class="h-16 px-space-xs grid grid-cols-5 items-center"><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="scanner" href="#"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span class="font-label-mono-sm text-label-mono-sm">Scan</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="manual-serial-gate-entry" href="#"><span class="material-symbols-outlined text-[20px]">pin</span><span class="font-label-mono-sm text-label-mono-sm">Manual</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="event-configuration" href="#"><span class="material-symbols-outlined text-[20px]">event_available</span><span class="font-label-mono-sm text-label-mono-sm">Events</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="hardware-printer-settings" href="#"><span class="material-symbols-outlined text-[20px]">print</span><span class="font-label-mono-sm text-label-mono-sm">Hardware</span></a><a aria-current="page" class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors text-primary bg-surface-container-high font-semibold" data-path="reconciliation-reporting" href="#"><span class="material-symbols-outlined text-[20px]">query_stats</span><span class="font-label-mono-sm text-label-mono-sm">Reconcile</span></a></div></nav></body></html>

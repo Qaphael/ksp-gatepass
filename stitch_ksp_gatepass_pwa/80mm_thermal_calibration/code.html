@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}body{min-height:max(884px,100dvh);}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "error-container": "#93000a", "surface": "#0e141a", "primary-container": "#5e6ad2", "outline-variant": "#454652", "secondary-fixed": "#6bfcb8", "on-tertiary-fixed": "#281900", "inverse-primary": "#4854bb", "on-primary-fixed": "#000965", "on-tertiary-fixed-variant": "#5f4100", "surface-variant": "#30353d", "on-secondary-fixed-variant": "#005234", "on-secondary-fixed": "#002112", "surface-container-highest": "#30353d", "on-error-container": "#ffdad6", "inverse-on-surface": "#2c3138", "on-surface-variant": "#c6c5d5", "tertiary-fixed": "#ffdeab", "secondary": "#4adf9d", "background": "#0e141a", "secondary-fixed-dim": "#4adf9d", "error": "#ffb4ab", "tertiary": "#ffba33", "inverse-surface": "#dee3ec", "on-primary-fixed-variant": "#2e3aa2", "on-tertiary": "#422c00", "outline": "#908f9e", "surface-container-high": "#252a32", "on-primary": "#121f8b", "on-error": "#690005", "tertiary-fixed-dim": "#ffba33", "on-secondary": "#003823", "tertiary-container": "#996b00", "secondary-container": "#01ba7c", "primary": "#bdc2ff", "surface-dim": "#0e141a", "surface-bright": "#343a41", "on-primary-container": "#fdfaff", "on-tertiary-container": "#fffaf8", "on-background": "#dee3ec", "surface-container": "#1b2027", "surface-tint": "#bdc2ff", "surface-container-lowest": "#090f15", "primary-fixed-dim": "#bdc2ff", "on-surface": "#dee3ec", "surface-container-low": "#171c23", "on-secondary-container": "#00432a", "primary-fixed": "#dfe0ff" }, borderRadius: { DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem" }, spacing: { "space-md": "1rem", "gutter": "1rem", "space-lg": "1.5rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-xl": "2rem", "margin": "1rem" }, fontFamily: { "headline-xl": ["Geist"], "body-lg": ["Geist"], "headline-lg": ["Geist"], "label-mono-md": ["JetBrains Mono"], "headline-md": ["Geist"], "body-md": ["Geist"], "body-sm": ["Geist"], "label-mono-sm": ["JetBrains Mono"], "label-mono-lg": ["JetBrains Mono"], "headline-sm": ["Geist"] }, fontSize: { "headline-xl": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "600" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg": ["24px", { lineHeight: "30px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-mono-md": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label-mono-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "500" }], "label-mono-lg": ["16px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-sm": ["16px", { lineHeight: "22px", letterSpacing: "-0.005em", fontWeight: "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="KSP GatePass Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/ALJJyrD2WKylT-EoiGTNwkzyiwhNZ5kve8k_GMcmYU-SQaem-5ef17Xk8FanxBveSk6VU0EchDGOgBLYCCuYA6E7CoA8EW6jQVBQ3eTWQyi5_z-BO-cFpzdiwoSU0TkQaAiJdDCFl7_tg6y6JpmrpEFrh_u-wKMuGtWPZt2jxcTcb-0xZu1LvH3KecdpmljTt5wYl3wDyeIYlMZP3vxneb5NQm1nk3X2vdd-a0nK0FZ1esYu"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface truncate">KSP GatePass</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant truncate">• OpDesk</span></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0 animate-pulse"></span><span class="font-label-mono-sm text-label-mono-sm text-secondary truncate">Online · Hardware Sync OK</span></div></div></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-surface-container-high"><span class="material-symbols-outlined text-[14px] text-tertiary">event</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface">Gulu Summer Gala 2025</span></div><div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0 border border-outline-variant/30"><span class="material-symbols-outlined text-primary text-[18px]">verified_user</span></div></div></div></header><main class="flex flex-col relative w-full px-margin pt-16 pb-20 bg-surface flex-grow"><div class="flex flex-col w-full gap-space-lg pb-space-xl">
+<!-- Top Navigation & Context Bar -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="inline-flex items-center gap-1 text-on-surface-variant hover:text-on-surface transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+<span class="font-body-sm text-body-sm">Back to Event</span>
+</button>
+<span class="text-outline-variant font-label-mono-sm text-label-mono-sm">/</span>
+<span class="text-on-surface-variant font-label-mono-sm text-label-mono-sm truncate">Hardware &amp; Print Config</span>
+<span class="text-outline-variant font-label-mono-sm text-label-mono-sm">/</span>
+<span class="text-primary font-label-mono-sm text-label-mono-sm truncate">Templates</span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-space-xs">
+<div>
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight">80mm Thermal Roll Calibration</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Precision print offsets, QR code contrast &amp; cut margins for KSP Gulu Annual Music Festival</p>
+</div>
+<div class="flex items-center gap-space-xs flex-shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-[13px] text-tertiary">schedule</span>
+          EAT (UTC+3)
+        </span>
+</div>
+</div>
+</div>
+<!-- Printer Device Status Card -->
+<div class="rounded-xl bg-surface-container p-space-md shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">print</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Epson TM-T20III</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant px-1.5 py-0.5 rounded-lg bg-surface-container-high">USB/LAN Node #01</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="inline-flex items-center gap-1 text-secondary font-label-mono-sm text-label-mono-sm">
+<span class="w-2 h-2 rounded-full bg-secondary inline-block animate-pulse"></span>
+            READY · 203 DPI (8 dots/mm)
+          </span>
+<span class="text-outline-variant font-label-mono-sm text-label-mono-sm">•</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant truncate">ESCPOS / Raster</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between sm:justify-end gap-space-md pt-space-xs sm:pt-0">
+<div class="text-left sm:text-right">
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">ACTIVE CALIBRATION PROFILE</div>
+<div class="font-label-mono-md text-label-mono-md text-primary truncate">Thermal-Pass-Roll-80mm (v2.4)</div>
+</div>
+<button class="h-9 px-3 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-mono-sm text-label-mono-sm inline-flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[15px]">sync_alt</span>
+        Switch
+      </button>
+</div>
+</div>
+<!-- Interactive Roll Geometry Preview & Live Blueprint -->
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-md shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">straighten</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Interactive Roll Geometry &amp; Visual Preview</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Live visual feedback reflecting 80mm roll width, safe margins, and tear positioning</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-container-low font-label-mono-sm text-label-mono-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px] text-secondary">crop_free</span>
+          Scale: 1.0x Real-time
+        </span>
+</div>
+</div>
+<!-- Blueprint Canvas Area -->
+<div class="w-full rounded-xl bg-surface-container-lowest p-space-md flex flex-col items-center justify-center overflow-x-auto relative">
+<!-- Dimensions Overhead Indicators -->
+<div class="w-[280px] flex items-center justify-between mb-2 text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="text-tertiary">|← 4mm Left</span>
+<span class="text-primary font-semibold">Printable: 72mm</span>
+<span class="text-tertiary">4mm Right →|</span>
+</div>
+<!-- Ticket Canvas Container -->
+<div class="relative w-[280px] bg-[#fbfbfb] text-[#121212] rounded-t-sm shadow-xl p-3 flex flex-col items-center select-none" id="preview-ticket">
+<!-- Rulers and Micro-notches -->
+<div class="w-full flex items-center justify-between text-[9px] font-label-mono-sm text-neutral-500 pb-1">
+<span>0mm</span>
+<span class="text-primary font-bold">TOTAL: 80.0 mm</span>
+<span>80mm</span>
+</div>
+<!-- Printable Area Box -->
+<div class="w-full bg-white p-3 rounded-none flex flex-col items-center text-center shadow-inner relative transition-all duration-200" id="printable-zone">
+<!-- Top Margin Marker -->
+<div class="w-full text-[9px] font-label-mono-sm text-neutral-400 flex items-center justify-center gap-1 mb-1">
+<span class="material-symbols-outlined text-[10px]">arrow_downward</span>
+<span id="label-top-feed">Feed Offset: +4mm</span>
+<span class="material-symbols-outlined text-[10px]">arrow_downward</span>
+</div>
+<!-- Header Section -->
+<div class="w-full flex items-center justify-center gap-1 mb-1">
+<span class="material-symbols-outlined text-[15px] text-neutral-800">confirmation_number</span>
+<span class="font-label-mono-md text-[13px] font-bold text-neutral-900 tracking-tight">KSP HOTEL GULU</span>
+</div>
+<div class="text-[10px] font-label-mono-sm text-neutral-600 uppercase tracking-widest">ANNUAL MUSIC GALA 2025</div>
+<div class="text-[9px] font-label-mono-sm text-neutral-500 mt-0.5">GATE 02 · VIP ACCESS WRISTBAND</div>
+<!-- Decorative Perforation Line -->
+<div class="w-full my-2 flex items-center justify-center">
+<div class="w-full h-[1px] bg-neutral-300"></div>
+</div>
+<!-- QR Code Placement Zone (Interactive size via calibration) -->
+<div class="my-1 p-2 bg-white flex flex-col items-center justify-center relative transition-all" id="qr-preview-box">
+<!-- Simulated High Density 2D Code (Inline Vector for 100% black thermal burn) -->
+<svg class="w-24 h-24 text-black" fill="currentColor" viewbox="0 0 100 100">
+<!-- Corner Finder Outer 1 -->
+<rect fill="black" height="28" width="28" x="2" y="2"></rect>
+<rect fill="white" height="20" width="20" x="6" y="6"></rect>
+<rect fill="black" height="12" width="12" x="10" y="10"></rect>
+<!-- Corner Finder Outer 2 -->
+<rect fill="black" height="28" width="28" x="70" y="2"></rect>
+<rect fill="white" height="20" width="20" x="74" y="6"></rect>
+<rect fill="black" height="12" width="12" x="78" y="10"></rect>
+<!-- Corner Finder Outer 3 -->
+<rect fill="black" height="28" width="28" x="2" y="70"></rect>
+<rect fill="white" height="20" width="20" x="6" y="74"></rect>
+<rect fill="black" height="12" width="12" x="10" y="78"></rect>
+<!-- Data payload dots (thermal matrix pattern) -->
+<rect height="4" width="4" x="34" y="4"></rect>
+<rect height="4" width="8" x="42" y="4"></rect>
+<rect height="4" width="4" x="54" y="4"></rect>
+<rect height="4" width="4" x="62" y="4"></rect>
+<rect height="4" width="8" x="34" y="12"></rect>
+<rect height="4" width="4" x="46" y="12"></rect>
+<rect height="4" width="8" x="58" y="12"></rect>
+<rect height="8" width="4" x="34" y="20"></rect>
+<rect height="4" width="8" x="42" y="20"></rect>
+<rect height="4" width="12" x="54" y="20"></rect>
+<rect height="4" width="8" x="4" y="34"></rect>
+<rect height="4" width="12" x="16" y="34"></rect>
+<rect height="36" width="36" x="32" y="32"></rect>
+<rect fill="white" height="28" width="28" x="36" y="36"></rect>
+<rect fill="black" height="12" width="12" x="44" y="44"></rect>
+<rect height="4" width="8" x="72" y="34"></rect>
+<rect height="4" width="12" x="84" y="34"></rect>
+<rect height="8" width="4" x="4" y="42"></rect>
+<rect height="4" width="8" x="12" y="42"></rect>
+<rect height="4" width="12" x="72" y="42"></rect>
+<rect height="8" width="8" x="88" y="42"></rect>
+<rect height="4" width="12" x="4" y="54"></rect>
+<rect height="4" width="8" x="20" y="54"></rect>
+<rect height="4" width="8" x="72" y="54"></rect>
+<rect height="4" width="8" x="84" y="54"></rect>
+<rect height="8" width="8" x="34" y="72"></rect>
+<rect height="4" width="4" x="46" y="72"></rect>
+<rect height="4" width="12" x="54" y="72"></rect>
+<rect height="8" width="4" x="70" y="72"></rect>
+<rect height="4" width="8" x="82" y="72"></rect>
+<rect height="12" width="4" x="34" y="84"></rect>
+<rect height="4" width="12" x="42" y="84"></rect>
+<rect height="8" width="4" x="58" y="84"></rect>
+<rect height="4" width="8" x="74" y="84"></rect>
+<rect height="12" width="10" x="86" y="84"></rect>
+</svg>
+<span class="mt-1 font-label-mono-sm text-[9px] text-neutral-700 bg-neutral-100 px-1 py-0.2 rounded-sm" id="qr-size-badge">28 × 28 mm</span>
+</div>
+<!-- Serial Barcode Zone -->
+<div class="mt-1 flex flex-col items-center">
+<div class="font-label-mono-md text-[13px] font-bold text-neutral-900 tracking-wider">SN-V-0241-KSP</div>
+<div class="text-[9px] font-label-mono-sm text-neutral-600">VALIDATED 28-JUL 18:45 EAT · UGX 50,000</div>
+</div>
+<!-- Security Microtext -->
+<div class="mt-2 text-[8px] font-label-mono-sm text-neutral-400 uppercase tracking-tighter">
+            SECURITY WATERMARK 100% NON-TRANSFERABLE
+          </div>
+</div>
+<!-- Cutter / Tear-Off Separation Line -->
+<div class="w-full pt-2 flex flex-col items-center">
+<div class="w-full flex items-center justify-between text-neutral-400 text-[10px] my-0.5">
+<span class="material-symbols-outlined text-[13px]">content_cut</span>
+<div class="flex-grow mx-1 border-b border-dashed border-neutral-400 h-0"></div>
+<span class="font-label-mono-sm text-[9px] text-neutral-600" id="cutter-indicator-label">AUTO-CUT (2mm NOTCH)</span>
+<div class="flex-grow mx-1 border-b border-dashed border-neutral-400 h-0"></div>
+<span class="material-symbols-outlined text-[13px] rotate-180">content_cut</span>
+</div>
+<div class="text-[9px] font-label-mono-sm text-neutral-400">Total Slip Length: 120mm · 4mm Clearance</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Calibration Controls & Physical Adjustments -->
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">tune</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Calibration Adjustment Controls</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary bg-surface-container-high px-2 py-0.5 rounded-lg flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">verified</span> Auto-Synced
+      </span>
+</div>
+<!-- Sliders and Inputs Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- QR Code Dimension Slider -->
+<div class="flex flex-col gap-1.5 p-space-sm rounded-xl bg-surface-container-low">
+<div class="flex items-center justify-between">
+<label class="font-body-md text-body-md text-on-surface font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">qr_code_2</span>
+            QR Code Dimension
+          </label>
+<span class="font-label-mono-md text-label-mono-md text-primary font-semibold" id="val-qr-dim">28 mm</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Recommended 28-30mm for Honeywell &amp; Zebra handheld optical scanners at dimly lit gates.</p>
+<div class="flex items-center gap-3 mt-2">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">20mm</span>
+<input class="w-full accent-primary-container h-2 bg-surface-container-highest rounded-lg cursor-pointer" id="slider-qr-dim" max="38" min="20" type="range" value="28"/>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">38mm</span>
+</div>
+</div>
+<!-- Top Feed Offset Slider -->
+<div class="flex flex-col gap-1.5 p-space-sm rounded-xl bg-surface-container-low">
+<div class="flex items-center justify-between">
+<label class="font-body-md text-body-md text-on-surface font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">vertical_align_top</span>
+            Top Feed Offset
+          </label>
+<span class="font-label-mono-md text-label-mono-md text-primary font-semibold" id="val-top-feed">+4 mm</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Initial slip advance before firing thermal head pins to prevent clipped headers.</p>
+<div class="flex items-center gap-3 mt-2">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0mm</span>
+<input class="w-full accent-primary-container h-2 bg-surface-container-highest rounded-lg cursor-pointer" id="slider-top-feed" max="12" min="0" type="range" value="4"/>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">+12mm</span>
+</div>
+</div>
+<!-- Left Margin Indent Slider -->
+<div class="flex flex-col gap-1.5 p-space-sm rounded-xl bg-surface-container-low">
+<div class="flex items-center justify-between">
+<label class="font-body-md text-body-md text-on-surface font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">format_align_left</span>
+            Left Margin Indent
+          </label>
+<span class="font-label-mono-md text-label-mono-md text-primary font-semibold" id="val-left-margin">4 mm</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Horizontal center offset for 80mm roll spindles with loose side guide-plates.</p>
+<div class="flex items-center gap-3 mt-2">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0mm</span>
+<input class="w-full accent-primary-container h-2 bg-surface-container-highest rounded-lg cursor-pointer" id="slider-left-margin" max="8" min="0" type="range" value="4"/>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">8mm</span>
+</div>
+</div>
+<!-- Thermal Burn Intensity / Heat -->
+<div class="flex flex-col gap-1.5 p-space-sm rounded-xl bg-surface-container-low">
+<div class="flex items-center justify-between">
+<label class="font-body-md text-body-md text-on-surface font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">local_fire_department</span>
+            Thermal Burn Intensity
+          </label>
+<span class="font-label-mono-md text-label-mono-md text-tertiary font-semibold" id="val-burn-heat">115%</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Higher heat improves sunlight and sweat resistance on outdoor Gulu festival wristbands.</p>
+<div class="flex items-center gap-3 mt-2">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">90%</span>
+<input class="w-full accent-tertiary h-2 bg-surface-container-highest rounded-lg cursor-pointer" id="slider-burn-heat" max="130" min="90" type="range" value="115"/>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">130%</span>
+</div>
+</div>
+</div>
+<!-- Toggle Controls -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-space-sm rounded-xl bg-surface-container-low gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">content_cut</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium">Auto-Cut Trigger Mode</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Execute partial knife slice leaving a 2mm central tear notch</span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant" id="cutter-mode-text">Partial Notch Cut</span>
+<button class="w-12 h-6 rounded-full bg-primary-container flex items-center p-0.5 transition-colors" id="toggle-cut-mode" type="button">
+<div class="w-5 h-5 rounded-full bg-on-primary-container shadow-sm transform translate-x-6 transition-transform" id="toggle-knob"></div>
+</button>
+</div>
+</div>
+</div>
+<!-- Physical Calibration Action Section -->
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-md shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-xs">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Physical Calibration Actions</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Send micro-calibration job packages directly to the connected Epson LAN/USB node</p>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant" id="print-job-indicator">Node #01 Queue: Idle</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
+<!-- Primary Print Action -->
+<button class="min-h-[48px] h-12 px-space-md rounded-xl bg-primary-container hover:bg-inverse-primary text-on-primary-container font-headline-sm text-headline-sm flex items-center justify-center gap-2 transition-all active:scale-[0.99] shadow-sm" id="btn-print-sample" type="button">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+        Print Test Ticket (SN-TEST-001)
+      </button>
+<!-- Secondary 5-Pass Alignment -->
+<button class="min-h-[48px] h-12 px-space-md rounded-xl bg-surface-container-high hover:bg-surface-bright text-on-surface font-body-md text-body-md font-medium flex items-center justify-center gap-2 transition-all active:scale-[0.99]" id="btn-print-ruler" type="button">
+<span class="material-symbols-outlined text-[20px] text-primary">straighten</span>
+        Print 5-Pass Alignment Ruler
+      </button>
+<!-- Tertiary Reset -->
+<button class="min-h-[48px] h-12 px-space-md rounded-xl bg-surface-container-low hover:bg-surface-container-high text-error font-body-md text-body-md font-medium flex items-center justify-center gap-2 transition-all active:scale-[0.99]" id="btn-reset-factory" type="button">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+        Reset Factory Offsets
+      </button>
+</div>
+<!-- Live Toast/Feedback Container -->
+<div class="hidden p-space-sm rounded-lg bg-surface-container-high text-secondary flex items-center justify-between font-label-mono-sm text-label-mono-sm" id="print-toast">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">check_circle</span>
+<span id="toast-message">Raw ESC/POS calibration packet dispatched (1,420 bytes)</span>
+</div>
+<span class="text-on-surface-variant font-label-mono-sm text-label-mono-sm">203 DPI · SUCCESS</span>
+</div>
+</div>
+<!-- Paper Roll Stock & Hardware Telemetry -->
+<div class="rounded-xl bg-surface-container p-space-md flex flex-col gap-space-md shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">analytics</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Paper Roll Stock &amp; Hardware Telemetry</h2>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Diagnostics: Real-time</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-sm">
+<!-- Metric 1: Remaining Roll -->
+<div class="rounded-xl bg-surface-container-low p-space-sm flex flex-col justify-between gap-space-xs">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-mono-sm text-label-mono-sm">ROLL CAPACITY</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">save_as</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface">Approx. 42m</div>
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface-variant mt-0.5">~350 tickets remaining</div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-secondary h-full rounded-full" style="width: 70%;"></div>
+</div>
+</div>
+<!-- Metric 2: Cutter Actuation Count -->
+<div class="rounded-xl bg-surface-container-low p-space-sm flex flex-col justify-between gap-space-xs">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-mono-sm text-label-mono-sm">CUTTER CYCLE</span>
+<span class="material-symbols-outlined text-[18px] text-primary">content_cut</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-label-mono-md text-label-mono-md">1,248 cuts</div>
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface-variant mt-0.5">Life expectancy: 1.5M</div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-primary h-full rounded-full" style="width: 1%;"></div>
+</div>
+</div>
+<!-- Metric 3: Thermal Head Temperature -->
+<div class="rounded-xl bg-surface-container-low p-space-sm flex flex-col justify-between gap-space-xs">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-mono-sm text-label-mono-sm">HEAD SENSOR</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary">thermostat</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface">38°C</div>
+<div class="font-label-mono-sm text-label-mono-sm text-secondary mt-0.5 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+            Nominal Range (&lt;65°C)
+          </div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-tertiary h-full rounded-full" style="width: 40%;"></div>
+</div>
+</div>
+<!-- Metric 4: Hardware Checksum -->
+<div class="rounded-xl bg-surface-container-low p-space-sm flex flex-col justify-between gap-space-xs">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-mono-sm text-label-mono-sm">FIRMWARE HASH</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">security</span>
+</div>
+<div>
+<div class="font-label-mono-sm text-label-mono-sm text-on-surface truncate">SHA256: 8f4be169ac9920d</div>
+<div class="font-label-mono-sm text-label-mono-sm text-secondary mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">verified_user</span>
+            Integrity Verified
+          </div>
+</div>
+<div class="text-[10px] font-label-mono-sm text-on-surface-variant mt-1">KSP-Epson-Gulu v4.11-rc</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function () {
+    const sliderQr = document.getElementById('slider-qr-dim');
+    const valQr = document.getElementById('val-qr-dim');
+    const qrBadge = document.getElementById('qr-size-badge');
+    const qrBox = document.getElementById('qr-preview-box');
+
+    const sliderTop = document.getElementById('slider-top-feed');
+    const valTop = document.getElementById('val-top-feed');
+    const labelTopFeed = document.getElementById('label-top-feed');
+
+    const sliderLeft = document.getElementById('slider-left-margin');
+    const valLeft = document.getElementById('val-left-margin');
+    const printableZone = document.getElementById('printable-zone');
+
+    const sliderHeat = document.getElementById('slider-burn-heat');
+    const valHeat = document.getElementById('val-burn-heat');
+
+    const btnCutToggle = document.getElementById('toggle-cut-mode');
+    const toggleKnob = document.getElementById('toggle-knob');
+    const cutterModeText = document.getElementById('cutter-mode-text');
+    const cutterIndicator = document.getElementById('cutter-indicator-label');
+
+    const btnPrintSample = document.getElementById('btn-print-sample');
+    const btnPrintRuler = document.getElementById('btn-print-ruler');
+    const btnResetFactory = document.getElementById('btn-reset-factory');
+    const toast = document.getElementById('print-toast');
+    const toastMessage = document.getElementById('toast-message');
+
+    let isPartialCut = true;
+
+    // QR Dimension Live Sync
+    if (sliderQr) {
+      sliderQr.addEventListener('input', function (e) {
+        const val = e.target.value;
+        valQr.textContent = val + ' mm';
+        qrBadge.textContent = val + ' × ' + val + ' mm';
+        const scale = val / 28;
+        qrBox.style.transform = 'scale(' + scale + ')';
+      });
+    }
+
+    // Top Feed Offset Sync
+    if (sliderTop) {
+      sliderTop.addEventListener('input', function (e) {
+        const val = e.target.value;
+        valTop.textContent = '+' + val + ' mm';
+        labelTopFeed.textContent = 'Feed Offset: +' + val + 'mm';
+        printableZone.style.paddingTop = Math.max(12, val * 3) + 'px';
+      });
+    }
+
+    // Left Margin Indent Sync
+    if (sliderLeft) {
+      sliderLeft.addEventListener('input', function (e) {
+        const val = e.target.value;
+        valLeft.textContent = val + ' mm';
+        printableZone.style.marginLeft = (val * 2) + 'px';
+      });
+    }
+
+    // Burn Intensity Sync
+    if (sliderHeat) {
+      sliderHeat.addEventListener('input', function (e) {
+        const val = e.target.value;
+        valHeat.textContent = val + '%';
+        const opacity = Math.min(1.0, val / 110);
+        qrBox.style.filter = 'contrast(' + val + '%)';
+      });
+    }
+
+    // Cutter toggle
+    if (btnCutToggle) {
+      btnCutToggle.addEventListener('click', function () {
+        isPartialCut = !isPartialCut;
+        if (isPartialCut) {
+          toggleKnob.classList.remove('translate-x-0');
+          toggleKnob.classList.add('translate-x-6');
+          btnCutToggle.classList.remove('bg-surface-variant');
+          btnCutToggle.classList.add('bg-primary-container');
+          cutterModeText.textContent = 'Partial Notch Cut';
+          cutterIndicator.textContent = 'AUTO-CUT (2mm NOTCH)';
+        } else {
+          toggleKnob.classList.remove('translate-x-6');
+          toggleKnob.classList.add('translate-x-0');
+          btnCutToggle.classList.remove('bg-primary-container');
+          btnCutToggle.classList.add('bg-surface-variant');
+          cutterModeText.textContent = 'Full Slice Cut';
+          cutterIndicator.textContent = 'FULL SLICE AUTO-CUT';
+        }
+      });
+    }
+
+    function showToast(msg) {
+      if (!toast) return;
+      toastMessage.textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(function () {
+        toast.classList.add('hidden');
+      }, 4000);
+    }
+
+    if (btnPrintSample) {
+      btnPrintSample.addEventListener('click', function () {
+        showToast('Direct RAW ESC/POS sent to Node #01: SN-TEST-001 (80mm calibration pass)');
+      });
+    }
+
+    if (btnPrintRuler) {
+      btnPrintRuler.addEventListener('click', function () {
+        showToast('5-Pass Alignment Metric Ruler printing (120mm run with 1mm ticks)');
+      });
+    }
+
+    if (btnResetFactory) {
+      btnResetFactory.addEventListener('click', function () {
+        sliderQr.value = 28;
+        sliderQr.dispatchEvent(new Event('input'));
+        sliderTop.value = 4;
+        sliderTop.dispatchEvent(new Event('input'));
+        sliderLeft.value = 4;
+        sliderLeft.dispatchEvent(new Event('input'));
+        sliderHeat.value = 115;
+        sliderHeat.dispatchEvent(new Event('input'));
+        showToast('Offsets reset to Factory Defaults (Epson TM-T20III standard spec)');
+      });
+    }
+  })();
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.35)]" data-active-classes="text-primary bg-surface-container-high font-semibold"><div class="h-16 px-space-xs grid grid-cols-5 items-center"><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="scanner" href="#"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span class="font-label-mono-sm text-label-mono-sm">Scan</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="manual-serial-gate-entry" href="#"><span class="material-symbols-outlined text-[20px]">pin</span><span class="font-label-mono-sm text-label-mono-sm">Manual</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="event-configuration" href="#"><span class="material-symbols-outlined text-[20px]">event_available</span><span class="font-label-mono-sm text-label-mono-sm">Events</span></a><a aria-current="page" class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl transition-colors text-primary bg-surface-container-high font-semibold" data-path="hardware-printer-settings" href="#"><span class="material-symbols-outlined text-[20px]">print</span><span class="font-label-mono-sm text-label-mono-sm">Hardware</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="reconciliation-reporting" href="#"><span class="material-symbols-outlined text-[20px]">query_stats</span><span class="font-label-mono-sm text-label-mono-sm">Reconcile</span></a></div></nav></body></html>

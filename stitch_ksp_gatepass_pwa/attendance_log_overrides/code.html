@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=JetBrains+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "error-container": "#93000a", "surface": "#0e141a", "primary-container": "#5e6ad2", "outline-variant": "#454652", "secondary-fixed": "#6bfcb8", "on-tertiary-fixed": "#281900", "inverse-primary": "#4854bb", "on-primary-fixed": "#000965", "on-tertiary-fixed-variant": "#5f4100", "surface-variant": "#30353d", "on-secondary-fixed-variant": "#005234", "on-secondary-fixed": "#002112", "surface-container-highest": "#30353d", "on-error-container": "#ffdad6", "inverse-on-surface": "#2c3138", "on-surface-variant": "#c6c5d5", "tertiary-fixed": "#ffdeab", "secondary": "#4adf9d", "background": "#0e141a", "secondary-fixed-dim": "#4adf9d", "error": "#ffb4ab", "tertiary": "#ffba33", "inverse-surface": "#dee3ec", "on-primary-fixed-variant": "#2e3aa2", "on-tertiary": "#422c00", "outline": "#908f9e", "surface-container-high": "#252a32", "on-primary": "#121f8b", "on-error": "#690005", "tertiary-fixed-dim": "#ffba33", "on-secondary": "#003823", "tertiary-container": "#996b00", "secondary-container": "#01ba7c", "primary": "#bdc2ff", "surface-dim": "#0e141a", "surface-bright": "#343a41", "on-primary-container": "#fdfaff", "on-tertiary-container": "#fffaf8", "on-background": "#dee3ec", "surface-container": "#1b2027", "surface-tint": "#bdc2ff", "surface-container-lowest": "#090f15", "primary-fixed-dim": "#bdc2ff", "on-surface": "#dee3ec", "surface-container-low": "#171c23", "on-secondary-container": "#00432a", "primary-fixed": "#dfe0ff" }, borderRadius: { DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem" }, spacing: { "space-md": "1rem", "gutter": "1rem", "space-lg": "1.5rem", "space-sm": "0.5rem", "space-xs": "0.25rem", "space-xl": "2rem", "margin": "1rem" }, fontFamily: { "headline-xl": ["Geist"], "body-lg": ["Geist"], "headline-lg": ["Geist"], "label-mono-md": ["JetBrains Mono"], "headline-md": ["Geist"], "body-md": ["Geist"], "body-sm": ["Geist"], "label-mono-sm": ["JetBrains Mono"], "label-mono-lg": ["JetBrains Mono"], "headline-sm": ["Geist"] }, fontSize: { "headline-xl": ["32px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "600" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "headline-lg": ["24px", { lineHeight: "30px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-mono-md": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "label-mono-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "500" }], "label-mono-lg": ["16px", { lineHeight: "20px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-sm": ["16px", { lineHeight: "22px", letterSpacing: "-0.005em", fontWeight: "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.25)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="KSP GatePass Logo" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/ALJJyrD2WKylT-EoiGTNwkzyiwhNZ5kve8k_GMcmYU-SQaem-5ef17Xk8FanxBveSk6VU0EchDGOgBLYCCuYA6E7CoA8EW6jQVBQ3eTWQyi5_z-BO-cFpzdiwoSU0TkQaAiJdDCFl7_tg6y6JpmrpEFrh_u-wKMuGtWPZt2jxcTcb-0xZu1LvH3KecdpmljTt5wYl3wDyeIYlMZP3vxneb5NQm1nk3X2vdd-a0nK0FZ1esYu"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface truncate">KSP GatePass</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant truncate">• Scanner</span></div><div class="flex items-center gap-space-xs"><span class="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0"></span><span class="font-label-mono-sm text-label-mono-sm text-secondary truncate">Online · EAT Africa/Kampala</span></div></div></div><div class="flex items-center gap-space-sm flex-shrink-0"><div class="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-surface-container-high"><span class="material-symbols-outlined text-[14px] text-tertiary">event</span><span class="font-label-mono-sm text-label-mono-sm text-on-surface">Gulu Summer Gala 2025</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full px-margin pt-16 pb-20 bg-surface flex-grow"><div class="flex flex-col w-full pb-6 space-y-4">
+<!-- Operational Breadcrumb & Live Network Banner -->
+<div class="flex flex-col gap-2 pt-1">
+<div class="flex items-center justify-between gap-2">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span>Gate Operations</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-medium">Turnstile Live Stream</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-surface-container-high">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+</span>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">SYNCED · 8ms EAT</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Attendance &amp; Turnstile Log</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[15px] text-tertiary">stadium</span>
+          KSP Gulu Annual Music Festival · Sat, 18 Oct 2025
+        </p>
+</div>
+<!-- Action Strip -->
+<div class="flex items-center gap-2 overflow-x-auto pb-0.5">
+<button class="min-h-[44px] px-3.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center gap-2 transition-colors flex-shrink-0 active:scale-[0.98]" id="btn-export">
+<span class="material-symbols-outlined text-[18px] text-primary">download</span>
+<span class="font-label-mono-md text-label-mono-md">Export Gate Log (CSV)</span>
+</button>
+<button class="min-h-[44px] px-3 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface flex items-center gap-2 transition-colors flex-shrink-0 active:scale-[0.98]" id="btn-gate-toggle">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+<span class="font-label-mono-md text-label-mono-md">Filter Gates</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Operational KPI 4-Card Strip (Dense 2x2 on mobile, single visual weight) -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+<!-- KPI 1 -->
+<div class="p-3 rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<span class="font-label-mono-sm text-label-mono-sm uppercase tracking-wider">Admitted Today</span>
+<span class="material-symbols-outlined text-[16px] text-primary">how_to_reg</span>
+</div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-md text-headline-md text-on-surface font-semibold">214</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface-variant">/ 382</span>
+</div>
+<div class="mt-2 flex items-center justify-between text-label-mono-sm font-label-mono-sm pt-2">
+<span class="text-secondary font-medium">56.0% Admitted</span>
+<span class="text-on-surface-variant">168 pending</span>
+</div>
+<!-- Progress Bar micro indicator -->
+<div class="w-full bg-surface-container-highest h-1 rounded-sm overflow-hidden mt-1.5">
+<div class="bg-secondary h-full rounded-sm" style="width: 56%"></div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="p-3 rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<span class="font-label-mono-sm text-label-mono-sm uppercase tracking-wider">Peak Flow Rate</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary">speed</span>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-tertiary font-semibold">42</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface">scans/min</span>
+</div>
+<div class="mt-2 flex items-center justify-between text-label-mono-sm font-label-mono-sm pt-2">
+<span class="text-on-surface-variant">Peak: 14:30 EAT</span>
+<span class="text-secondary">Normal</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-sm overflow-hidden mt-1.5">
+<div class="bg-tertiary h-full rounded-sm" style="width: 78%"></div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="p-3 rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<span class="font-label-mono-sm text-label-mono-sm uppercase tracking-wider">Turnstiles</span>
+<span class="material-symbols-outlined text-[16px] text-secondary">sensors</span>
+</div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-md text-headline-md text-on-surface font-semibold">4</span>
+<span class="font-label-mono-sm text-label-mono-sm text-secondary">Active Lanes</span>
+</div>
+<div class="mt-2 flex items-center justify-between text-label-mono-sm font-label-mono-sm pt-2">
+<span class="text-on-surface-variant truncate">Gate A: 2 · Gate B: 2</span>
+<span class="text-secondary">100%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-sm overflow-hidden mt-1.5">
+<div class="bg-secondary h-full rounded-sm" style="width: 100%"></div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="p-3 rounded-xl bg-surface-container-low flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<span class="font-label-mono-sm text-label-mono-sm uppercase tracking-wider">Overrides</span>
+<span class="material-symbols-outlined text-[16px] text-tertiary">admin_panel_settings</span>
+</div>
+<div class="flex items-baseline gap-1.5">
+<span class="font-headline-md text-headline-md text-tertiary font-semibold">3</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Authorized</span>
+</div>
+<div class="mt-2 flex items-center justify-between text-label-mono-sm font-label-mono-sm pt-2">
+<span class="text-on-surface-variant">Lead: @raphael</span>
+<span class="text-tertiary">Signed</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-sm overflow-hidden mt-1.5">
+<div class="bg-tertiary-container h-full rounded-sm" style="width: 15%"></div>
+</div>
+</div>
+</div>
+<!-- Anti-Passback Guard Notice Bar -->
+<div class="rounded-xl bg-surface-container-high px-3.5 py-2.5 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2.5 min-w-0">
+<span class="material-symbols-outlined text-[18px] text-secondary flex-shrink-0" style="font-variation-settings: 'FILL' 1;">shield</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface font-medium truncate">Anti-Passback Guard Active</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">0 re-entry breaches recorded in the last 30 min</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-1 rounded bg-surface-container text-on-surface-variant font-label-mono-sm text-label-mono-sm flex-shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+      Mesh Rule L3
+    </div>
+</div>
+<!-- Gate / Lane Filtering Tabs & Secondary Filters -->
+<div class="flex flex-col gap-2">
+<!-- Horizontal Tab Pills -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+<button class="lane-filter-btn min-h-[44px] px-3.5 rounded-xl bg-primary-container text-on-primary-container font-label-mono-sm text-label-mono-sm flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-all">
+<span>All Turnstiles</span>
+<span class="px-1.5 py-0.5 rounded bg-surface/30 text-white font-medium">214</span>
+</button>
+<button class="lane-filter-btn min-h-[44px] px-3.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1.5 flex-shrink-0 transition-colors">
+<span>Gate A Main</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">148</span>
+</button>
+<button class="lane-filter-btn min-h-[44px] px-3.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1.5 flex-shrink-0 transition-colors">
+<span>Gate B Arena</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">66</span>
+</button>
+<button class="lane-filter-btn min-h-[44px] px-3.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1.5 flex-shrink-0 transition-colors">
+<span>VIP FastTrack</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">42</span>
+</button>
+</div>
+<!-- Secondary Meta Controls: Scan window & Flagged toggle -->
+<div class="flex items-center justify-between gap-2 px-1 pt-1">
+<div class="flex items-center gap-1 text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>Displaying latest 100 scans</span>
+</div>
+<button class="min-h-[44px] px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center gap-1.5 transition-colors" id="flagged-toggle">
+<span class="material-symbols-outlined text-[16px] text-tertiary">flag</span>
+<span class="font-label-mono-sm text-label-mono-sm">Flagged Only</span>
+</button>
+</div>
+</div>
+<!-- Operational Stream List: High-Density Cards -->
+<div class="flex flex-col space-y-2.5" id="scan-stream">
+<!-- Card 1: Scan #214 (VIP Gold - Recent Fast Admittance) -->
+<div class="scan-card p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-2.5 cursor-pointer" onclick="openInspectionModal('SN-V-0241', 'Auma Beatrice', 'VIP Gold Access', 'Gate A · Turnstile #03', '0.8s', 'VALID QR', 'Okello David (#KSP-882)')">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0 font-label-mono-md">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-mono-sm text-label-mono-sm text-primary font-bold">#214</span>
+<span class="text-on-surface-variant font-label-mono-sm text-label-mono-sm">·</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">15:18:06 EAT</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate leading-snug">Auma Beatrice</h2>
+</div>
+</div>
+<!-- Status Chip with Icon & Mono Label -->
+<div class="flex flex-col items-end gap-1 flex-shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary/15 text-secondary font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+            ADMITTED · VALID QR
+          </span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0.8s latency</span>
+</div>
+</div>
+<!-- Detail Grid Strip -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 bg-surface-container/50 p-2.5 rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Ticket Code</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">SN-V-0241</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Tier Category</span>
+<span class="font-label-mono-md text-label-mono-md text-tertiary font-medium truncate">VIP Gold Access</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Assigned Gate</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface truncate">Gate A · Turnstile #03</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Verifier / Device</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface-variant truncate">Okello David (#KSP-882)</span>
+</div>
+</div>
+</div>
+<!-- Card 2: Scan #213 (Regular Arena) -->
+<div class="scan-card p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-2.5 cursor-pointer" onclick="openInspectionModal('SN-R-0893', 'Ochen Samuel', 'Regular Arena', 'Gate B · Turnstile #01', '1.1s', 'VALID QR', 'Operator #04')">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-mono-sm text-label-mono-sm text-primary font-bold">#213</span>
+<span class="text-on-surface-variant font-label-mono-sm text-label-mono-sm">·</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">15:16:40 EAT</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate leading-snug">Ochen Samuel</h2>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1 flex-shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary/15 text-secondary font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+            ADMITTED · VALID QR
+          </span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">1.1s latency</span>
+</div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 bg-surface-container/50 p-2.5 rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Ticket Code</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">SN-R-0893</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Tier Category</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">Regular Arena</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Assigned Gate</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface truncate">Gate B · Turnstile #01</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Verifier / Device</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface-variant truncate">Operator #04 (Lane 01)</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Scan #212 (Plus-One Ticket Validation) -->
+<div class="scan-card p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-2.5 cursor-pointer" onclick="openInspectionModal('SN-R-0892', 'Guest of Ochen Samuel', 'Regular Arena', 'Gate B · Turnstile #01', '0.9s', 'VALID QR', 'Operator #04')">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">group</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-mono-sm text-label-mono-sm text-primary font-bold">#212</span>
+<span class="text-on-surface-variant font-label-mono-sm text-label-mono-sm">·</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">15:15:12 EAT</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate leading-snug">Guest of Ochen Samuel</h2>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1 flex-shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary/15 text-secondary font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+            ADMITTED · VALID QR
+          </span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0.9s latency</span>
+</div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 bg-surface-container/50 p-2.5 rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Ticket Code</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">SN-R-0892</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Tier Category</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">Regular Arena</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Assigned Gate</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface truncate">Gate B · Turnstile #01</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Verifier / Device</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface-variant truncate">Operator #04</span>
+</div>
+</div>
+</div>
+<!-- Card 4: Scan #211 (MANUAL OVERRIDE - Amber Alert / Flagged State) -->
+<div class="scan-card p-3.5 rounded-xl bg-surface-container-high hover:bg-surface-variant transition-colors flex flex-col gap-2.5 cursor-pointer border-l-2 border-tertiary" onclick="openInspectionModal('SN-V-0240', 'Komakech Walter', 'VIP Gold Access', 'Gate A · FastTrack', '1.4s', 'MANUAL OVERRIDE · CASH PAID', 'Okello David (Lead: @raphael)')">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-tertiary/20 flex items-center justify-center text-tertiary flex-shrink-0 font-label-mono-md">
+<span class="material-symbols-outlined text-[18px]">published_with_changes</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary font-bold">#211</span>
+<span class="text-on-surface-variant font-label-mono-sm text-label-mono-sm">·</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">15:12:00 EAT</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary/20 text-tertiary font-label-mono-sm text-[10px] uppercase">Supervisor</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate leading-snug">Komakech Walter (Pledged - Cleared at Gate)</h2>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1 flex-shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-tertiary/20 text-tertiary font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+            MANUAL OVERRIDE
+          </span>
+<span class="font-label-mono-sm text-label-mono-sm text-tertiary font-medium">UGX 100,000 Paid</span>
+</div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 bg-surface-container-low p-2.5 rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Ticket Code</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">SN-V-0240</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Authorized Tier</span>
+<span class="font-label-mono-md text-label-mono-md text-tertiary font-medium truncate">VIP Gold Access</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Entry Turnstile</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface truncate">Gate A · FastTrack</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Signed Supervisor</span>
+<span class="font-label-mono-md text-label-mono-md text-tertiary truncate">@raphael (SecOps)</span>
+</div>
+</div>
+</div>
+<!-- Card 5: Scan #210 (Regular Arena) -->
+<div class="scan-card p-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-2.5 cursor-pointer" onclick="openInspectionModal('SN-R-0870', 'Akello Grace', 'Regular Arena', 'Gate A · Turnstile #02', '0.7s', 'VALID QR', 'Denis O.')">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-mono-sm text-label-mono-sm text-primary font-bold">#210</span>
+<span class="text-on-surface-variant font-label-mono-sm text-label-mono-sm">·</span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">15:08:33 EAT</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate leading-snug">Akello Grace</h2>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1 flex-shrink-0">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary/15 text-secondary font-label-mono-sm text-label-mono-sm">
+<span class="material-symbols-outlined text-[13px]">check_circle</span>
+            ADMITTED · VALID QR
+          </span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">0.7s latency</span>
+</div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 bg-surface-container/50 p-2.5 rounded-lg">
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Ticket Code</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">SN-R-0870</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Tier Category</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface font-medium truncate">Regular Arena</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Assigned Gate</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface truncate">Gate A · Turnstile #02</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant">Verifier / Device</span>
+<span class="font-label-mono-md text-label-mono-md text-on-surface-variant truncate">Denis O. (#KSP-884)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Operational Detail / Action Drawer Banner (Triggered by click or persistent context) -->
+<div class="p-4 rounded-xl bg-surface-container-high flex flex-col gap-3 mt-1" id="inspection-drawer">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">manage_search</span>
+<span class="font-headline-sm text-headline-sm text-on-surface">Turnstile Supervisor Quick Actions</span>
+</div>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface-variant" id="drawer-active-code">Selected: SN-V-0241</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+<!-- 48px Touch Targets strictly compliant with guidelines -->
+<button class="min-h-[48px] px-3.5 rounded-lg bg-surface-container hover:bg-surface-variant text-on-surface flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px] text-primary">manage_history</span>
+<span class="font-label-mono-sm text-label-mono-sm font-medium">Inspect Pass Lifecycle</span>
+</button>
+<button class="min-h-[48px] px-3.5 rounded-lg bg-surface-container hover:bg-surface-variant text-tertiary flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">report_problem</span>
+<span class="font-label-mono-sm text-label-mono-sm font-medium">Flag Suspicious Scan</span>
+</button>
+<button class="min-h-[48px] px-3.5 rounded-lg bg-primary-container hover:opacity-95 text-on-primary-container flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+<span class="font-label-mono-sm text-label-mono-sm font-medium">Print Gate Admission Slip</span>
+</button>
+</div>
+</div>
+<!-- Operational Diagnostics & Node Mesh Status Footer Strip -->
+<div class="rounded-xl bg-surface-container-lowest p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary flex-shrink-0"></span>
+<span class="font-label-mono-sm text-label-mono-sm text-on-surface font-medium truncate">
+        Gulu Turnstile Mesh Node #01 · Hotel Main Paddock
+      </span>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant font-label-mono-sm text-label-mono-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">save</span>
+<span>Offline Cache: <strong class="text-on-surface font-medium">0 Pending</strong></span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">cloud_done</span>
+<span>Sync: <strong class="text-secondary font-medium">100%</strong></span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  function openInspectionModal(code, attendee, tier, gate, latency, status, verifier) {
+    const label = document.getElementById('drawer-active-code');
+    if (label) {
+      label.textContent = 'Selected: ' + code + ' · ' + attendee;
+    }
+  }
+
+  // Gate tab switching visual feedback
+  const filterButtons = document.querySelectorAll('.lane-filter-btn');
+  filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterButtons.forEach(b => {
+        b.className = 'lane-filter-btn min-h-[44px] px-3.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-mono-sm text-label-mono-sm flex items-center gap-1.5 flex-shrink-0 transition-colors';
+      });
+      btn.className = 'lane-filter-btn min-h-[44px] px-3.5 rounded-xl bg-primary-container text-on-primary-container font-label-mono-sm text-label-mono-sm flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-all';
+    });
+  });
+
+  // Flagged toggle interaction
+  const flaggedToggle = document.getElementById('flagged-toggle');
+  let flaggedActive = false;
+  if (flaggedToggle) {
+    flaggedToggle.addEventListener('click', () => {
+      flaggedActive = !flaggedActive;
+      if (flaggedActive) {
+        flaggedToggle.classList.add('bg-tertiary-container', 'text-on-tertiary-container');
+        flaggedToggle.classList.remove('bg-surface-container', 'text-on-surface-variant');
+      } else {
+        flaggedToggle.classList.remove('bg-tertiary-container', 'text-on-tertiary-container');
+        flaggedToggle.classList.add('bg-surface-container', 'text-on-surface-variant');
+      }
+    });
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.35)]" data-active-classes="text-primary bg-surface-container-high font-semibold"><div class="h-16 px-space-xs grid grid-cols-4 items-center"><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[20px]">home</span><span class="font-label-mono-sm text-label-mono-sm">Dashboard</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="sales" href="#"><span class="material-symbols-outlined text-[20px]">local_activity</span><span class="font-label-mono-sm text-label-mono-sm">Sales</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="scanner" href="#"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span class="font-label-mono-sm text-label-mono-sm">Scanner</span></a><a class="min-h-[48px] h-full flex flex-col items-center justify-center gap-0.5 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="account" href="#"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span><span class="font-label-mono-sm text-label-mono-sm">Account</span></a></div></nav></body></html>
