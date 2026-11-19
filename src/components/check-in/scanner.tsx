@@ -93,7 +93,7 @@ export function CheckInScanner({ eventId, eventName, events = [], mode = "camera
   return <section className="-mx-4 -my-5 flex min-h-[calc(100dvh_-_8rem)] flex-col overflow-hidden bg-background text-foreground sm:-mx-6 lg:my-0 lg:min-h-[calc(100dvh_-_8rem)]">
     <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border px-4 py-2 sm:px-6">
       <div className="min-w-0"><p className="truncate text-xs font-semibold text-muted-foreground">{mode === "manual" ? "Manual check-in" : "Gate scanner"}</p><p className="truncate text-base font-semibold">{eventName}</p></div>
-      <div className={`flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold ${serverOnline ? "border-success/50 bg-success text-success-foreground" : "border-warning/60 bg-warning text-warning-foreground"}`} role="status" aria-label={serverOnline ? "Server connected" : "Server connection unavailable"}>
+      <div className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${serverOnline ? "border-success/50 bg-success text-success-foreground" : "border-warning/60 bg-warning text-warning-foreground"}`} role="status" aria-label={serverOnline ? "Server connected" : "Server connection unavailable"}>
         {serverOnline ? <Wifi className="size-4" aria-hidden="true" /> : <WifiOff className="size-4" aria-hidden="true" />}{serverOnline ? "Connected" : "Connecting…"}
       </div>
     </header>
@@ -109,7 +109,7 @@ export function CheckInScanner({ eventId, eventName, events = [], mode = "camera
 
     {mode === "camera" ? <>
       <QrCamera disabled={!serverOnline || gateRequired} paused={Boolean(result) || busy} onScan={(value) => void handleQr(value)} label="Ticket QR camera view" theme="light" />
-      {gateRequired && <p className="px-4 pb-3 text-base font-medium text-warning-foreground sm:px-6">Enter the gate name before scanning.</p>}
+      {gateRequired && <p className="px-4 pb-3 text-base font-medium text-warning sm:px-6">Enter the gate name before scanning.</p>}
     </> : <div className="flex flex-1 flex-col justify-center px-4 py-6 sm:px-6">
       <form onSubmit={verifySerial} className="mx-auto w-full max-w-2xl rounded-2xl border border-border/70 bg-card p-4 shadow-card sm:p-6">
         <label className="grid gap-2 text-base font-semibold" htmlFor="ticket-serial">Ticket serial</label>
@@ -119,7 +119,7 @@ export function CheckInScanner({ eventId, eventName, events = [], mode = "camera
         </div>
         <Button size="xl" className="mt-4 w-full" disabled={!serverOnline || gateRequired || busy || !serial.trim()}>{busy ? "Checking…" : "Verify serial"}</Button>
       </form>
-      {gateRequired && <p className="mx-auto mt-3 w-full max-w-2xl text-base font-medium text-warning-foreground">Enter the gate name before verifying.</p>}
+      {gateRequired && <p className="mx-auto mt-3 w-full max-w-2xl text-base font-medium text-warning">Enter the gate name before verifying.</p>}
     </div>}
     <footer className="flex items-center justify-between gap-3 border-t border-border bg-card/60 px-4 py-3 text-sm text-muted-foreground sm:px-6"><span className="truncate">{serverOnline ? "Connected to admission service" : "Waiting for server connection"}</span><span className="shrink-0 font-medium">{busy ? "Checking…" : mode === "camera" ? "Ready to scan" : "Gate staff"}</span></footer>
 

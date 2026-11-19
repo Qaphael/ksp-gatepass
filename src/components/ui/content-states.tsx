@@ -14,7 +14,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="grid justify-items-center gap-3 rounded-xl border border-dashed bg-card px-5 py-10 text-center">
+    <div className="grid justify-items-center gap-3 rounded-lg border border-dashed bg-card px-5 py-10 text-center">
       <Inbox aria-hidden="true" className="size-8 text-muted-foreground" />
       <div className="grid gap-1">
         <h2 className="text-lg font-semibold">{title}</h2>
@@ -35,7 +35,7 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div role="alert" className="grid justify-items-center gap-3 rounded-xl border border-danger/40 bg-danger/50 px-5 py-8 text-center text-danger-foreground">
+    <div role="alert" className="grid justify-items-center gap-3 rounded-lg border border-danger/40 bg-danger/10 px-5 py-8 text-center text-danger">
       <AlertCircle aria-hidden="true" className="size-8" />
       <div className="grid gap-1">
         <h2 className="text-lg font-semibold">{title}</h2>
@@ -56,7 +56,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
 
 export function CardSkeleton() {
   return (
-    <div aria-hidden="true" className="grid gap-3 rounded-xl border bg-card p-4 shadow-card">
+    <div aria-hidden="true" className="grid gap-3 rounded-lg border bg-card p-4 shadow-card">
       <Skeleton className="h-5 w-2/5" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-3/4" />

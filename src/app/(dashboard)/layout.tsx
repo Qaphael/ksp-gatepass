@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
-import { BrandLockup, LogoMark } from "@/components/brand/logo-mark";
-import { Toaster } from "@/components/ui/sonner";
+import { BrandLockup } from "@/components/brand/logo-mark";
 import { NavLinks, type NavIconName, type NavItem } from "@/components/layout/nav-links";
+import { AppHeader, BottomNav } from "@/components/layout/app-header";
 import { UserMenu } from "@/components/layout/user-menu";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
+import { Toaster } from "@/components/ui/sonner";
 
 export const instant = false;
 
@@ -40,25 +41,37 @@ export default async function DashboardLayout({ children }: { children: React.Re
   else navItems = collect(all.overview, all.sales, all.tickets, all.scan, all.stock, all.events, all.team, all.audit, all.reports, all.settings);
   const landing = ctx.role === "VERIFIER" ? "/scanner" : ctx.role === "SELLER" ? "/sales/new" : "/dashboard";
 
+  const sectionLabels: Record<string, string> = {
+    "/dashboard": "Overview",
+    "/sales": "Sales",
+    "/scanner": "Scanner",
+    "/check-in/manual": "Manual Entry",
+    "/check-in/recent": "Attendance",
+    "/check-in/attempts": "Scan Attempts",
+    "/tickets": "Ticket Inventory",
+    "/tickets/new": "Generate Tickets",
+    "/events": "Events",
+    "/team": "Team",
+    "/reports": "Reports",
+    "/audit-logs": "Audit Log",
+    "/account": "Account",
+    "/stock": "Stock",
+  };
+
+  const currentSection = sectionLabels[ctx.role === "VERIFIER" ? "/scanner" : ctx.role === "SELLER" ? "/sales/new" : "/dashboard"];
+
   return (
-    <div className="flex min-h-dvh flex-col lg:flex-row" style={{ minHeight: "100dvh" }}>
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-5 text-sidebar-foreground lg:flex">
-        <Link href={landing} aria-label="KSP GatePass home" className="mb-6 block px-2"><BrandLockup /></Link>
-        <div className="mt-5"><NavLinks items={navItems} orientation="vertical" /></div>
-        <div className="mt-auto border-t border-border pt-4"><UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} /></div>
+    <div className="flex min-h-dvh flex-col lg:flex-row bg-background" style={{ minHeight: "100dvh" }}>
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-4 py-6 text-sidebar-foreground lg:flex">
+        <Link href={landing} aria-label="KSP GatePass home" className="mb-8 block px-2"><BrandLockup /></Link>
+        <div className="mt-6"><NavLinks items={navItems} orientation="vertical" /></div>
+        <div className="mt-auto border-t border-border pt-6"><UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} /></div>
       </aside>
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-          <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-3 px-3 sm:px-5">
-            <div className="flex min-w-0 items-center gap-2 lg:hidden"><Link href={landing} aria-label="KSP GatePass home" className="flex min-h-11 shrink-0 items-center gap-2"><LogoMark className="size-8 text-brand-900" /><span className="text-base font-bold">KSP GatePass</span></Link></div>
-            <div className="hidden min-w-0 items-center gap-3 lg:flex"><span className="truncate text-sm font-medium">KSP GatePass</span></div>
-            <span data-connection-indicator-slot="" className="ml-auto size-2 shrink-0" aria-hidden="true" />
-            <UserMenu user={{ displayName: ctx.displayName, role: ctx.role }} />
-          </div>
-        </header>
-        <main className="mx-auto w-full max-w-7xl min-w-0 flex-1 px-4 py-6 pb-[calc(6.25rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-7 lg:pb-8">{children}</main>
+        <AppHeader section={currentSection} user={{ displayName: ctx.displayName, role: ctx.role }} />
+        <main className="flex min-h-dvh min-w-0 flex-1 flex-col px-4 pt-20 pb-28 sm:px-6 lg:px-8">{children}</main>
       </div>
-      <div className="lg:hidden"><NavLinks items={navItems} /></div>
+      <div className="lg:hidden"><BottomNav /></div>
       <Toaster position="top-center" />
     </div>
   );

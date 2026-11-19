@@ -30,7 +30,7 @@ export function EventSwitcher({ events }: { events: Array<{ id: string; name: st
       <SelectTrigger
         aria-label="Choose event"
         size="sm"
-        className="h-11 min-h-11 w-[min(44vw,15rem)] min-w-0 max-w-[15rem] justify-start gap-2 rounded-full px-3 text-sm font-medium"
+        className="h-11 min-h-11 w-[min(44vw,15rem)] min-w-0 max-w-[15rem] justify-start gap-2 rounded-md px-3 text-sm font-medium"
       >
         <CalendarDays className="size-4 text-primary" aria-hidden="true" />
         <SelectValue placeholder="Select event" className="truncate" />

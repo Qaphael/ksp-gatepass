@@ -155,7 +155,7 @@ export default async function EventDetailPage({
                       <h3 className="truncate font-medium">{type.name}</h3>
                       <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{type.sold} sold · {type.remaining} remaining</span>
                     </div>
-                    <progress className="mt-3 h-2 w-full accent-brand-700" value={Math.min(type.sold, total)} max={total} aria-label={`${type.name}: ${type.sold} sold, ${type.remaining} remaining`} />
+                    <progress className="mt-3 h-2 w-full accent-primary" value={Math.min(type.sold, total)} max={total} aria-label={`${type.name}: ${type.sold} sold, ${type.remaining} remaining`} />
                   </li>
                 );
               })}

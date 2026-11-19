@@ -30,7 +30,7 @@ export function InstallAppCard() {
       </CardHeader>
       <CardContent className="grid gap-3">
         {isInstalled ? (
-          <p role="status" className="text-base font-medium text-success-foreground">KSP GatePass is installed on this device.</p>
+          <p role="status" className="text-base font-medium text-success">KSP GatePass is installed on this device.</p>
         ) : promptAvailable ? (
           <Button className="min-h-12 w-full sm:w-auto" onClick={() => void installApp()} disabled={installing}>
             <Download aria-hidden="true" />{installing ? "Opening install…" : "Install KSP GatePass"}

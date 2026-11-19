@@ -52,12 +52,12 @@ export function ResultTakeover({ result, onDismiss, onConfirm, busy, canConfirm 
   const Icon = presentation.icon === "check" ? Check : presentation.icon === "warning" ? AlertTriangle : CircleSlash;
   const original = result.originalCheckIn;
 
-  return <div role="alert" aria-live="assertive" aria-atomic="true" className={`fixed inset-0 z-[70] flex min-h-dvh flex-col items-center justify-center overflow-y-auto px-5 py-8 text-center ${colors}`}>
-    {!admitted && <button type="button" aria-label="Dismiss result" onClick={onDismiss} className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex size-12 items-center justify-center rounded-full border border-current/30" ><X aria-hidden="true" /></button>}
+  return <div role="alert" aria-live="assertive" aria-atomic="true" className={`fixed inset-0 z-[100] flex min-h-dvh flex-col items-center justify-center overflow-y-auto px-5 py-8 text-center ${colors}`}>
+    {!admitted && <button type="button" aria-label="Dismiss result" onClick={onDismiss} className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] flex size-12 items-center justify-center rounded-md border border-current/30" ><X aria-hidden="true" /></button>}
     <Icon aria-hidden="true" className="mb-5 size-24 stroke-[2.5] sm:size-32" />
     <p className="text-3xl font-semibold sm:text-5xl">{presentation.label}</p>
     <p className="mt-4 max-w-2xl text-xl font-semibold leading-snug sm:text-2xl">{presentation.reason}</p>
-    {result.ticket && <div className="mt-8 w-full max-w-xl rounded-2xl border border-current/25 bg-white/40 p-5 text-left sm:p-7">
+    {result.ticket && <div className="mt-8 w-full max-w-xl rounded-lg border border-current/25 bg-white/40 p-5 text-left sm:p-7">
       <p className="text-lg font-semibold">{result.ticket.ticketTypeName}</p>
       <p className="mt-2 break-all font-mono text-2xl font-bold tracking-wider sm:text-3xl">{result.ticket.serial}</p>
       {original && <div className="mt-5 border-t border-current/20 pt-4 text-base"><p className="flex items-center gap-2 font-semibold"><Clock3 className="size-5" aria-hidden="true" />Already checked in</p><p className="mt-1">{formatTime(original.checkedInAt)} · {original.gate}</p></div>}

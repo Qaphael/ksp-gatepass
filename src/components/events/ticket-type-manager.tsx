@@ -184,7 +184,7 @@ export function TicketTypeManager({
                   </Button>
                 }
               />
-              <DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-[18px] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-3rem)] md:max-w-2xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[18px]">
+              <DialogContent className="top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-lg p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-3rem)] md:max-w-2xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg">
                 <DialogHeader>
                   <DialogTitle>
                     {editing === null ? "Add ticket category" : "Edit ticket category"}
@@ -240,7 +240,7 @@ export function TicketTypeManager({
                       <div className="flex flex-col gap-2"><Label>Status</Label><Select value={form.status} onValueChange={(value) => set("status", value as FormState["status"])}><SelectTrigger className="w-full" disabled={saving}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent></Select></div>
                       <div className="flex flex-col gap-2"><Label htmlFor="tt-print-label">Print label (optional)</Label><Input id="tt-print-label" value={form.printLabel} onChange={(e) => set("printLabel", e.target.value)} disabled={saving} /></div>
                     </div>
-                    <label className="flex min-h-12 items-center gap-3 rounded-[14px] border border-border/70 bg-muted/40 px-3 text-base"><input type="checkbox" checked={form.permitsAdmission} onChange={(e) => set("permitsAdmission", e.target.checked)} disabled={saving} className="size-4 accent-primary" />This category permits admission</label>
+                    <label className="flex min-h-12 items-center gap-3 rounded-lg border border-border/70 bg-muted/40 px-3 text-base"><input type="checkbox" checked={form.permitsAdmission} onChange={(e) => set("permitsAdmission", e.target.checked)} disabled={saving} className="size-4 accent-primary" />This category permits admission</label>
                   </section>
                   <DialogFooter className="sticky bottom-0 gap-2 border-t bg-popover pt-3">
                     <Button
@@ -291,7 +291,7 @@ export function TicketTypeManager({
                   <div className="col-span-2"><dt className="text-muted-foreground">Sales window</dt><dd>{type.salesOpensAtLocal && type.salesClosesAtLocal ? `${type.salesOpensAtLocal} – ${type.salesClosesAtLocal}` : "No scheduled window"}</dd></div>
                 </dl>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className={type.status === "ACTIVE" ? "border-transparent bg-emerald-600/10 text-emerald-700 dark:text-emerald-400" : "border-border bg-muted text-muted-foreground"}>{type.status === "ACTIVE" ? "Active" : "Inactive"}</Badge>
+                  <Badge variant="outline" className={type.status === "ACTIVE" ? "border-transparent bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}>{type.status === "ACTIVE" ? "Active" : "Inactive"}</Badge>
                   {!type.permitsAdmission ? <Badge variant="outline" className="border-border bg-muted text-muted-foreground">No admission</Badge> : null}
                 </div>
               </article>
@@ -337,7 +337,7 @@ export function TicketTypeManager({
                           variant="outline"
                           className={
                             type.status === "ACTIVE"
-                              ? "border-transparent bg-emerald-600/10 text-emerald-700 dark:text-emerald-400"
+                              ? "border-transparent bg-success/10 text-success"
                               : "border-border bg-muted text-muted-foreground"
                           }
                         >

@@ -257,7 +257,7 @@ export default async function TicketDetailPage({
                 <article key={entry.id} className="grid gap-2 rounded-lg border p-3">
                   <div className="flex items-start justify-between gap-3">
                     <span className="min-w-0 break-words font-mono text-base font-medium">{entry.action}</span>
-                    <span className="shrink-0 text-base flex items-center gap-1">{entry.outcome === "SUCCESS" ? (<><Check className="size-4 text-success-foreground" aria-hidden="true" /><span>Success</span></>) : (<><CircleSlash className="size-4 text-danger-foreground" aria-hidden="true" /><span>Failure</span></>)}</span>
+                    <span className="shrink-0 text-base flex items-center gap-1">{entry.outcome === "SUCCESS" ? (<><Check className="size-4 text-success" aria-hidden="true" /><span>Success</span></>) : (<><CircleSlash className="size-4 text-danger" aria-hidden="true" /><span>Failure</span></>)}</span>
                   </div>
                   <time className="text-base text-muted-foreground">{formatTimestamp(entry.createdAt)}</time>
                   <p className="break-words text-base text-muted-foreground">{entry.summary ? JSON.stringify(entry.summary) : "—"}</p>

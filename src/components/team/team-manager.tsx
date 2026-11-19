@@ -153,9 +153,9 @@ export function TeamManager({
                 </Button>
               }
             />
-            <DialogContent className="top-auto bottom-0 left-0 max-h-[calc(100dvh-env(safe-area-inset-top))] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-[18px] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-3rem)] md:max-w-3xl md:max-h-[calc(100dvh-3rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[18px]">
+            <DialogContent className="top-auto bottom-0 left-0 max-h-[calc(100dvh-env(safe-area-inset-top))] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-lg p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-3rem)] md:max-w-3xl md:max-h-[calc(100dvh-3rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg">
               <DialogHeader className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-b border-border/70 pb-4">
-                <span className="grid size-11 place-items-center rounded-[14px] bg-accent text-primary" aria-hidden="true"><UserRound className="size-5" /></span>
+                <span className="grid size-11 place-items-center rounded-lg bg-accent text-primary" aria-hidden="true"><UserRound className="size-5" /></span>
                 <div className="grid min-w-0 gap-2">
                   <DialogTitle>Add team member</DialogTitle>
                   <DialogDescription>Set up their profile and sign-in access.</DialogDescription>
@@ -230,7 +230,7 @@ export function TeamManager({
         const isSelf = user.id === currentUserId;
         const isSuperAdmin = user.role === "SUPER_ADMIN";
         return <article key={user.id} className="rounded-2xl border border-border/70 bg-card p-4">
-          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{user.displayName}{isSelf ? " (you)" : ""}</p><p className="truncate text-sm text-muted-foreground">@{user.username}</p>{user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}</div><Badge variant="outline" className={user.active ? "border-success/40 bg-success/10 text-success-foreground" : "border-border bg-muted text-muted-foreground"}>{user.active ? "Active" : "Deactivated"}</Badge></div>
+          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{user.displayName}{isSelf ? " (you)" : ""}</p><p className="truncate text-sm text-muted-foreground">@{user.username}</p>{user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}</div><Badge variant="outline" className={user.active ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}>{user.active ? "Active" : "Deactivated"}</Badge></div>
           <div className="mt-3 flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Role</span>{canManage && !isSelf && !isSuperAdmin ? <Select value={user.role} onValueChange={(value) => void onChangeRole(user, value as Role)} disabled={busyUserId === user.id}><SelectTrigger className="min-h-11 w-40" aria-label={`Role for ${user.displayName}`}><SelectValue>{ROLE_LABELS[user.role]}</SelectValue></SelectTrigger><SelectContent>{ROLE_VALUES.map((role) => <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>)}</SelectContent></Select> : <span className="text-base">{ROLE_LABELS[user.role]}{isSuperAdmin ? " · protected" : ""}</span>}</div>
           {canManage && user.active && !isSelf && !isSuperAdmin && <Button className="mt-3 min-h-11 w-full" variant="outline" disabled={busyUserId === user.id} onClick={() => void onDeactivate(user)}>{busyUserId === user.id ? <Loader2 className="animate-spin" /> : <UserMinus />}Deactivate</Button>}
         </article>;
@@ -288,7 +288,7 @@ export function TeamManager({
                         variant="outline"
                         className={
                           user.active
-                            ? "border-transparent bg-emerald-600/10 text-emerald-700 dark:text-emerald-400"
+                            ? "border-transparent bg-success/10 text-success"
                             : "border-border bg-muted text-muted-foreground"
                         }
                       >

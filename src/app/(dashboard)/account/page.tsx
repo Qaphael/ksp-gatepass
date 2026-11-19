@@ -32,7 +32,7 @@ export default async function AccountPage() {
 
       <Card>
         <CardHeader className="justify-items-center gap-3 text-center">
-          <div className="grid size-20 place-items-center rounded-[1.4rem] border-4 border-white bg-accent text-primary shadow-md ring-1 ring-border">
+          <div className="grid size-20 place-items-center rounded-full border-4 border-foreground bg-accent text-primary shadow-md ring-1 ring-border">
             <UserRound aria-hidden="true" className="size-9" />
           </div>
           <div className="grid gap-1">

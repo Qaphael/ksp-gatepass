@@ -31,7 +31,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
   const query = parsed.success ? parsed.data : auditLogQuerySchema.parse({});
   const result = await listAuditLogs(ctx, query);
   const activeCount = [query.eventId, query.actorId, query.action, query.q, query.outcome, query.from, query.to].filter(Boolean).length;
-  const cards = result.logs.map((entry) => <article key={entry.id} className="rounded-[18px] border border-border/70 bg-card p-4 shadow-card">
+  const cards = result.logs.map((entry) => <article key={entry.id} className="rounded-lg border border-border/70 bg-card p-4 shadow-card">
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0"><h2 className="truncate font-semibold">{entry.action.replaceAll("_", " ")}</h2><time className="mt-1 block text-sm text-muted-foreground">{when(entry.createdAt)}</time></div>
       <Outcome outcome={entry.outcome} />
@@ -40,7 +40,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
       <div className="min-w-0"><dt className="text-xs font-semibold text-muted-foreground">Actor</dt><dd className="mt-1 truncate font-medium">{entry.actor?.displayName ?? (entry.actorId ? "Inactive account" : "Unauthenticated")}</dd><dd className="text-muted-foreground">{entry.actorRole ?? "No role"}</dd></div>
       <div className="min-w-0"><dt className="text-xs font-semibold text-muted-foreground">Target and event</dt><dd className="mt-1 break-words font-medium">{entry.targetType ?? "No target"}</dd>{entry.targetId ? <dd className="break-all font-mono text-xs text-muted-foreground">{entry.targetId}</dd> : null}<dd className="break-words text-muted-foreground">{entry.eventName ?? "No event"}</dd></div>
     </dl>
-    <details className="group mt-3 overflow-hidden rounded-[12px] bg-muted/60 text-sm">
+    <details className="group mt-3 overflow-hidden rounded-lg bg-muted/60 text-sm">
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 font-medium marker:hidden [&::-webkit-details-marker]:hidden">Change summary<ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" /></summary>
       <pre className="max-h-56 overflow-auto border-t border-border/60 px-3 py-2 font-mono text-xs leading-relaxed text-muted-foreground">{entry.summary === null ? "No summary" : JSON.stringify(entry.summary, null, 2)}</pre>
     </details>
@@ -48,7 +48,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
   return <div className="flex flex-col gap-4">
     <PageHeader title="Audit log" description="Search critical actions with actor, event, outcome and safe change summaries." />
     {!parsed.success && <p className="rounded-lg border border-warning/50 bg-warning/10 p-3 text-sm" role="status">Some filter values were invalid and have been reset. Update the filters and search again.</p>}
-    <FilterSheet activeCount={activeCount}><form className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 md:rounded-[18px] md:border md:border-border/70 md:bg-card md:p-4 md:shadow-card lg:p-5">
+    <FilterSheet activeCount={activeCount}><form className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 md:rounded-lg md:border md:border-border/70 md:bg-card md:p-4 md:shadow-card lg:p-5">
       <label className="grid gap-1.5 text-sm font-semibold">Event<select name="eventId" defaultValue={query.eventId ?? ""} className="min-h-12 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm"><option value="">All events</option>{events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
       <label className="grid gap-1.5 text-sm font-semibold">Actor<select name="actorId" defaultValue={query.actorId ?? ""} className="min-h-12 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm"><option value="">All actors</option>{users.map((user) => <option key={user.id} value={user.id}>{user.displayName} · {user.username}{user.active ? "" : " (inactive)"}</option>)}</select></label>
       <label className="grid gap-1.5 text-sm font-semibold">Action<input name="action" defaultValue={query.action} placeholder="sale, auth, ticket…" className="min-h-12 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm" /></label>
@@ -58,7 +58,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
       <label className="grid gap-1.5 text-sm font-semibold">To<input type="date" name="to" defaultValue={query.to} className="min-h-12 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm" /></label>
       <Button type="submit" className="min-h-12 w-full self-end md:w-auto lg:col-span-4 lg:justify-self-end"><Search aria-hidden="true" />Search</Button>
     </form></FilterSheet>
-    <ResponsiveList cards={cards} table={<div className="overflow-hidden rounded-[18px] border border-border/70 bg-card shadow-card"><Table className="min-w-[900px] table-fixed text-sm">
+    <ResponsiveList cards={cards} table={<div className="overflow-hidden rounded-lg border border-border/70 bg-card shadow-card"><Table className="min-w-[900px] table-fixed text-sm">
       <caption className="sr-only">Audit entries matching the selected filters</caption>
       <TableHeader className="bg-muted/70"><TableRow className="border-b border-border hover:bg-transparent"><TableHead className="w-40">Time</TableHead><TableHead className="w-44">Actor</TableHead><TableHead className="w-48">Action</TableHead><TableHead>Target and event</TableHead><TableHead className="w-56">Outcome and summary</TableHead></TableRow></TableHeader>
       <TableBody>{result.logs.map((entry) => <TableRow key={entry.id} className="align-top hover:bg-accent/30">
@@ -66,7 +66,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
         <TableCell className="whitespace-normal py-3"><span className="block font-medium">{entry.actor?.displayName ?? (entry.actorId ? "Inactive account" : "Unauthenticated")}</span><span className="text-sm text-muted-foreground">{entry.actorRole ?? "No role"}</span></TableCell>
         <TableCell className="whitespace-normal py-3"><span className="block font-medium">{entry.action.replaceAll("_", " ")}</span><span className="font-mono text-xs text-muted-foreground">{entry.action}</span></TableCell>
         <TableCell className="whitespace-normal py-3"><span className="block font-medium">{entry.targetType ?? "No target"}</span>{entry.targetId ? <span className="block break-all font-mono text-xs text-muted-foreground">{entry.targetId}</span> : null}<span className="mt-1 line-clamp-2 text-sm text-muted-foreground">{entry.eventName ?? "No event"}</span></TableCell>
-        <TableCell className="whitespace-normal py-3"><Outcome outcome={entry.outcome} /><details className="mt-2"><summary className="flex min-h-9 cursor-pointer items-center gap-1 text-sm font-medium text-primary">Change summary<ChevronDown className="size-4" aria-hidden="true" /></summary><pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-muted/60 p-2 font-mono text-xs">{entry.summary === null ? "No summary" : JSON.stringify(entry.summary, null, 2)}</pre></details></TableCell>
+        <TableCell className="whitespace-normal py-3"><Outcome outcome={entry.outcome} /><details className="mt-2"><summary className="flex min-h-9 cursor-pointer items-center gap-1 text-sm font-medium text-primary">Change summary<ChevronDown className="size-4" aria-hidden="true" /></summary><pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words rounded bg-muted/60 p-2 font-mono text-xs">{entry.summary === null ? "No summary" : JSON.stringify(entry.summary, null, 2)}</pre></details></TableCell>
       </TableRow>)}</TableBody>
     </Table></div>} />
     {result.logs.length === 0 && <div className="rounded-xl border border-dashed p-8 text-center"><p className="text-base font-medium">No audit entries match these filters.</p><a className="mt-2 inline-flex min-h-11 items-center underline" href="/audit-logs">Clear filters</a></div>}
@@ -77,7 +77,7 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
 function Outcome({ outcome }: { outcome: "SUCCESS" | "FAILURE" }) {
   const success = outcome === "SUCCESS";
   const Icon = success ? Check : CircleX;
-  return <span className={success ? "inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border border-success/50 bg-success px-2.5 text-sm font-semibold text-success-foreground" : "inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border border-danger/40 bg-danger px-2.5 text-sm font-semibold text-danger-foreground"}>
+  return <span className={success ? "inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-md border border-success/50 bg-success px-2.5 text-sm font-semibold text-success-foreground" : "inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-md border border-danger/40 bg-danger px-2.5 text-sm font-semibold text-danger-foreground"}>
     <Icon className="size-4" aria-hidden="true" />{success ? "Success" : "Failure"}
   </span>;
 }

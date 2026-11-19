@@ -50,13 +50,13 @@ export function InstallHint({ role }: { role: "seller" | "verifier" }) {
         Install GatePass for quick {role === "verifier" ? "gate scanning" : "ticket sales"} from your home screen.
       </p>
       {promptAvailable ? (
-        <Button size="sm" variant="outline" className="min-h-10 shrink-0 border-white/30 bg-white/10 px-3 text-white hover:bg-white/20" onClick={() => void installApp()} disabled={installing}>
+        <Button size="sm" variant="outline" className="min-h-10 shrink-0 border-input bg-accent px-3 text-foreground hover:bg-accent-strong" onClick={() => void installApp()} disabled={installing}>
           {installing ? "Opening…" : "Install"}
         </Button>
       ) : (
-        <span className="shrink-0 text-[11px] text-white/75">Browser menu</span>
+        <span className="shrink-0 text-[11px] text-muted-foreground">Browser menu</span>
       )}
-      <Button type="button" size="icon" variant="ghost" className="size-10 shrink-0 text-white hover:bg-white/15 hover:text-white" aria-label="Dismiss install app hint" onClick={dismiss}>
+      <Button type="button" size="icon" variant="ghost" className="size-10 shrink-0 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Dismiss install app hint" onClick={dismiss}>
         <X aria-hidden="true" />
       </Button>
     </aside>

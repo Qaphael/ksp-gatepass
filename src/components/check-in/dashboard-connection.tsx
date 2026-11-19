@@ -21,7 +21,7 @@ export function DashboardConnection({ eventId }: { eventId: string }) {
     return () => { live = false; window.clearInterval(timer); };
   }, []);
   return <div className="grid gap-2">
-    <div role="status" aria-live="polite" className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-semibold ${online ? "border-success/40 bg-success/10 text-success-foreground" : "border-warning/50 bg-warning/10 text-warning-foreground"}`}>
+    <div role="status" aria-live="polite" className={`flex min-h-12 items-center gap-2 rounded-lg border px-3 text-sm font-semibold ${online ? "border-success/40 bg-success/10 text-success" : "border-warning/50 bg-warning/10 text-warning"}`}>
     {online ? <Wifi aria-hidden="true" className="size-5" /> : <WifiOff aria-hidden="true" className="size-5" />}
     {online ? "Connected to admission service" : "Connection unavailable — check-in needs a server connection"}
     </div>

@@ -7,7 +7,7 @@ const STATUS_STYLES: Record<EventStatus, string> = {
   SCHEDULED:
     "border-transparent bg-primary/10 text-primary",
   COMPLETED:
-    "border-transparent bg-emerald-600/10 text-emerald-700 dark:text-emerald-400",
+    "border-transparent bg-success/10 text-success",
   ARCHIVED: "border-border bg-muted text-muted-foreground",
 };
 
@@ -28,7 +28,7 @@ export function StatusBadge({ status }: { status: EventStatus }) {
 
 export function OpenBadge({ open, label }: { open: boolean; label: string }) {
   return open ? (
-    <Badge variant="outline" className="border-transparent bg-sky-600/10 text-sky-700 dark:text-sky-400">
+    <Badge variant="outline" className="border-transparent bg-info/10 text-info">
       {label} open
     </Badge>
   ) : (

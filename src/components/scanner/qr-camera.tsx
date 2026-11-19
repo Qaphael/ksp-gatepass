@@ -30,8 +30,8 @@ export function QrCamera({
   const [torchSupported, setTorchSupported] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
   const isDark = theme === "dark";
-  const frameClass = isDark ? "bg-brand-900/90 text-white" : "bg-card text-foreground";
-  const mutedClass = isDark ? "text-white/80" : "text-muted-foreground";
+  const frameClass = isDark ? "bg-background/90 text-foreground" : "bg-card text-foreground";
+  const mutedClass = isDark ? "text-foreground/80" : "text-muted-foreground";
 
   useEffect(() => { onScanRef.current = onScan; }, [onScan]);
 
@@ -89,10 +89,10 @@ export function QrCamera({
   const displayCamera = disabled || paused ? "idle" : camera;
   const displayTorchOn = displayCamera === "active" && torchOn;
   return <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-card" aria-label="QR scanner">
-    <div className="relative flex min-h-[min(42dvh,24rem)] flex-1 items-center justify-center bg-[#171714] text-white">
+    <div className="relative flex min-h-[min(42dvh,24rem)] flex-1 items-center justify-center bg-background text-foreground">
       <video ref={videoRef} className="absolute inset-0 size-full object-cover" muted playsInline aria-label={label} />
       {displayCamera !== "active" && <div className={`relative z-10 mx-5 max-w-md rounded-2xl border border-current/15 p-5 text-center shadow-xl backdrop-blur-sm ${frameClass}`}>
-        {camera === "denied" || camera === "error" ? <AlertCircle className="mx-auto size-10 text-warning-foreground" aria-hidden="true" /> : <Camera className="mx-auto size-10 opacity-75" aria-hidden="true" />}
+        {camera === "denied" || camera === "error" ? <AlertCircle className="mx-auto size-10 text-warning" aria-hidden="true" /> : <Camera className="mx-auto size-10 opacity-75" aria-hidden="true" />}
         <p className="mt-3 text-lg font-bold">{statusTitle}</p><p className={`mt-2 text-base leading-relaxed ${mutedClass}`}>{disabled ? "Connect to the server to scan tickets." : statusMessage}</p>
       </div>}
       {displayCamera === "active" && <div className="pointer-events-none relative z-10 aspect-square w-[min(72vw,20rem)] rounded-3xl border-4 border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,0.25)]" aria-hidden="true" />}

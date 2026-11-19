@@ -100,9 +100,9 @@ function money(value: number): string {
 }
 
 function EmptyDashboard({ role }: { role: "SUPER_ADMIN" | "ADMIN" | "SELLER" | "VERIFIER" | "SUPERVISOR" }) {
-  return <section className="mx-auto flex min-h-[55dvh] max-w-lg flex-col justify-center gap-4 text-center">
-    <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-accent text-primary"><CalendarDaysIcon /></div>
-    <div><h1 className="text-2xl font-semibold">No event is ready</h1><p className="mt-2 text-base text-muted-foreground">An administrator needs to configure an event before your {ROLE_LABELS[role].toLowerCase()} dashboard can show event activity.</p></div>
+  return <section className="mx-auto flex min-h-[55dvh] max-w-lg flex-col justify-center gap-6 text-center">
+    <div className="mx-auto grid size-12 place-items-center rounded-lg bg-accent text-primary"><CalendarDaysIcon /></div>
+    <div><h1 className="text-2xl font-semibold">No event is ready</h1><p className="mt-4 text-base text-muted-foreground">An administrator needs to configure an event before your {ROLE_LABELS[role].toLowerCase()} dashboard can show event activity.</p></div>
     {(role === "ADMIN" || role === "SUPER_ADMIN") && <Button nativeButton={false} render={<Link href="/events/new" />}>Create event <ArrowRight /></Button>}
   </section>;
 }
@@ -110,38 +110,38 @@ function EmptyDashboard({ role }: { role: "SUPER_ADMIN" | "ADMIN" | "SELLER" | "
 function CalendarDaysIcon() { return <CalendarDays className="size-7" aria-hidden="true" />; }
 
 function DashboardHeading({ event, eyebrow = "Event overview" }: { event: EventDto; eyebrow?: string }) {
-  return <div className="flex min-w-0 flex-col gap-2">
+  return <div className="flex min-w-0 flex-col gap-3">
     {event.branding.poster && <>
-      <EventPoster poster={event.branding.poster} variant="display" className="max-h-[60dvh] md:hidden" />
+      <EventPoster poster={event.branding.poster} variant="display" className="max-h-[48dvh] md:hidden" />
       <EventPoster poster={event.branding.poster} variant="banner" className="hidden md:block" />
-      <a href={`${event.branding.poster.displayUrl}&download=1`} className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
+      <a href={`${event.branding.poster.displayUrl}&download=1`} className="inline-flex min-h-10 w-fit items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
     </>}
-    <div className="flex min-w-0 items-center gap-3">
+    <div className="flex min-w-0 items-center gap-4">
       <div className="min-w-0"><p className="text-sm font-medium text-muted-foreground">{eyebrow}</p><h1 className="truncate text-2xl font-semibold">{event.name}</h1><p className="truncate text-sm text-muted-foreground">{event.eventDate} · {event.venue}</p></div>
-      <div className="ml-auto flex shrink-0 flex-col items-end gap-1"><StatusBadge status={event.status} /><OpenBadge open={event.admissionOpen} label="Admission" /></div>
+      <div className="ml-auto flex shrink-0 flex-col items-end gap-3"><StatusBadge status={event.status} /><OpenBadge open={event.admissionOpen} label="Admission" /></div>
     </div>
   </div>;
 }
 
 function Stat({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail?: string }) {
-  return <Card className="min-w-0"><CardContent className="p-4"><div className="flex items-center gap-2.5"><span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-primary *:size-4">{icon}</span><span className="min-w-0 text-sm font-semibold text-muted-foreground">{label}</span></div><p className="mt-3 break-words text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>{detail && <p className="mt-1 text-sm leading-snug text-muted-foreground">{detail}</p>}</CardContent></Card>;
+  return <Card className="min-w-0"><CardContent className="p-6"><div className="flex items-center gap-3"><span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-md bg-accent text-primary *:size-4">{icon}</span><span className="min-w-0 text-sm font-semibold text-muted-foreground">{label}</span></div><p className="mt-4 break-words text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>{detail && <p className="mt-2 text-sm leading-snug text-muted-foreground">{detail}</p>}</CardContent></Card>;
 }
 
 function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: EventDto; stats: { sold: number; paidUgx: number; outstandingUgx: number; checkedIn: number; remaining: number; capacity: number; today: number }; sales: Awaited<ReturnType<typeof listSales>>["sales"]; checkins: Awaited<ReturnType<typeof listRecentCheckIns>>; alerts: { balances: number; failed: number; revoked: number; configuration: boolean } }) {
-  return <main className="flex flex-col gap-4 sm:gap-6">
+  return <main className="flex flex-col gap-6 sm:gap-8">
     <DashboardHeading event={event} />
-    <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5 lg:gap-4">
+    <div className="grid min-w-0 grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-5 lg:gap-8">
       <Stat icon={<Ticket />} label="Tickets sold" value={String(stats.sold)} detail={`of ${stats.capacity} capacity`} />
       <Stat icon={<Banknote />} label="Paid" value={money(stats.paidUgx)} />
       <Stat icon={<Wallet />} label="Outstanding" value={money(stats.outstandingUgx)} />
       <Stat icon={<Check />} label="Checked in" value={String(stats.checkedIn)} detail={`${stats.today} today`} />
       <Stat icon={<Users />} label="Remaining" value={String(stats.remaining)} detail="sold, not admitted" />
     </div>
-    {(alerts.balances > 0 || alerts.failed > 0 || alerts.revoked > 0 || alerts.configuration) && <section aria-label="Event alerts" className="flex flex-wrap items-center gap-2 rounded-xl border border-warning bg-warning/10 p-3 text-sm">
-      <CircleAlert className="size-5 shrink-0 text-warning-foreground" aria-hidden="true" /><strong>Needs attention</strong>
+    {(alerts.balances > 0 || alerts.failed > 0 || alerts.revoked > 0 || alerts.configuration) && <section aria-label="Event alerts" className="flex flex-wrap items-center gap-3 rounded-lg border border-warning bg-warning/10 p-4 text-sm">
+      <CircleAlert className="size-5 shrink-0 text-warning" aria-hidden="true" /><strong>Needs attention</strong>
       {alerts.balances > 0 && <Badge variant="outline">{alerts.balances} open balances</Badge>}{alerts.failed > 0 && <Badge variant="outline">{alerts.failed} unsuccessful scans today</Badge>}{alerts.revoked > 0 && <Badge variant="outline">{alerts.revoked} revoked tickets</Badge>}{alerts.configuration && <Badge variant="outline">No ticket categories configured</Badge>}
     </section>}
-    <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-5">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
     <RecentSales sales={sales} /><RecentCheckins rows={checkins} timezone={event.timezone} />
     </div>
     <QuickActions event={event} admin />
@@ -149,10 +149,10 @@ function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: Even
 }
 
 function SellerDashboard({ event, metrics, recent, outstandingRows }: { event: EventDto; metrics: Awaited<ReturnType<typeof getSellerDashboardMetrics>>; recent: Awaited<ReturnType<typeof listSales>>["sales"]; outstandingRows: number }) {
-  return <main className="flex flex-col gap-4 sm:gap-6">
+  return <main className="flex flex-col gap-6 sm:gap-8">
     <DashboardHeading event={event} eyebrow="Seller overview" />
-    <Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center text-lg"><Plus aria-hidden="true" />New sale</Button>
-    <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+    <Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12 w-full justify-center text-base"><Plus aria-hidden="true" />New sale</Button>
+    <div className="grid min-w-0 grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-8">
       <Stat icon={<Ticket />} label="Sales today" value={String(metrics.salesCount)} />
       <Stat icon={<Banknote />} label="Sales value" value={money(metrics.salesValueUgx)} detail="Today · UGX" />
       <Stat icon={<Banknote />} label="Received net today" value={money(metrics.receivedNetUgx)} detail="Recorded payments less adjustments" />
@@ -163,10 +163,10 @@ function SellerDashboard({ event, metrics, recent, outstandingRows }: { event: E
 }
 
 function VerifierDashboard({ event, count, day, recent, attempts }: { event: EventDto; count: number; day: string; recent: Awaited<ReturnType<typeof listRecentCheckIns>>; attempts: Awaited<ReturnType<typeof listScanAttempts>> }) {
-  return <main className="mx-auto flex w-full max-w-xl flex-col gap-4 sm:gap-6">
+  return <main className="mx-auto flex w-full max-w-xl flex-col gap-6 sm:gap-8">
     <DashboardHeading event={event} eyebrow="Gate overview" />
     <DashboardConnection eventId={event.id} />
-    <Card className="border-border/70 bg-card"><CardContent className="flex flex-col gap-4 p-5 sm:p-6"><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-full bg-success text-success-foreground"><Check aria-hidden="true" className="size-5" /></span><div><p className="text-base font-semibold">Successful check-ins · {day}</p><p className="mt-1 text-4xl font-semibold tabular-nums">{count}</p></div></div><Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-16 w-full justify-center"><ScanLine aria-hidden="true" />Scan ticket</Button><Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center"><ClipboardList aria-hidden="true" />Enter serial</Button></CardContent></Card>
+    <Card className="border-border/70 bg-card"><CardContent className="flex flex-col gap-6 p-6 sm:p-8"><div className="flex items-center gap-4"><span className="grid size-10 place-items-center rounded-md bg-success text-success-foreground"><Check aria-hidden="true" className="size-5" /></span><div><p className="text-base font-semibold">Successful check-ins · {day}</p><p className="mt-2 text-4xl font-semibold tabular-nums">{count}</p></div></div><Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-14 w-full justify-center text-base"><ScanLine aria-hidden="true" />Scan ticket</Button><Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12 w-full justify-center text-base"><ClipboardList aria-hidden="true" />Enter serial</Button></CardContent></Card>
     <RecentAttempts rows={attempts} timezone={event.timezone} />
     <RecentCheckins rows={recent} timezone={event.timezone} />
   </main>;
@@ -178,18 +178,18 @@ function SupervisorDashboard({ event, attendance, today, attempts, byGate, recen
   const failed = attempts.filter((row) => row[1] !== "ADMITTED" && row[1] !== "ELIGIBLE").reduce((sum, row) => sum + Number(row[2] ?? 0), 0);
   const gates = new Map<string, number>();
   for (const row of byGate) gates.set(String(row[1]), (gates.get(String(row[1])) ?? 0) + Number(row[2] ?? 0));
-  return <main className="flex flex-col gap-4 sm:gap-6">
+  return <main className="flex flex-col gap-6 sm:gap-8">
     <DashboardHeading event={event} eyebrow="Supervisor overview" />
-    <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 lg:gap-4"><Stat icon={<Check />} label="Admissions" value={String(attendance.checkedIn)} detail={`${today} today`} /><Stat icon={<Activity />} label="Admission rate" value={`${rate}%`} detail={`${attendance.checkedIn} of ${attendance.ticketsSold} sold tickets`} /><Stat icon={<CircleAlert />} label="Failed scans" value={String(failed)} detail="Today" /><Stat icon={<ScanLine />} label="Repeat scans" value={String(repeated)} detail="Already admitted · today" /></div>
-    <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-5"><Card><CardHeader><CardTitle>Admissions by gate</CardTitle><CardDescription>Today&apos;s successful check-ins</CardDescription></CardHeader><CardContent>{gates.size ? <ul className="divide-y divide-border">{[...gates].sort((a, b) => b[1] - a[1]).map(([gate, value]) => <li key={gate} className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"><span className="truncate">{gate}</span><strong className="tabular-nums">{value}</strong></li>)}</ul> : <p className="text-sm text-muted-foreground">No admissions recorded today.</p>}</CardContent></Card><RecentCheckins rows={recent} timezone={event.timezone} /></div>
+    <div className="grid min-w-0 grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4 lg:gap-8"><Stat icon={<Check />} label="Admissions" value={String(attendance.checkedIn)} detail={`${today} today`} /><Stat icon={<Activity />} label="Admission rate" value={`${rate}%`} detail={`${attendance.checkedIn} of ${attendance.ticketsSold} sold tickets`} /><Stat icon={<CircleAlert />} label="Failed scans" value={String(failed)} detail="Today" /><Stat icon={<ScanLine />} label="Repeat scans" value={String(repeated)} detail="Already admitted · today" /></div>
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6"><Card><CardHeader><CardTitle>Admissions by gate</CardTitle><CardDescription>Today&apos;s successful check-ins</CardDescription></CardHeader><CardContent>{gates.size ? <ul className="divide-y divide-border">{[...gates].sort((a, b) => b[1] - a[1]).map(([gate, value]) => <li key={gate} className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm"><span className="truncate">{gate}</span><strong className="tabular-nums">{value}</strong></li>)}</ul> : <p className="text-sm text-muted-foreground">No admissions recorded today.</p>}</CardContent></Card><RecentCheckins rows={recent} timezone={event.timezone} /></div>
   </main>;
 }
 
 function RecentSales({ sales, title = "Recent sales" }: { sales: Awaited<ReturnType<typeof listSales>>["sales"]; title?: string }) {
   return <Card>
-    <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
+    <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3">
       <CardTitle className="min-w-0 truncate">{title}</CardTitle>
-      <Link href="/sales" className="col-start-2 row-start-1 inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-[12px] px-3 text-sm font-semibold text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Link href="/sales" className="col-start-2 row-start-1 inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         All sales <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
       </Link>
       <CardDescription className="col-span-2 row-start-2">Latest recorded transactions</CardDescription>
@@ -199,7 +199,7 @@ function RecentSales({ sales, title = "Recent sales" }: { sales: Awaited<ReturnT
         <ul className="divide-y divide-border">
           {sales.map((sale) => (
             <li key={sale.id}>
-              <Link href={`/sales/${sale.id}`} className="flex min-h-16 items-center justify-between gap-3 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Link href={`/sales/${sale.id}`} className="flex min-h-14 items-center justify-between gap-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-base font-semibold">{sale.customerName ?? sale.reference}</span>
                   <span className="block truncate text-sm text-muted-foreground">{sale.reference} · {sale.status.replaceAll("_", " ")}</span>
@@ -225,5 +225,5 @@ function RecentAttempts({ rows, timezone }: { rows: Awaited<ReturnType<typeof li
 }
 
 function QuickActions({ event, admin = false }: { event: EventDto; admin?: boolean }) {
-  return <section aria-label="Quick actions" className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"><Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><Plus aria-hidden="true" />New sale</Button><Button nativeButton={false} variant="outline" render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><ScanLine aria-hidden="true" />Check-in</Button>{admin && <><Button nativeButton={false} variant="outline" render={<Link href={`/reports?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><Activity aria-hidden="true" />Reports</Button><Button nativeButton={false} variant="outline" render={<Link href="/team" />} className="min-h-12"><Users aria-hidden="true" />Team</Button></>}</section>;
+  return <section aria-label="Quick actions" className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap"><Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><Plus aria-hidden="true" />New sale</Button><Button nativeButton={false} variant="outline" render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><ScanLine aria-hidden="true" />Check-in</Button>{admin && <><Button nativeButton={false} variant="outline" render={<Link href={`/reports?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><Activity aria-hidden="true" />Reports</Button><Button nativeButton={false} variant="outline" render={<Link href="/team" />} className="min-h-12"><Users aria-hidden="true" />Team</Button></>}</section>;
 }

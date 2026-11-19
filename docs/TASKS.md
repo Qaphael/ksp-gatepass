@@ -25,14 +25,19 @@ The restarted local server reports the existing dev-database schema is missing `
 
 ## Reference-driven visual redesign
 
-- [x] Define a shared warm-cream, white-card and coral-accent visual system based on the supplied mobile reference; preserve semantic outcome colors.
-- [x] Reshape the app shell, headings, cards, forms, lists and navigation so the reference's spacing and rounded surfaces apply across existing routes.
-- [x] Review and update dashboards, events, sales, tickets, check-in, stock, team, reports, audit and account pages; preserve workflows and permissions.
-- [x] Run typecheck, lint and live UI checks; update `docs/DESIGN.md` and record physical-device follow-up.
+- [x] Define the Linear design system as `docs/DESIGN.md` (DesignMD source of truth); old KSP spec backed up to `docs/DESIGN-KSP-GATEPASS-BACKUP.md`.
+- [x] Dark-first re-theme: page `#08090A`, text `#F7F8F8`, cards `#0F1011`, sidebar `#000000`, primary `#5E6AD2`, accent `white 5%`, semantic outcome pairs (success `#00BA7C`, warning `#F7B32B`, danger `#E5484D`, info `#5E6AD2`).
+- [x] Rewrite `src/app/globals.css` with Linear tokens, radius scale (4/6/8/9999), shadow scale, typography weights 400/510/590; Inter via `next/font/google`; legacy `--brand-*`/`--gold-*`/`--ivory`/`--ink` kept for ticket artwork only.
+- [x] `layout.tsx` themeColor `#08090a`; PWA manifest colors updated; sonner forced `theme="dark"`.
+- [x] UI primitives restyled: button pill + doc variants, card `rounded-lg`, input/textarea/select `rounded-md`, dialog `rounded-lg`, content-states, result-takeover `z-[100]`, nav-links active `#FFFFFF`/inactive `#8A8F98` no blue pill/shadow.
+- [x] Bulk radius sweep across 10 files to doc scale; avatar → `rounded-full`.
+- [x] Semantic text fixes: tinted-context `text-*-foreground` → `text-*`; solid fills keep `text-*-foreground`.
+- [x] Hardcoded color replacement: emerald/sky/amber callouts → tokens; `bg-brand-900`/`text-white` camera overlay → tokens; `accent-brand-700` → `accent-primary`; `bg-brand-50` → `bg-muted`; design-preview swatch labels updated.
+- [x] Structural alignment with Linear Component Stylings (§4-5): primary/secondary/ghost/navigation/input-button specs; Dark Card (8px, flat shadow, 24px padding); Text Input Dark (68px height, surface overlay bg, inset ring shadow); Navigation Button (active `#FFFFFF`/inactive `#8A8F98`, no radius/shadow); z-index layering (takeover `z-[100]`, modal `100+`); 8px spacing scale on primitives; all pill `rounded-full` replaced with `rounded-lg`/`rounded-md` (no pill shapes anywhere).
 
-Implemented shared palette, rounded-card surfaces and raised bottom navigation; carried the palette into the scanner shell, stock actions, account profile and verifier dashboard. Camera viewport stays dark for image contrast; admission results keep semantic colors. Typecheck/lint pass; the live `/login` route returns HTTP 200. Protected pages still need a signed-in visual pass and Android touch/camera review.
+- [x] Density and structure pass across dashboard shell and all dashboard pages (8px spacing grid, flat cards, compact inputs, no active nav fills)
+- [x] Run typecheck, lint and tests against the Linear theme; update docs; report results.
 
-Plan: inspect the existing design tokens and shared components; translate the reference into accessible shared tokens and reusable surfaces; then apply those patterns through the shell and route groups; review at phone widths and run the repository checks. The image guides visual style only; it does not add product features or supersede GatePass business rules.
 
 ## Full-page mobile UI/UX audit
 

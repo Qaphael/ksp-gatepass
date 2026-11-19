@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import { PwaInstallProvider } from "@/components/pwa/install-provider";
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-app" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-app" });
 
 export const metadata: Metadata = {
   title: "KSP GatePass",
@@ -14,13 +14,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f7f1ea",
+  themeColor: "#08090a",
   viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`h-full antialiased ${geist.variable}`}>
+    <html lang="en" className={`h-full antialiased ${inter.variable}`}>
       <body className="min-h-full flex flex-col">
         <PwaInstallProvider>{children}</PwaInstallProvider>
       </body>
