@@ -78,12 +78,8 @@ export default function LoginPage() {
           </ul>
 
           <div className="mt-auto flex items-center gap-2.5 rounded-md border border-border bg-background px-3 py-2 text-muted-foreground">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-            </span>
             <span className="text-[11px] font-mono tracking-tight">
-              Server online · Africa/Kampala (EAT)
+              KSP Hotel Gulu · Africa/Kampala
             </span>
           </div>
         </div>

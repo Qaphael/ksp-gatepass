@@ -75,6 +75,24 @@ export function localToUtc(local: string, timeZone: string): Date {
   return new Date(guess - offsetMsAt(first, timeZone));
 }
 
+/**
+ * Format a date as a human-readable date+time in an explicit IANA timezone.
+ * `date` must be provided (an ISO string or Date); `timeZone` must be provided.
+ * Server components should pass `Africa/Kampala` or the event's timezone.
+ */
+export function formatDateTime(
+  date: string | Date,
+  timeZone: string,
+  locale = "en-UG",
+  options: Intl.DateTimeFormatOptions = {},
+): string {
+  const value = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat(locale, {
+    timeZone,
+    ...options,
+  }).format(value);
+}
+
 /** Format a UTC instant as "YYYY-MM-DDTHH:mm" wall-clock time in a timezone. */
 export function utcToLocal(date: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {

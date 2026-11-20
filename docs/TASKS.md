@@ -1,5 +1,18 @@
 # Tasks
 
+## Stitch batch 0 — shared primitives and claim cleanup
+
+- [x] Add shared UI primitives in `src/components/ui`: `StatTile` (label, value, optional suffix/sub, integer percent bar), `SectionCard` (title, description, right-side action), `DefList`/`DefRow` (label left / value right, stacks at 390px base), `StickyActionBar` (border-t, safe-area padding, hidden at lg), and `Timeline` (ordered, mono time, label, detail).
+- [x] Add one EAT date/time helper `formatDateTime(date, timeZone, locale?, options?)` in `src/lib/time.ts` with explicit locale and timeZone parameters and no implicit `new Date()`.
+- [x] Make Money the single UGX formatter: removed local `money()` in `dashboard/page.tsx` and `sales/[id]/page.tsx`, replaced with `formatUGX`/`Money`.
+- [x] Remove unverified claims: dashboard footer "Server connected · database in sync" green-dot line replaced with neutral event name · timezone; turnstile card "Live turnstile stream" + pulsing "Live" badge renamed to "Latest"; alerts "Live dispatch" → "Latest dispatch"; login-page "Server online · Africa/Kampala (EAT)" ping replaced with neutral "KSP Hotel Gulu · Africa/Kampala".
+- [x] Replace colour-only open-state `Chip` in the dashboard with neutral labelled text, and colour-only PAID/PENDING sale spans with the sale-domain `StatusBadge` (server `sale.status`).
+- [x] Convert dashboard recent lists to the new `formatDateTime` helper.
+
+Keep all roles, actions, business checks, eligibility/payment/check-in logic and stored instants unchanged. Primitives are added for later batches; this batch rewrites no screen layout.
+
+Plan: Batch 0 adds shared primitives and removes claims nothing verifies; subsequent batches adapt the stitch mockups' structure only, still sourcing every eligibility, payment, check-in and total decision from the server.
+
 ## Desktop sidebar and overnight event windows
 
 - [x] Make the desktop sidebar explicitly use a readable light surface and foreground, independent of color-scheme variables.
