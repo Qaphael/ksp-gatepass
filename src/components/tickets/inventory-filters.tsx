@@ -109,6 +109,7 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
           placeholder="KSP-00001"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="w-full min-w-0"
         />
       </div>
 
@@ -120,7 +121,7 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
             if (value) void onEventChange(value);
           }}
         >
-          <SelectTrigger aria-label="Filter by event" className="min-h-12 w-full text-base">
+          <SelectTrigger aria-label="Filter by event" className="min-h-12 w-full min-w-40 text-base whitespace-nowrap">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -140,7 +141,7 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
           value={status}
           onValueChange={(value) => setStatus(value ?? ALL)}
         >
-          <SelectTrigger aria-label="Filter by status" className="min-h-12 w-full text-base">
+          <SelectTrigger aria-label="Filter by status" className="min-h-12 w-full min-w-36 text-base whitespace-nowrap">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -162,7 +163,7 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
             onValueChange={(value) => setTicketTypeId(value ?? ALL)}
             disabled={loadingTypes}
           >
-            <SelectTrigger aria-label="Filter by category" className="min-h-12 w-full text-base">
+            <SelectTrigger aria-label="Filter by category" className="min-h-12 w-full min-w-36 text-base whitespace-nowrap">
               <SelectValue
                 placeholder={loadingTypes ? "Loading…" : "All categories"}
               />
