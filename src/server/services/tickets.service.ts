@@ -1,4 +1,4 @@
-import type { PrintKind, Prisma, TicketStatus } from "@/generated/prisma/client";
+import type { CheckInMethod, PrintKind, Prisma, SaleStatus, TicketStatus } from "@/generated/prisma/client";
 import { recordAudit, sanitizeAuditData } from "@/lib/audit";
 import type { AuthContext } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/client";
@@ -33,6 +33,19 @@ export interface TicketDto {
   revokedById: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Compact sale/check-in summary; present only when `listTickets` runs with `include: "trace"`. */
+  trace?: TicketTraceCompact;
+}
+
+/** Compact trace added per row when a ticket list requests `include: "trace"`. */
+export interface TicketTraceCompact {
+  saleReference: string | null;
+  saleId: string | null;
+  customerName: string | null;
+  /** Only the last three digits of the phone number, e.g. `***123`. */
+  customerPhoneMasked: string | null;
+  checkedInAt: string | null;
+  gate: string | null;
 }
 
 const DTO_INCLUDE = {
@@ -70,6 +83,58 @@ export interface TicketListResult {
   pageSize: number;
 }
 
+/**
+ * Adds a compact sale/check-in summary to every ticket on the page, using one
+ * batched SaleTicket + CheckIn query. Buyers are only visible to roles that may
+ * already read them (`inventory:read` is required by `listTickets`; the phone
+ * is masked to its last three digits). Never exposes QR tokens.
+ */
+async function attachTrace(tickets: NonNullable<TicketRecord>[]): Promise<TicketTraceCompact[]> {
+  const ids = tickets.map((t) => t.id);
+  if (!ids.length) return [];
+  const [saleRows, checkInRows] = await Promise.all([
+    prisma.saleTicket.findMany({
+      where: { ticketId: { in: ids } },
+      include: {
+        sale: {
+          select: { id: true, reference: true, customerName: true, customerPhone: true },
+        },
+      },
+    }),
+    prisma.checkIn.findMany({
+      where: { ticketId: { in: ids } },
+      select: { ticketId: true, checkedInAt: true, gate: true },
+    }),
+  ]);
+  const saleByTicket = new Map<string, NonNullable<typeof saleRows>[number]["sale"]>();
+  for (const row of saleRows) {
+    if (!saleByTicket.has(row.ticketId)) saleByTicket.set(row.ticketId, row.sale);
+  }
+  const checkInByTicket = new Map<string, { checkedInAt: Date; gate: string }>();
+  for (const row of checkInRows) {
+    if (!checkInByTicket.has(row.ticketId)) checkInByTicket.set(row.ticketId, { checkedInAt: row.checkedInAt, gate: row.gate });
+  }
+  return tickets.map((ticket) => {
+    const sale = saleByTicket.get(ticket.id);
+    const checkIn = checkInByTicket.get(ticket.id);
+    return {
+      saleReference: sale?.reference ?? null,
+      saleId: sale?.id ?? null,
+      customerName: sale?.customerName ?? null,
+      customerPhoneMasked: sale?.customerPhone ? `***${sale.customerPhone.slice(-3)}` : null,
+      checkedInAt: checkIn?.checkedInAt.toISOString() ?? null,
+      gate: checkIn?.gate ?? null,
+    };
+  });
+}
+
+/** Maps page tickets to DTOs, adding compact traces when `include: "trace"`. */
+async function toListDtos(tickets: NonNullable<TicketRecord>[], include: TicketListQuery["include"]): Promise<TicketDto[]> {
+  if (include !== "trace") return tickets.map((t) => toDto(t as TicketRecord));
+  const traces = await attachTrace(tickets);
+  return tickets.map((t, index) => ({ ...toDto(t as TicketRecord), trace: traces[index] }));
+}
+
 export async function listTickets(
   ctx: AuthContext,
   query: TicketListQuery,
@@ -97,7 +162,7 @@ export async function listTickets(
   ]);
 
   return {
-    tickets: tickets.map((t) => toDto(t as TicketRecord)),
+    tickets: await toListDtos(tickets, query.include),
     total,
     page: query.page,
     pageSize: query.pageSize,
@@ -161,6 +226,100 @@ export async function getTicket(ctx: AuthContext, id: string): Promise<TicketDet
       ticketCount: row.ticketCount,
       createdAt: row.createdAt.toISOString(),
     })),
+  };
+}
+
+export interface TicketTrace {
+  sale: {
+    id: string;
+    reference: string;
+    status: SaleStatus;
+    customerName: string | null;
+    customerPhone: string | null;
+    sellerName: string;
+    totalUgx: number;
+    paidNetUgx: number;
+    balanceUgx: number;
+    createdAt: string;
+  } | null;
+  checkIn: {
+    checkedInAt: string;
+    gate: string;
+    method: CheckInMethod;
+    verifierName: string;
+  } | null;
+}
+
+/**
+ * Full read-only trace of a ticket's sale and admission. Requires
+ * `inventory:read`. Never returns QR tokens, and buyer details are only
+ * surfaced to roles that may already read sales.
+ */
+export async function getTicketTrace(ctx: AuthContext, ticketId: string): Promise<TicketTrace> {
+  requirePermission(ctx.role, "inventory:read");
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: {
+      saleTickets: {
+        take: 1,
+        include: {
+          sale: {
+            select: {
+              id: true,
+              reference: true,
+              status: true,
+              customerName: true,
+              customerPhone: true,
+              totalUgx: true,
+              createdAt: true,
+              seller: { select: { displayName: true } },
+              payments: { include: { adjustments: true } },
+            },
+          },
+        },
+      },
+      checkIn: {
+        select: {
+          checkedInAt: true,
+          gate: true,
+          method: true,
+          verifier: { select: { displayName: true } },
+        },
+      },
+    },
+  });
+  if (!ticket) throw notFound("Ticket not found.");
+  const sale = ticket.saleTickets[0]?.sale ?? null;
+  const paidNetUgx = sale
+    ? sale.payments.reduce(
+        (sum, payment) =>
+          sum + payment.amountUgx - payment.adjustments.reduce((adjustmentSum, adjustment) => adjustmentSum + adjustment.amountUgx, 0),
+        0,
+      )
+    : 0;
+  return {
+    sale: sale
+      ? {
+          id: sale.id,
+          reference: sale.reference,
+          status: sale.status,
+          customerName: sale.customerName,
+          customerPhone: sale.customerPhone,
+          sellerName: sale.seller.displayName,
+          totalUgx: sale.totalUgx,
+          paidNetUgx,
+          balanceUgx: Math.max(0, sale.totalUgx - paidNetUgx),
+          createdAt: sale.createdAt.toISOString(),
+        }
+      : null,
+    checkIn: ticket.checkIn
+      ? {
+          checkedInAt: ticket.checkIn.checkedInAt.toISOString(),
+          gate: ticket.checkIn.gate,
+          method: ticket.checkIn.method,
+          verifierName: ticket.checkIn.verifier.displayName,
+        }
+      : null,
   };
 }
 

@@ -1,5 +1,17 @@
 # Tasks
 
+## Stitch batch 0.5 — read-only service additions
+
+- [x] `tickets.service`: `getTicketTrace(ctx, ticketId)` (inventory:read) returns sale + check-in summary (never QR tokens); `listTickets` gained optional `include: "trace"` adding compact `{ saleReference, saleId, customerName, customerPhoneMasked, checkedInAt, gate }` via one batched SaleTicket + CheckIn query (masked phone = last 3 digits).
+- [x] `ticket-batches.service`: `getBatchFlow(ctx, batchId)` (inventory:read) returns `{ total, sold, withSellers, inVault, revoked, cancelled, checkedIn }` summing to quantity; `custody` per-seller breakdown only when caller has `stock:read-all`.
+- [x] `sales.service`: optional `search` in `SaleListQuery` (reference uppercase contains, customerName insensitive, customerPhoneNormalized digits contains); `getSalesTotals(ctx, query)` with same where/scoping ignoring pagination → `{ saleCount, grossUgx, collectedNetUgx, outstandingUgx, byStatus }`; `getSale` tickets gain optional `checkIn` (gate only when caller has `checkin:read-recent`).
+- [x] `stock.service`: `getSellerStockStatement` additive `batches` (grouped by batch/ticket-type: issued, sold, held, heldSerials) and `remittances` (id, amountUgx, method, recordedAt, reversesId, receivedByName, reversed). No existing field or write path changed.
+- [x] `check-in.service`: `listScanAttempts` ALREADY_USED rows gain `originalCheckIn` via batched lookup; `listRecentCheckIns` + schema gained `method` (QR|MANUAL) filter; new `listCheckInGates(ctx, eventId)` (checkin:read-recent) returns distinct gates with counts ordered desc.
+- [x] Validation: `sales.ts` `search`, `check-in.ts` `method`, `tickets.ts` `include: "trace"`.
+- [x] Added integration tests `tests/integration/batch-05-reads.test.ts` (16 tests): permission-denied, seller scoping, empty result, and count assertions per new function.
+
+Note: `getBatchFlow` `custody` sorting and `listCheckInGates` ordering verified in tests. No UI touched; all decisions stay on the server.
+
 ## Stitch batch 0 — shared primitives and claim cleanup
 
 - [x] Add shared UI primitives in `src/components/ui`: `StatTile` (label, value, optional suffix/sub, integer percent bar), `SectionCard` (title, description, right-side action), `DefList`/`DefRow` (label left / value right, stacks at 390px base), `StickyActionBar` (border-t, safe-area padding, hidden at lg), and `Timeline` (ordered, mono time, label, detail).

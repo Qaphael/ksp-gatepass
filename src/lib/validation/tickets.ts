@@ -62,6 +62,8 @@ export const ticketListQuerySchema = z.object({
   batchId: z.string().trim().min(1).optional(),
   /** Serial search: exact or prefix, e.g. `KSP-000`. */
   search: z.string().trim().max(50).optional(),
+  /** Set to "trace" to add a compact per-row sale/check-in summary. */
+  include: z.literal("trace").optional(),
   page: intQuery.default(1),
   pageSize: intQuery.max(100).default(25),
 });
@@ -70,7 +72,7 @@ export type TicketListQuery = z.infer<typeof ticketListQuerySchema>;
 
 /** CSV export uses the same filters but no pagination. */
 export const ticketExportQuerySchema = ticketListQuerySchema
-  .omit({ page: true, pageSize: true })
+  .omit({ page: true, pageSize: true, include: true })
   .refine((q) => q.eventId !== undefined, {
     message: "Choose an event to export.",
     path: ["eventId"],

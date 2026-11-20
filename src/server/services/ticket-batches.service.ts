@@ -7,6 +7,7 @@ import { generateQrToken, hashQrToken } from "@/lib/qr/tokens";
 import { encryptToken } from "@/lib/qr/token-vault";
 import { formatSerial, SERIAL_NUMBER_MAX } from "@/lib/serial";
 import type { GenerateBatchInput } from "@/lib/validation/tickets";
+import { can } from "@/lib/permissions";
 import { conflict, notFound, requirePermission } from "./errors";
 
 /**
@@ -277,4 +278,91 @@ export async function listBatches(ctx: AuthContext, eventId: string): Promise<Ti
     include: DTO_INCLUDE,
   });
   return batches.map(toDto);
+}
+
+export interface BatchFlow {
+  total: number;
+  sold: number;
+  withSellers: number;
+  inVault: number;
+  revoked: number;
+  cancelled: number;
+  checkedIn: number;
+  /** Per-seller holding summary; present only when the caller has `stock:read-all`. */
+  custody?: Array<{ sellerId: string; sellerName: string; held: number; sold: number }>;
+}
+
+/**
+ * Read-only flow counts for a batch. `withSellers` + `inVault` + `sold` +
+ * `revoked` + `cancelled` sum to `total` (unused `RESERVED` tickets are not
+ * produced by this system). Requires `inventory:read`; the per-seller
+ * `custody` summary is returned only when the caller also has `stock:read-all`.
+ * Never exposes QR tokens.
+ */
+export async function getBatchFlow(ctx: AuthContext, batchId: string): Promise<BatchFlow> {
+  requirePermission(ctx.role, "inventory:read");
+  const batch = await prisma.ticketBatch.findUnique({
+    where: { id: batchId },
+    select: { id: true, quantity: true },
+  });
+  if (!batch) throw notFound("Batch not found.");
+
+  const [byStatus, withSellers, checkedIn, custodyRows, soldRows] = await Promise.all([
+    prisma.ticket.groupBy({ by: ["status"], where: { batchId }, _count: { _all: true } }),
+    prisma.ticketCustody.count({ where: { releasedAt: null, ticket: { batchId, status: "AVAILABLE" } } }),
+    prisma.checkIn.count({ where: { ticket: { batchId } } }),
+    can(ctx.role, "stock:read-all")
+      ? prisma.ticketCustody.findMany({
+          where: { releasedAt: null, ticket: { batchId, status: "AVAILABLE" } },
+          select: { sellerId: true, seller: { select: { displayName: true } } },
+        })
+      : Promise.resolve([]),
+    can(ctx.role, "stock:read-all")
+      ? prisma.ticket.findMany({
+          where: { batchId, status: "SOLD" },
+          select: { saleTickets: { take: 1, select: { sale: { select: { sellerId: true } } } } },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const sold = byStatus.find((row) => row.status === "SOLD")?._count._all ?? 0;
+  const available = byStatus.find((row) => row.status === "AVAILABLE")?._count._all ?? 0;
+  const revoked = byStatus.find((row) => row.status === "REVOKED")?._count._all ?? 0;
+  const cancelled = byStatus.find((row) => row.status === "CANCELLED")?._count._all ?? 0;
+
+  const flow: BatchFlow = {
+    total: batch.quantity,
+    sold,
+    withSellers,
+    inVault: Math.max(0, available - withSellers),
+    revoked,
+    cancelled,
+    checkedIn,
+  };
+
+  if (can(ctx.role, "stock:read-all")) {
+    const heldBySeller = new Map<string, number>();
+    const sellerNames = new Map<string, string>();
+    for (const row of custodyRows) {
+      heldBySeller.set(row.sellerId, (heldBySeller.get(row.sellerId) ?? 0) + 1);
+      sellerNames.set(row.sellerId, row.seller.displayName);
+    }
+    const soldBySeller = new Map<string, number>();
+    for (const row of soldRows) {
+      const sellerId = row.saleTickets[0]?.sale.sellerId;
+      if (!sellerId) continue;
+      soldBySeller.set(sellerId, (soldBySeller.get(sellerId) ?? 0) + 1);
+    }
+    const sellerIds = new Set([...heldBySeller.keys(), ...soldBySeller.keys()]);
+    flow.custody = [...sellerIds]
+      .map((sellerId) => ({
+        sellerId,
+        sellerName: sellerNames.get(sellerId) ?? "",
+        held: heldBySeller.get(sellerId) ?? 0,
+        sold: soldBySeller.get(sellerId) ?? 0,
+      }))
+      .sort((a, b) => b.held + b.sold - (a.held + a.sold));
+  }
+
+  return flow;
 }

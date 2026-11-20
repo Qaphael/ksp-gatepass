@@ -21,6 +21,7 @@ export const checkInListQuerySchema = z.object({
   eventId,
   limit: z.coerce.number().int().min(1).max(100).default(50),
   before: z.coerce.date().optional(),
+  method: z.enum(["QR", "MANUAL"]).optional(),
 });
 
 export const scanAttemptQuerySchema = z.object({

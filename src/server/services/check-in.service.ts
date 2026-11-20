@@ -100,6 +100,8 @@ export interface ScanAttemptDto {
   gate: string | null;
   actor: { id: string; displayName: string };
   attemptedAt: string;
+  /** The original successful admission for an ALREADY_USED attempt, when one exists. */
+  originalCheckIn?: { checkedInAt: string; gate: string } | null;
 }
 
 const MESSAGE: Record<ScanResultCode, string> = {
@@ -478,7 +480,11 @@ export async function listRecentCheckIns(ctx: AuthContext, query: CheckInListQue
   requirePermission(ctx.role, "checkin:read-recent");
   const event = await getEvent(ctx, prisma, query.eventId);
   const rows = await prisma.checkIn.findMany({
-    where: { eventId: event.id, ...(query.before ? { checkedInAt: { lt: query.before } } : {}) },
+    where: {
+      eventId: event.id,
+      ...(query.before ? { checkedInAt: { lt: query.before } } : {}),
+      ...(query.method ? { method: query.method } : {}),
+    },
     include: {
       event: { select: { name: true } },
       ticket: { include: { ticketType: { select: { name: true } } } },
@@ -492,6 +498,22 @@ export async function listRecentCheckIns(ctx: AuthContext, query: CheckInListQue
     take: query.limit,
   });
   return rows.map((row) => toCheckInRecord(row));
+}
+
+/**
+ * Distinct gates with their check-in counts, ordered most-used first. Requires
+ * `checkin:read-recent`; counts come from the database only.
+ */
+export async function listCheckInGates(ctx: AuthContext, eventId: string) {
+  requirePermission(ctx.role, "checkin:read-recent");
+  const event = await getEvent(ctx, prisma, eventId);
+  const rows = await prisma.checkIn.groupBy({
+    by: ["gate"],
+    where: { eventId: event.id },
+    _count: { _all: true },
+    orderBy: { _count: { gate: "desc" } },
+  });
+  return rows.map((row) => ({ gate: row.gate, count: row._count._all }));
 }
 
 function toCheckInRecord(row: {
@@ -561,17 +583,35 @@ export async function listScanAttempts(ctx: AuthContext, query: ScanAttemptQuery
     orderBy: { attemptedAt: "desc" },
     take: query.limit,
   });
-  return rows.map((row): ScanAttemptDto => ({
-    id: row.id,
-    eventId: row.eventId,
-    eventName: row.event.name,
-    serial: row.ticket?.serial ?? row.serial,
-    method: row.method,
-    resultCode: row.resultCode,
-    gate: row.gate,
-    actor: row.actor,
-    attemptedAt: row.attemptedAt.toISOString(),
-  }));
+  const checkInRows = await (async () => {
+    const alreadyUsed = rows.filter((row) => row.resultCode === "ALREADY_USED" && row.ticketId);
+    if (!alreadyUsed.length) return new Map<string, { checkedInAt: Date; gate: string }>();
+    const found = await prisma.checkIn.findMany({
+      where: { ticketId: { in: alreadyUsed.map((row) => row.ticketId as string) } },
+      select: { ticketId: true, checkedInAt: true, gate: true },
+    });
+    return new Map(found.map((row) => [row.ticketId, { checkedInAt: row.checkedInAt, gate: row.gate }]));
+  })();
+  return rows.map((row): ScanAttemptDto => {
+    const dto: ScanAttemptDto = {
+      id: row.id,
+      eventId: row.eventId,
+      eventName: row.event.name,
+      serial: row.ticket?.serial ?? row.serial,
+      method: row.method,
+      resultCode: row.resultCode,
+      gate: row.gate,
+      actor: row.actor,
+      attemptedAt: row.attemptedAt.toISOString(),
+    };
+    if (row.resultCode === "ALREADY_USED" && row.ticketId) {
+      const original = checkInRows.get(row.ticketId);
+      dto.originalCheckIn = original
+        ? { checkedInAt: original.checkedInAt.toISOString(), gate: original.gate }
+        : null;
+    }
+    return dto;
+  });
 }
 
 export async function recordCheckInCorrection(

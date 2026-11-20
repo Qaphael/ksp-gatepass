@@ -81,6 +81,9 @@ export const paymentAdjustmentSchema = z.object({
 export const saleListQuerySchema = z.object({
   eventId: z.string().min(1).optional(),
   status: z.enum(["PENDING_PAYMENT", "PARTIALLY_PAID", "PAID", "CANCELLED", "REFUNDED"]).optional(),
+  /** Free-text search: matches reference (uppercase), customer name and
+   * normalized customer phone (digits only). */
+  search: z.string().trim().max(50).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });

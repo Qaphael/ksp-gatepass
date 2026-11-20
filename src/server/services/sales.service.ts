@@ -66,7 +66,13 @@ export interface SaleDto {
     unitPriceUgx: number;
     discountUgx: number;
     lineTotalUgx: number;
-    tickets: Array<{ id: string; serial: string; status: string }>;
+    tickets: Array<{
+      id: string;
+      serial: string;
+      status: string;
+      /** Admission for this ticket; populated by `getSale` (gate only when the caller may see it). */
+      checkIn?: { checkedInAt: string; gate?: string } | null;
+    }>;
   }>;
   payments: Array<{
     id: string;
@@ -539,11 +545,7 @@ export async function lookupTicketForSale(ctx: AuthContext, input: SaleLookupTic
 export async function listSales(ctx: AuthContext, query: SaleListQuery): Promise<SaleListResult> {
   const permission: Permission = can(ctx.role, "sale:read-all") ? "sale:read-all" : "sale:read-own";
   requirePermission(ctx.role, permission);
-  const where = {
-    ...(query.eventId ? { eventId: query.eventId } : {}),
-    ...(query.status ? { status: query.status } : {}),
-    ...(permission === "sale:read-own" ? { sellerId: ctx.userId } : {}),
-  };
+  const where = saleListWhere(query, permission, ctx.userId);
   const [total, sales] = await Promise.all([
     prisma.sale.count({ where }),
     prisma.sale.findMany({
@@ -554,12 +556,121 @@ export async function listSales(ctx: AuthContext, query: SaleListQuery): Promise
   return { sales: sales.map(toDto), total, page: query.page, pageSize: query.pageSize };
 }
 
+/** Scope+sanitize a sale list query into a Prisma where clause (shared by list & totals). */
+function saleListWhere(
+  query: SaleListQuery,
+  permission: Permission,
+  userId: string,
+): Prisma.SaleWhereInput {
+  return {
+    ...(query.eventId ? { eventId: query.eventId } : {}),
+    ...(query.status ? { status: query.status } : {}),
+    ...(permission === "sale:read-own" ? { sellerId: userId } : {}),
+    ...(query.search
+      ? {
+          OR: [
+            { reference: { contains: query.search.toUpperCase() } },
+            { customerName: { contains: query.search, mode: "insensitive" } },
+            { customerPhone: { contains: query.search.replace(/\D/g, "") } },
+          ],
+        }
+      : {}),
+  };
+}
+
 export async function getSale(ctx: AuthContext, id: string): Promise<SaleDto> {
   const permission: Permission = can(ctx.role, "sale:read-all") ? "sale:read-all" : "sale:read-own";
   requirePermission(ctx.role, permission);
   const sale = await prisma.sale.findUnique({ where: { id }, include: SALE_INCLUDE });
   if (!sale || (permission === "sale:read-own" && sale.sellerId !== ctx.userId)) throw notFound("Sale not found.");
-  return toDto(sale);
+  const dto = toDto(sale);
+  const ticketIds = sale.items.flatMap((item) => item.tickets.map((t) => t.ticket.id));
+  if (ticketIds.length) {
+    const maySeeGate = can(ctx.role, "checkin:read-recent");
+    const checkInRows = await prisma.checkIn.findMany({
+      where: { ticketId: { in: ticketIds } },
+      select: { ticketId: true, checkedInAt: true, gate: maySeeGate },
+    });
+    const byTicket = new Map(checkInRows.map((row) => [row.ticketId, row]));
+    for (const item of dto.items) {
+      for (const ticket of item.tickets) {
+        const row = byTicket.get(ticket.id);
+        ticket.checkIn = row
+          ? maySeeGate
+            ? { checkedInAt: row.checkedInAt.toISOString(), gate: row.gate }
+            : { checkedInAt: row.checkedInAt.toISOString() }
+          : null;
+      }
+    }
+  }
+  return dto;
+}
+
+export interface SalesTotals {
+  saleCount: number;
+  /** Sum of totals for sales not cancelled or refunded. */
+  grossUgx: number;
+  /** Payments minus adjustments across the matching sales. */
+  collectedNetUgx: number;
+  /** Sum of unpaid balances (floored at zero) on active sales. */
+  outstandingUgx: number;
+  /** Count of sales per status. */
+  byStatus: Record<SaleStatus, number>;
+}
+
+/**
+ * Read-only totals over the same scope/filters as `listSales` (pagination
+ * ignored). Reuses the net-payment arithmetic used by the dashboard; all
+ * money values are integer UGX. Requires to read sales as the caller does.
+ */
+export async function getSalesTotals(ctx: AuthContext, query: SaleListQuery): Promise<SalesTotals> {
+  const permission: Permission = can(ctx.role, "sale:read-all") ? "sale:read-all" : "sale:read-own";
+  requirePermission(ctx.role, permission);
+  const where = saleListWhere(query, permission, ctx.userId);
+  const [saleRows, payments, adjustments] = await Promise.all([
+    prisma.sale.findMany({
+      where,
+      select: {
+        status: true,
+        totalUgx: true,
+        payments: { select: { amountUgx: true, adjustments: { select: { amountUgx: true } } } },
+      },
+    }),
+    prisma.payment.aggregate({ where: { sale: where }, _sum: { amountUgx: true } }),
+    prisma.paymentAdjustment.groupBy({
+      by: ["type"],
+      where: { payment: { sale: where } },
+      _sum: { amountUgx: true },
+    }),
+  ]);
+
+  const received = payments._sum.amountUgx ?? 0;
+  const adjusted = adjustments.reduce((sum, item) => sum + (item._sum.amountUgx ?? 0), 0);
+  const collectedNetUgx = received - adjusted;
+
+  let grossUgx = 0;
+  let outstandingUgx = 0;
+  const byStatus: Record<SaleStatus, number> = {
+    DRAFT: 0, PENDING_PAYMENT: 0, PARTIALLY_PAID: 0, PAID: 0, CANCELLED: 0, REFUNDED: 0,
+  };
+  for (const sale of saleRows) {
+    byStatus[sale.status] = (byStatus[sale.status] ?? 0) + 1;
+    if (sale.status === "CANCELLED" || sale.status === "REFUNDED") continue;
+    grossUgx += sale.totalUgx;
+    const paid = sale.payments.reduce(
+      (sum, payment) => sum + payment.amountUgx - payment.adjustments.reduce((adjustmentSum, adjustment) => adjustmentSum + adjustment.amountUgx, 0),
+      0,
+    );
+    outstandingUgx += Math.max(0, sale.totalUgx - paid);
+  }
+
+  return {
+    saleCount: saleRows.length,
+    grossUgx,
+    collectedNetUgx,
+    outstandingUgx,
+    byStatus,
+  };
 }
 
 async function getVisibleSale(ctx: AuthContext, tx: Prisma.TransactionClient, id: string) {

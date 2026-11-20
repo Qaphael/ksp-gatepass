@@ -248,9 +248,27 @@ export async function getSellerStockStatement(ctx: AuthContext, sellerId: string
   const [event, seller, custodyRows, sales, remittances, closeout] = await Promise.all([
     prisma.event.findUnique({ where: { id: query.eventId }, select: { id: true, name: true } }),
     prisma.user.findUnique({ where: { id: sellerId }, select: { id: true, displayName: true, username: true, role: true } }),
-    prisma.ticketCustody.findMany({ where: { sellerId, stockIssue: { eventId: query.eventId } }, include: { ticket: { select: { serial: true } } }, orderBy: { issuedAt: "asc" } }),
+    prisma.ticketCustody.findMany({
+      where: { sellerId, stockIssue: { eventId: query.eventId } },
+      include: {
+        ticket: {
+          select: {
+            serial: true,
+            batch: { select: { batchRef: true } },
+            ticketType: { select: { name: true, priceUgx: true } },
+          },
+        },
+      },
+      orderBy: { issuedAt: "asc" },
+    }),
     prisma.sale.findMany({ where: { eventId: query.eventId, sellerId }, select: { payments: { select: { amountUgx: true, method: true, adjustments: { select: { amountUgx: true } } } } } }),
-    prisma.remittance.findMany({ where: { eventId: query.eventId, sellerId }, select: { amountUgx: true, method: true, reversesId: true } }),
+    prisma.remittance.findMany({
+      where: { eventId: query.eventId, sellerId },
+      select: {
+        id: true, amountUgx: true, method: true, reversesId: true, recordedAt: true,
+        receivedBy: { select: { displayName: true } },
+      },
+    }),
     prisma.stockCloseout.findUnique({ where: { eventId_sellerId: { eventId: query.eventId, sellerId } }, select: { closedAt: true } }),
   ]);
   if (!event) throw notFound("Event not found.");
@@ -266,6 +284,8 @@ export async function getSellerStockStatement(ctx: AuthContext, sellerId: string
   }
   const totalTakingsUgx = Object.values(takingsByMethod).reduce((sum, value) => sum + value, 0);
   const remittedUgx = remittances.reduce((sum, row) => sum + (row.reversesId ? -row.amountUgx : row.amountUgx), 0);
+  // Group the seller's issued custody rows by batch + ticket type.
+  const batches = groupStockBatches(custodyRows);
   return {
     event: { id: event.id, name: event.name },
     seller: { id: seller.id, displayName: seller.displayName, username: seller.username },
@@ -274,8 +294,58 @@ export async function getSellerStockStatement(ctx: AuthContext, sellerId: string
     totalTakingsUgx,
     remittedUgx,
     balanceOwedUgx: totalTakingsUgx - remittedUgx,
+    batches,
+    remittances: remittances.map((row) => ({
+      id: row.id,
+      amountUgx: row.amountUgx,
+      method: row.method,
+      recordedAt: row.recordedAt.toISOString(),
+      reversesId: row.reversesId,
+      receivedByName: row.receivedBy.displayName,
+      reversed: row.reversesId !== null,
+    })),
     closedAt: closeout?.closedAt.toISOString() ?? null,
   };
+}
+
+/**
+ * Groups a seller's TicketCustody rows into per-batch stock summaries. Group
+ * key is batchRef + ticketType (name/price) — pure display grouping of data
+ * the caller can already read; never exposes QR tokens.
+ */
+function groupStockBatches(
+  custodyRows: Array<{
+    releaseReason: string | null;
+    releasedAt: Date | null;
+    ticket: { serial: string; batch: { batchRef: string } | null; ticketType: { name: string; priceUgx: number } };
+  }>,
+): Array<{
+  batchRef: string | null;
+  ticketTypeName: string;
+  unitPriceUgx: number;
+  issued: number;
+  sold: number;
+  held: number;
+  heldSerials: string[];
+}> {
+  const grouped = new Map<string, (typeof custodyRows)[number][]>();
+  for (const row of custodyRows) {
+    const ticketTypeKey = `${row.ticket.batch?.batchRef ?? "nobatch"}::${row.ticket.ticketType.name}`;
+    grouped.set(ticketTypeKey, grouped.get(ticketTypeKey) ?? []);
+    grouped.get(ticketTypeKey)!.push(row);
+  }
+  return [...grouped.values()].map((rows) => {
+    const heldRows = rows.filter((row) => row.releasedAt === null);
+    return {
+      batchRef: rows[0].ticket.batch?.batchRef ?? null,
+      ticketTypeName: rows[0].ticket.ticketType.name,
+      unitPriceUgx: rows[0].ticket.ticketType.priceUgx,
+      issued: rows.length,
+      sold: rows.filter((row) => row.releaseReason === "SOLD").length,
+      held: heldRows.length,
+      heldSerials: heldRows.map((row) => row.ticket.serial),
+    };
+  });
 }
 
 export async function closeOutSeller(ctx: AuthContext, sellerId: string, input: StockCloseoutInput, rawKey: string | null) {
