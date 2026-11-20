@@ -93,12 +93,12 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
           </p>
         </div>
 
-        {/* Actions: one column on phones, three across from sm */}
-        <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+        {/* Actions: print buttons side by side on phones, all three from sm */}
+        <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3">
           <Button
             nativeButton={false}
             variant="outline"
-            className="min-h-11 w-full justify-center gap-2 text-sm"
+            className="min-h-11 w-full justify-center gap-2 px-2 text-sm"
             render={<a href={`/api/v1/sales/${sale.id}/receipt.pdf`} />}
           >
             <Printer className="size-4 shrink-0" aria-hidden="true" /> Print receipt
@@ -107,7 +107,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
             <Button
               nativeButton={false}
               variant="outline"
-              className="min-h-11 w-full justify-center gap-2 text-sm"
+              className="min-h-11 w-full justify-center gap-2 px-2 text-sm"
               render={<a href="#sale-tickets" />}
             >
               <Printer className="size-4 shrink-0" aria-hidden="true" /> Print tickets
@@ -116,7 +116,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
           {canCollect ? (
             <Button
               nativeButton={false}
-              className="min-h-11 w-full justify-center gap-2 text-sm"
+              className="col-span-2 min-h-11 w-full justify-center gap-2 text-sm sm:col-span-1"
               render={<a href="#collect-balance" />}
             >
               Record balance
