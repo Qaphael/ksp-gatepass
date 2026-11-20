@@ -15,6 +15,7 @@ import { Timeline } from "@/components/ui/timeline";
 import { Serial } from "@/components/ui/serial";
 import { formatDateTime } from "@/lib/time";
 import { Money } from "@/components/ui/money";
+import { DefList, DefRow } from "@/components/ui/def-list";
 
 export const instant = false;
 
@@ -54,237 +55,293 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
   const printedTicketIds = new Set(printRows.flatMap((row) => row.ticketId ? [row.ticketId] : []));
   const outstanding = sale.status !== "CANCELLED" && sale.status !== "REFUNDED";
   const canPrint = can(ctx.role, "ticket:print");
+  const canRecordPayment = can(ctx.role, "payment:record");
   const hasPrintableTicket = ticketRows.some((ticket) => ticket.status !== "CANCELLED" && ticket.status !== "REVOKED");
   const maySeeGate = can(ctx.role, "checkin:read-recent");
+  const canCollect = outstanding && sale.balanceUgx > 0 && canRecordPayment;
 
   const totalTickets = sale.items.reduce((sum, item) => sum + item.quantity, 0);
   const admittedTickets = ticketRows.filter((t) => t.checkIn).length;
   const time = (value: string) => formatDateTime(value, "Africa/Kampala", "en-UG", { hour: "2-digit", minute: "2-digit" });
-  const dayTime = (value: string) => formatDateTime(value, "Africa/Kampala", "en-UG", { month: "short", day: "2-digit", year: "numeric" });
+  const stamp = (value: string) => formatDateTime(value, "Africa/Kampala", "en-UG", { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link href="/sales" className="inline-flex min-h-11 items-center text-base text-muted-foreground underline-offset-2 hover:underline">
-            <ArrowLeft className="size-4 shrink-0 mr-2" aria-hidden="true" /> Back to Sales
-          </Link>
-          <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-            Sale {sale.reference}
-            <StatusBadge domain="sale" status={sale.status} className="text-xs px-2" />
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-card/50 text-muted-foreground font-mono text-[10px] font-semibold">
+    <div className="flex min-w-0 flex-col gap-4">
+      {/* Breadcrumb */}
+      <Link
+        href="/sales"
+        className="inline-flex w-fit min-h-11 items-center gap-2 text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+      >
+        <ArrowLeft className="size-4 shrink-0" aria-hidden="true" /> Back to sales
+      </Link>
+
+      {/* Sale header card */}
+      <section className="flex min-w-0 flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-card sm:p-5">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h1 className="min-w-0 break-words font-mono text-xl font-semibold tracking-tight sm:text-2xl">
+              Sale {sale.reference}
+            </h1>
+            <StatusBadge domain="sale" status={sale.status} className="text-xs" />
+            <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground">
               {admittedTickets}/{totalTickets} admitted
             </span>
-          </h1>
-          <p className="text-base text-muted-foreground">{sale.eventName} · {dayTime(sale.createdAt)}</p>
-          <p className="mt-1 text-xs text-muted-foreground">EAT UTC+3 (Kampala) · {time(sale.createdAt)}</p>
+          </div>
+          <p className="mt-1 truncate text-sm text-muted-foreground">{sale.eventName}</p>
+          <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+            {stamp(sale.createdAt)} EAT
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {canPrint && hasPrintableTicket ? (
-            <Button nativeButton={false} className="min-h-12" render={<a href="#sale-tickets" />}>
-              <Printer /> Print tickets
-            </Button>
-          ) : null}
-          <Button nativeButton={false} className="min-h-12" variant="outline" render={<a href={`/api/v1/sales/${sale.id}/receipt.pdf`} />}>
-            Print receipt
-          </Button>
-          {outstanding && sale.balanceUgx > 0 && can(ctx.role, "payment:record") ? (
-            <Button nativeButton={false} className="min-h-12" render={<a href="#collect-balance" />}>
-              Record Balance
-            </Button>
-          ) : null}
-        </div>
-      </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-        {/* Left column: ledger + parties + tickets */}
-        <div className="flex flex-col gap-4">
-          {/* Financial ledger tile */}
-          <section className="rounded-lg border border-border p-4">
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Order total</span>
-                <span className="font-mono text-base font-semibold tabular-nums"><Money amount={sale.totalUgx} /></span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Paid to date</span>
-                <span className="font-mono text-base font-semibold tabular-nums text-success-foreground"><Money amount={sale.amountPaidUgx} /></span>
-              </div>
-              <div className="flex justify-between">
-                <span className="flex items-center gap-1">
-                  <span className="text-muted-foreground">Balance due</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">AT GATE</span>
+        {/* Actions: one column on phones, three across from sm */}
+        <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+          <Button
+            nativeButton={false}
+            variant="outline"
+            className="min-h-11 w-full justify-center gap-2 text-sm"
+            render={<a href={`/api/v1/sales/${sale.id}/receipt.pdf`} />}
+          >
+            <Printer className="size-4 shrink-0" aria-hidden="true" /> Print receipt
+          </Button>
+          {canPrint && hasPrintableTicket ? (
+            <Button
+              nativeButton={false}
+              variant="outline"
+              className="min-h-11 w-full justify-center gap-2 text-sm"
+              render={<a href="#sale-tickets" />}
+            >
+              <Printer className="size-4 shrink-0" aria-hidden="true" /> Print tickets
+            </Button>
+          ) : <span className="hidden sm:block" aria-hidden="true" />}
+          {canCollect ? (
+            <Button
+              nativeButton={false}
+              className="min-h-11 w-full justify-center gap-2 text-sm"
+              render={<a href="#collect-balance" />}
+            >
+              Record balance
+            </Button>
+          ) : <span className="hidden sm:block" aria-hidden="true" />}
+        </div>
+      </section>
+
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
+        {/* Left column: ledger, parties, tickets */}
+        <div className="flex min-w-0 flex-col gap-4">
+          {/* Financial ledger */}
+          <section aria-label="Financial ledger" className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-card">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-base font-semibold">Financial ledger</h2>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">UGX</span>
+            </div>
+            <div className="grid min-w-0 gap-2 sm:grid-cols-3">
+              <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted/40 p-3">
+                <span className="text-[11px] text-muted-foreground">Order total</span>
+                <span className="min-w-0 break-words font-mono text-base font-semibold tabular-nums">
+                  <Money amount={sale.totalUgx} />
                 </span>
-                <span className="font-mono text-base font-semibold tabular-nums text-muted-foreground"><Money amount={sale.balanceUgx} /></span>
               </div>
-              <div className="pt-2 border-t border-border/70">
-                <p className="text-xs text-muted-foreground">
-                  Subtotal <span className="font-mono text-xs font-semibold tabular-nums">{formatUGX(sale.subtotalUgx)}</span>
-                  &nbsp;·&nbsp;
-                  Discount <span className="font-mono text-xs font-semibold tabular-nums">{formatUGX(sale.discountUgx)}</span>
-                </p>
+              <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted/40 p-3">
+                <span className="text-[11px] text-muted-foreground">Paid to date</span>
+                <span className="min-w-0 break-words font-mono text-base font-semibold tabular-nums text-success-foreground">
+                  <Money amount={sale.amountPaidUgx} />
+                </span>
+              </div>
+              <div className="flex min-w-0 flex-col gap-1 rounded-lg bg-muted/40 p-3">
+                <span className="text-[11px] text-muted-foreground">Balance due</span>
+                <span className="min-w-0 break-words font-mono text-base font-semibold tabular-nums">
+                  <Money amount={sale.balanceUgx} />
+                </span>
               </div>
             </div>
+            <p className="border-t border-border/70 pt-2 text-xs text-muted-foreground">
+              Subtotal <span className="font-mono font-semibold tabular-nums text-foreground">{formatUGX(sale.subtotalUgx)}</span>
+              {sale.discountUgx > 0 ? (
+                <> · Discount <span className="font-mono font-semibold tabular-nums text-foreground">{formatUGX(sale.discountUgx)}</span></>
+              ) : null}
+            </p>
           </section>
 
-          {/* Secondary meta: seller + customer cards */}
-          <section className="grid gap-3 lg:grid-cols-2">
-            <div className="rounded-lg border border-border p-4 flex flex-col gap-2">
-              <span className="text-xs text-muted-foreground">Authorized seller</span>
-              <div className="text-base font-semibold">{sale.seller.displayName}</div>
-            </div>
-            <div className="rounded-lg border border-border p-4 flex flex-col gap-2">
-              <span className="text-xs text-muted-foreground">Customer contact</span>
-              <div className="text-base font-semibold truncate">{sale.customerName ?? "Not provided"}</div>
-              {sale.customerPhone ? <div className="text-xs text-muted-foreground">{sale.customerPhone}</div> : null}
-            </div>
+          {/* Parties */}
+          <section aria-label="Parties" className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-card">
+            <DefList>
+              <DefRow label="Authorized seller">
+                <span className="break-words">{sale.seller.displayName}</span>
+              </DefRow>
+              <DefRow label="Customer contact">
+                <span className="break-words">{sale.customerName ?? "Not provided"}</span>
+                {sale.customerPhone ? <span className="ml-1 font-mono text-xs text-muted-foreground">{sale.customerPhone}</span> : null}
+              </DefRow>
+              {sale.customerReference ? (
+                <DefRow label="Customer reference"><span className="break-words">{sale.customerReference}</span></DefRow>
+              ) : null}
+              {sale.notes ? (
+                <DefRow label="Notes"><span className="break-words">{sale.notes}</span></DefRow>
+              ) : null}
+            </DefList>
           </section>
 
           {/* Tickets */}
-          <section id="sale-tickets" className="scroll-mt-4 rounded-lg border border-border p-4">
-            <h2 className="text-lg font-semibold">Itemized Passes ({totalTickets})</h2>
-            <div className="mt-2 divide-y divide-border">
-              {sale.items.map((item) => (
-                <div key={item.id} className="py-3">
-                  <div className="flex justify-between gap-3 text-base">
-                    <span>{item.quantity} × {item.ticketTypeName}</span>
-                    <span>{formatUGX(item.lineTotalUgx)}</span>
-                  </div>
-                  <ul className="mt-2 divide-y">
-                    {item.tickets.map((ticket) => {
-                      const checkedIn = ticket.checkIn;
-                      return (
-                        <li key={ticket.id} className="flex items-center justify-between gap-3 py-2">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-base font-semibold tracking-wider"><Serial>{ticket.serial}</Serial></span>
-                              {checkedIn ? (
-                                <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-mono text-[10px] font-semibold">ADMITTED</span>
-                              ) : (
-                                <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px] font-semibold">ISSUED · PENDING GATE</span>
-                              )}
-                            </div>
-                            <p className="text-base text-muted-foreground">{item.ticketTypeName} · {formatUGX(item.unitPriceUgx)}</p>
-                            {checkedIn && maySeeGate ? (
-                              <span className="text-xs text-muted-foreground">Gate · {time(checkedIn.checkedInAt)}</span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">Unchecked · Gate pass active</span>
-                            )}
-                          </div>
-                          {canPrint ? (
-                            <TicketActions ticketId={ticket.id} serial={ticket.serial} canPrint={canPrint} printable={ticket.status !== "CANCELLED" && ticket.status !== "REVOKED"} hasPrintHistory={printedTicketIds.has(ticket.id)} />
-                          ) : null}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
+          <section id="sale-tickets" className="min-w-0 scroll-mt-4 rounded-lg border border-border bg-card p-4 shadow-card">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-base font-semibold">Itemized passes ({totalTickets})</h2>
+              {ticketRows[0]?.ticketTypeName ? (
+                <span className="truncate text-xs text-muted-foreground">{ticketRows[0].ticketTypeName}</span>
+              ) : null}
             </div>
+            <ul className="mt-2 divide-y divide-border">
+              {ticketRows.map((ticket) => {
+                const checkedIn = ticket.checkIn;
+                return (
+                  <li key={ticket.id} className="flex min-w-0 flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                        <span className="font-mono text-sm font-semibold tracking-wider"><Serial>{ticket.serial}</Serial></span>
+                        {checkedIn ? (
+                          <span className="rounded bg-success/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-success">ADMITTED</span>
+                        ) : (
+                          <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground">ISSUED · PENDING GATE</span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {ticket.ticketTypeName}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {checkedIn
+                          ? checkedIn.gate && maySeeGate
+                            ? `${checkedIn.gate} · ${time(checkedIn.checkedInAt)} EAT`
+                            : `Admitted · ${time(checkedIn.checkedInAt)} EAT`
+                          : "Not yet admitted"}
+                      </p>
+                    </div>
+                    {canPrint ? (
+                      <div className="shrink-0">
+                        <TicketActions
+                          ticketId={ticket.id}
+                          serial={ticket.serial}
+                          canPrint={canPrint}
+                          printable={ticket.status !== "CANCELLED" && ticket.status !== "REVOKED"}
+                          hasPrintHistory={printedTicketIds.has(ticket.id)}
+                        />
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+              {ticketRows.length === 0 ? <li className="py-3 text-sm text-muted-foreground">No tickets on this sale.</li> : null}
+            </ul>
           </section>
-
-          {/* Quick POS payment collection */}
-          {outstanding && sale.balanceUgx > 0 && can(ctx.role, "payment:record") ? (
-            <section id="collect-balance" className="rounded-lg border border-border p-4">
-              <h2 className="text-lg font-semibold">Collect Outstanding Balance</h2>
-              <span className="text-xs text-muted-foreground mb-2 block">Due: <span className="font-mono text-base font-semibold tabular-nums text-tertiary">{formatUGX(sale.balanceUgx)}</span></span>
-              <PaymentForm saleId={sale.id} balanceUgx={sale.balanceUgx} />
-            </section>
-          ) : null}
         </div>
 
-        {/* Right column: payments + timeline */}
-        <div className="flex flex-col gap-4 lg:col-span-1">
-          {/* Payments */}
-          <section className="rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <h2 className="text-lg font-semibold">Payment Ledger ({sale.payments.length})</h2>
+        {/* Right column: collect balance, payments, timeline */}
+        <div className="flex min-w-0 flex-col gap-4">
+          {canCollect ? (
+            <div id="collect-balance" className="min-w-0 scroll-mt-4">
+              <PaymentForm saleId={sale.id} balanceUgx={sale.balanceUgx} />
             </div>
-            <div className="mt-3 grid gap-3 md:hidden">
+          ) : null}
+
+          {/* Payments */}
+          <section aria-label="Payment history" className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-card">
+            <h2 className="text-base font-semibold">Payment ledger ({sale.payments.length})</h2>
+
+            {/* Phone: stacked rows, no nested card borders */}
+            <ul className="mt-2 divide-y divide-border md:hidden">
               {sale.payments.map((payment) => (
-                <article key={payment.id} className="grid gap-2 rounded-lg border bg-card p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="break-words font-medium">{payment.reference}</p>
-                      <p className="text-base text-muted-foreground">{new Date(payment.recordedAt).toLocaleString("en-UG", { timeZone: "Africa/Kampala" })}</p>
-                    </div>
-                    <StatusBadge domain="payment" status={payment.status as "RECORDED" | "REVERSED" | "REFUNDED"} className="text-xs" />
+                <li key={payment.id} className="flex min-w-0 flex-col gap-1.5 py-3">
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <span className="min-w-0 break-words font-mono text-sm font-semibold">{payment.reference}</span>
+                    <StatusBadge domain="payment" status={payment.status as "RECORDED" | "REVERSED" | "REFUNDED"} className="shrink-0 text-[10px]" />
                   </div>
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-base">
-                    <div>
-                      <dt className="text-muted-foreground">Method</dt>
-                      <dd>{payment.method.replaceAll("_", " ")}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Recorded</dt>
-                      <dd className="font-semibold tabular-nums">{formatUGX(payment.amountUgx)}</dd>
-                    </div>
-                  </dl>
-                  {payment.externalRef ? <p className="break-words text-base text-muted-foreground">Reference: {payment.externalRef}</p> : null}
+                  <div className="flex min-w-0 items-baseline justify-between gap-2">
+                    <span className="truncate text-xs text-muted-foreground">{payment.method.replaceAll("_", " ")}</span>
+                    <span className="shrink-0 font-mono text-sm font-semibold tabular-nums">{formatUGX(payment.amountUgx)}</span>
+                  </div>
+                  <p className="font-mono text-[11px] text-muted-foreground">{stamp(payment.recordedAt)} EAT</p>
+                  {payment.externalRef ? <p className="break-words text-xs text-muted-foreground">Ref: {payment.externalRef}</p> : null}
                   {payment.adjustments.map((adjustment) => (
-                    <p key={adjustment.id} className="break-words text-base text-muted-foreground">{adjustment.type.toLowerCase()}: −{formatUGX(adjustment.amountUgx)} · {adjustment.reason}</p>
+                    <p key={adjustment.id} className="break-words text-xs text-muted-foreground">
+                      {adjustment.type.toLowerCase()}: −{formatUGX(adjustment.amountUgx)} · {adjustment.reason}
+                    </p>
                   ))}
                   {can(ctx.role, "payment:reverse") && payment.netAmountUgx > 0 ? (
-                    <ReversePaymentButton paymentId={payment.id} reference={payment.reference} amountUgx={payment.netAmountUgx} />
+                    <div className="pt-1">
+                      <ReversePaymentButton paymentId={payment.id} reference={payment.reference} amountUgx={payment.netAmountUgx} />
+                    </div>
                   ) : null}
-                </article>
+                </li>
               ))}
-              {sale.payments.length === 0 && <p className="text-base text-muted-foreground">No payments recorded.</p>}
-            </div>
+              {sale.payments.length === 0 ? <li className="py-3 text-sm text-muted-foreground">No payments recorded.</li> : null}
+            </ul>
+
+            {/* Desktop: 5 columns, 5 cells */}
             <div className="mt-2 hidden overflow-x-auto md:block">
-              <table className="w-full text-left text-base">
+              <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-muted-foreground">
-                    {["Reference / date", "Method", "Recorded", "Status", "Action"].map((label) => (
-                      <th key={label} className="px-2 py-2 font-medium">{label}</th>
-                    ))}
+                  <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-2 py-2 font-medium">Reference / date</th>
+                    <th className="px-2 py-2 font-medium">Method</th>
+                    <th className="px-2 py-2 text-right font-medium">Amount</th>
+                    <th className="px-2 py-2 font-medium">Status</th>
+                    <th className="px-2 py-2 text-right font-medium">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sale.payments.map((payment) => (
                     <tr key={payment.id} className="border-t border-border align-top">
                       <td className="px-2 py-2">
-                        {payment.reference}
-                        <div className="text-base text-muted-foreground">{new Date(payment.recordedAt).toLocaleString("en-UG", { timeZone: "Africa/Kampala" })}</div>
+                        <span className="font-mono text-sm font-medium">{payment.reference}</span>
+                        <div className="font-mono text-[11px] text-muted-foreground">{stamp(payment.recordedAt)} EAT</div>
                       </td>
-                      <td className="px-2 py-2">{payment.method.replaceAll("_", " ")}</td>
-                      <td className="px-2 py-2"><StatusBadge domain="payment" status={payment.status as "RECORDED" | "REVERSED" | "REFUNDED"} className="text-xs" /></td>
+                      <td className="px-2 py-2 whitespace-nowrap">{payment.method.replaceAll("_", " ")}</td>
+                      <td className="px-2 py-2 text-right font-mono font-semibold tabular-nums whitespace-nowrap">{formatUGX(payment.amountUgx)}</td>
+                      <td className="px-2 py-2">
+                        <StatusBadge domain="payment" status={payment.status as "RECORDED" | "REVERSED" | "REFUNDED"} className="text-[10px]" />
+                      </td>
                       <td className="px-2 py-2 text-right">
-                        {can(ctx.role, "payment:reverse") && payment.netAmountUgx > 0 ? <ReversePaymentButton paymentId={payment.id} reference={payment.reference} amountUgx={payment.netAmountUgx} /> : null}
+                        {can(ctx.role, "payment:reverse") && payment.netAmountUgx > 0 ? (
+                          <ReversePaymentButton paymentId={payment.id} reference={payment.reference} amountUgx={payment.netAmountUgx} />
+                        ) : null}
                       </td>
                     </tr>
                   ))}
-                  {sale.payments.length === 0 && (
+                  {sale.payments.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-2 py-8 text-center text-muted-foreground">
-                        No payments recorded.
-                      </td>
+                      <td colSpan={5} className="px-2 py-6 text-center text-sm text-muted-foreground">No payments recorded.</td>
                     </tr>
-                  )}
+                  ) : null}
                 </tbody>
               </table>
             </div>
+
             <p className="mt-3 text-xs text-muted-foreground">
               Payments are recorded by staff. No provider verification is connected.
             </p>
           </section>
 
           {/* Timeline */}
-          <section className="rounded-lg border border-border p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Audit Trail &amp; Admissions</h2>
-              <SaleAdminActions saleId={sale.id} reference={sale.reference} totalUgx={sale.totalUgx} canCancel={can(ctx.role, "sale:cancel") && outstanding && sale.amountPaidUgx === 0} canRefund={can(ctx.role, "sale:refund") && outstanding && sale.amountPaidUgx > 0} />
+          <section aria-label="Transaction timeline" className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-card">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-semibold">Audit trail</h2>
+              <SaleAdminActions
+                saleId={sale.id}
+                reference={sale.reference}
+                totalUgx={sale.totalUgx}
+                canCancel={can(ctx.role, "sale:cancel") && outstanding && sale.amountPaidUgx === 0}
+                canRefund={can(ctx.role, "sale:refund") && outstanding && sale.amountPaidUgx > 0}
+              />
             </div>
-            <Timeline
-              items={auditRows.map((row) => ({
-                id: row.id,
-                time: new Date(row.createdAt).toLocaleString("en-UG", { timeZone: "Africa/Kampala" }),
-                label: timelineLabel(row.action),
-                detail: row.actorRole ? `${row.actorRole ?? "system"}` : undefined,
-              }))}
-              emptyText="No timeline events."
-            />
+            <div className="mt-3">
+              <Timeline
+                items={auditRows.map((row) => ({
+                  id: row.id,
+                  time: stamp(new Date(row.createdAt).toISOString()),
+                  label: timelineLabel(row.action),
+                  detail: row.actorRole ?? undefined,
+                }))}
+                emptyText="No timeline events."
+              />
+            </div>
           </section>
         </div>
       </div>
