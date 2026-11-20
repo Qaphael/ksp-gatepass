@@ -97,96 +97,100 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
   return (
     <form
       onSubmit={apply}
-      className="flex flex-wrap items-end gap-2"
+      className="flex flex-col gap-3 md:rounded-lg md:border md:border-border md:bg-card md:p-4"
       noValidate
     >
-      <div className="flex min-w-44 flex-1 flex-col gap-1">
-        <label htmlFor="ticket-search" className="text-base text-muted-foreground">
-          Serial search
-        </label>
-        <Input
-          id="ticket-search"
-          placeholder="KSP-00001"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full min-w-0"
-        />
-      </div>
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2 lg:col-span-2">
+          <label htmlFor="ticket-search" className="text-sm font-medium text-muted-foreground">
+            Serial search
+          </label>
+          <Input
+            id="ticket-search"
+            placeholder="KSP-00001"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full min-w-0"
+          />
+        </div>
 
-      <div className="flex min-w-40 flex-col gap-1">
-        <span className="text-base text-muted-foreground">Event</span>
-        <Select
-          value={eventId}
-          onValueChange={(value) => {
-            if (value) void onEventChange(value);
-          }}
-        >
-          <SelectTrigger aria-label="Filter by event" className="min-h-12 w-full min-w-40 text-base whitespace-nowrap">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All events</SelectItem>
-            {events.map((event) => (
-              <SelectItem key={event.id} value={event.id}>
-                {event.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex min-w-36 flex-col gap-1">
-        <span className="text-base text-muted-foreground">Status</span>
-        <Select
-          value={status}
-          onValueChange={(value) => setStatus(value ?? ALL)}
-        >
-          <SelectTrigger aria-label="Filter by status" className="min-h-12 w-full min-w-36 text-base whitespace-nowrap">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All statuses</SelectItem>
-            {TICKET_STATUSES.map((ticketStatus) => (
-              <SelectItem key={ticketStatus} value={ticketStatus}>
-                {STATUS_LABELS[ticketStatus]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {eventId !== ALL ? (
-        <div className="flex min-w-36 flex-col gap-1">
-          <span className="text-base text-muted-foreground">Category</span>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-sm font-medium text-muted-foreground">Event</span>
           <Select
-            value={ticketTypeId}
-            onValueChange={(value) => setTicketTypeId(value ?? ALL)}
-            disabled={loadingTypes}
+            value={eventId}
+            onValueChange={(value) => {
+              if (value) void onEventChange(value);
+            }}
           >
-            <SelectTrigger aria-label="Filter by category" className="min-h-12 w-full min-w-36 text-base whitespace-nowrap">
-              <SelectValue
-                placeholder={loadingTypes ? "Loading…" : "All categories"}
-              />
+            <SelectTrigger aria-label="Filter by event" className="w-full min-w-0 text-base">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>All categories</SelectItem>
-              {types.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  {type.name}
+              <SelectItem value={ALL}>All events</SelectItem>
+              {events.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-      ) : null}
 
-      <Button type="submit" size="sm" className="min-h-12 text-base">
-        {loadingTypes ? <Loader2 className="animate-spin" /> : <Search />}
-        Apply
-      </Button>
-      <Button type="button" variant="ghost" size="sm" className="min-h-12 text-base" onClick={clear}>
-        Clear
-      </Button>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-sm font-medium text-muted-foreground">Status</span>
+          <Select
+            value={status}
+            onValueChange={(value) => setStatus(value ?? ALL)}
+          >
+            <SelectTrigger aria-label="Filter by status" className="w-full min-w-0 text-base">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All statuses</SelectItem>
+              {TICKET_STATUSES.map((ticketStatus) => (
+                <SelectItem key={ticketStatus} value={ticketStatus}>
+                  {STATUS_LABELS[ticketStatus]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {eventId !== ALL ? (
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-sm font-medium text-muted-foreground">Category</span>
+            <Select
+              value={ticketTypeId}
+              onValueChange={(value) => setTicketTypeId(value ?? ALL)}
+              disabled={loadingTypes}
+            >
+              <SelectTrigger aria-label="Filter by category" className="w-full min-w-0 text-base">
+                <SelectValue
+                  placeholder={loadingTypes ? "Loading…" : "All categories"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All categories</SelectItem>
+                {types.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <Button type="button" variant="ghost" size="sm" className="min-h-12 text-base" onClick={clear}>
+          Clear
+        </Button>
+        <Button type="submit" size="sm" className="min-h-12 gap-2 text-base">
+          {loadingTypes ? <Loader2 className="animate-spin" /> : <Search />}
+          Apply filters
+        </Button>
+      </div>
     </form>
   );
 }
