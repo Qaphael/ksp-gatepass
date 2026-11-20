@@ -14,12 +14,16 @@ export function QrCamera({
   onScan,
   label = "Ticket QR camera view",
   theme = "light",
+  viewportClassName = "min-h-[min(42dvh,24rem)]",
+  className = "",
 }: {
   disabled: boolean;
   paused?: boolean;
   onScan: (value: string) => void;
   label?: string;
   theme?: "light" | "dark";
+  viewportClassName?: string;
+  className?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<Controls | null>(null);
@@ -88,14 +92,28 @@ export function QrCamera({
 
   const displayCamera = disabled || paused ? "idle" : camera;
   const displayTorchOn = displayCamera === "active" && torchOn;
-  return <section className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-card" aria-label="QR scanner">
-    <div className="relative flex min-h-[min(42dvh,24rem)] flex-1 items-center justify-center bg-background text-foreground">
+  return <section className={`flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-card text-foreground shadow-card ${className}`} aria-label="QR scanner">
+    <div className={`relative flex flex-1 items-center justify-center bg-background text-foreground ${viewportClassName}`}>
       <video ref={videoRef} className="absolute inset-0 size-full object-cover" muted playsInline aria-label={label} />
       {displayCamera !== "active" && <div className={`relative z-10 mx-5 max-w-md rounded-2xl border border-current/15 p-5 text-center shadow-xl backdrop-blur-sm ${frameClass}`}>
         {camera === "denied" || camera === "error" ? <AlertCircle className="mx-auto size-10 text-warning" aria-hidden="true" /> : <Camera className="mx-auto size-10 opacity-75" aria-hidden="true" />}
         <p className="mt-3 text-lg font-bold">{statusTitle}</p><p className={`mt-2 text-base leading-relaxed ${mutedClass}`}>{disabled ? "Connect to the server to scan tickets." : statusMessage}</p>
       </div>}
-      {displayCamera === "active" && <div className="pointer-events-none relative z-10 aspect-square w-[min(72vw,20rem)] rounded-3xl border-4 border-white/90 shadow-[0_0_0_999px_rgba(0,0,0,0.25)]" aria-hidden="true" />}
+      {displayCamera === "active" && <div className="pointer-events-none relative z-10 aspect-square w-[min(72vw,20rem)]" aria-hidden="true">
+        {/* Focus stencil mask */}
+        <div className="absolute inset-0 rounded-3xl border-4 border-primary/90 shadow-[0_0_0_999px_rgba(0,0,0,0.25)]" />
+        {/* Corner reticles */}
+        <div className="absolute -left-0.5 -top-0.5 size-9 rounded-tl-2xl border-l-4 border-t-4 border-primary" />
+        <div className="absolute -right-0.5 -top-0.5 size-9 rounded-tr-2xl border-r-4 border-t-4 border-primary" />
+        <div className="absolute -bottom-0.5 -left-0.5 size-9 rounded-bl-2xl border-b-4 border-l-4 border-primary" />
+        <div className="absolute -bottom-0.5 -right-0.5 size-9 rounded-br-2xl border-b-4 border-r-4 border-primary" />
+        {/* Animated scan line */}
+        <div className="absolute left-3 right-3 top-1/2 h-0.5 -translate-y-1/2 animate-[scan_1.6s_ease-in-out_infinite] rounded-full bg-primary/80 shadow-[0_0_12px_2px_rgba(94,106,210,0.55)]" />
+        {/* Align hint */}
+        <div className="absolute inset-x-0 bottom-4 flex justify-center">
+          <span className="rounded-full bg-background/70 px-3 py-1 font-mono text-[11px] tracking-wider text-foreground backdrop-blur-md">ALIGN QR IN BOX</span>
+        </div>
+      </div>}
     </div>
     <div className="flex flex-wrap gap-3 p-3 sm:p-4">
       {displayCamera === "active" ? <Button type="button" size="xl" variant="outline" onClick={stopCamera} className="min-w-40 flex-1"><CameraOff aria-hidden="true" />Stop camera</Button> : <Button type="button" size="xl" onClick={() => { setRequested(true); void startCamera(); }} disabled={disabled || paused || camera === "starting"} className="min-w-40 flex-1"> <Camera aria-hidden="true" />{camera === "starting" ? "Starting camera…" : "Start camera"}</Button>}

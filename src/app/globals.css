@@ -302,3 +302,8 @@
     background-color: var(--card);
   }
 }
+
+@keyframes scan {
+  0%, 100% { transform: translateY(-50%); }
+  50% { transform: translateY(calc(50% - 0.25rem)); }
+}

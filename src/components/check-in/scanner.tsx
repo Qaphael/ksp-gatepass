@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Wifi, WifiOff } from "lucide-react";
+import Link from "next/link";
+import { ScanLine, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InstallHint } from "@/components/pwa/install-hint";
 import { ResultTakeover, type CheckInResult } from "@/components/check-in/result-takeover";
@@ -29,8 +30,15 @@ export function CheckInScanner({ eventId, eventName, events = [], mode = "camera
   const [serial, setSerial] = useState("");
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [busy, setBusy] = useState(false);
+  // Rendered only after mount so the server and client tree match (no hydration mismatch).
+  const [now, setNow] = useState<Date | null>(null);
   const { serverOnline, serverOnlineRef } = useServerHeartbeat();
   const [canRetry, setCanRetry] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const rememberAdmission = useCallback(() => {
     tokenRef.current = null;
@@ -90,38 +98,60 @@ export function CheckInScanner({ eventId, eventName, events = [], mode = "camera
   const updateGate = (value: string) => saveGate(eventId, value);
   const gateRequired = !gate.trim();
 
-  return <section className="-mx-4 -my-5 flex min-h-[calc(100dvh_-_8rem)] flex-col overflow-hidden bg-background text-foreground sm:-mx-6 lg:my-0 lg:min-h-[calc(100dvh_-_8rem)]">
-    <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border px-4 py-2 sm:px-6">
-      <div className="min-w-0"><p className="truncate text-xs font-semibold text-muted-foreground">{mode === "manual" ? "Manual check-in" : "Gate scanner"}</p><p className="truncate text-base font-semibold">{eventName}</p></div>
-      <div className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${serverOnline ? "border-success/50 bg-success text-success-foreground" : "border-warning/60 bg-warning text-warning-foreground"}`} role="status" aria-label={serverOnline ? "Server connected" : "Server connection unavailable"}>
-        {serverOnline ? <Wifi className="size-4" aria-hidden="true" /> : <WifiOff className="size-4" aria-hidden="true" />}{serverOnline ? "Connected" : "Connecting…"}
+  return <section className="-mx-4 -my-5 flex min-h-dvh flex-col overflow-hidden bg-background text-foreground sm:-mx-6 lg:my-0">
+    {/* Top strip: event + connection status */}
+    <header className="flex min-h-14 items-center justify-between gap-3 border-b border-border bg-card/70 px-4 py-2 sm:px-6">
+      <div className="min-w-0 flex items-center gap-2.5">
+        <span aria-hidden="true" className={`grid size-8 shrink-0 place-items-center rounded-md ${serverOnline ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>{serverOnline ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}</span>
+        <div className="min-w-0"><p className="truncate font-mono text-[11px] uppercase tracking-wider text-muted-foreground">{mode === "manual" ? "Manual check-in" : "Scanner operations"}</p><p className="truncate text-sm font-semibold">{eventName}</p></div>
       </div>
+      <div className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider ${serverOnline ? "bg-success/10 text-success" : "bg-warning/15 text-warning"}`} role="status" aria-label={serverOnline ? "Server connected" : "Server connection unavailable"}>{serverOnline ? "Online" : "Connecting…"}</div>
     </header>
-    {mode === "camera" && showInstallHint ? <InstallHint role="verifier" /> : null}
     {!serverOnline && <div role="alert" className="sticky top-0 z-20 flex min-h-12 items-center justify-center gap-2 bg-warning px-3 text-center text-base font-bold text-warning-foreground">OFFLINE — CHECK-IN UNAVAILABLE</div>}
-    <div className="flex flex-wrap items-end gap-3 border-b border-border bg-card/70 px-4 py-3 sm:px-6">
-      {events.length > 1 && <form className="grid min-w-0 flex-1 gap-1 text-base font-semibold" key={eventId}><label htmlFor="scan-event">Event</label><div className="flex gap-2"><select id="scan-event" name="eventId" defaultValue={eventId} className="min-h-12 min-w-0 flex-1 rounded-control border border-input bg-card px-3 text-base text-foreground">{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select><Button type="submit" size="lg" variant="outline">Open</Button></div></form>}
-      <label className="grid min-w-0 flex-1 gap-1 text-base font-semibold">Gate
-        <input aria-label="Gate name" className="min-h-12 w-full rounded-control border border-input bg-card px-4 text-base font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" value={gate} onChange={(e) => updateGate(e.target.value)} placeholder="Enter gate name" />
+    {mode === "camera" && showInstallHint ? <InstallHint role="verifier" /> : null}
+
+    {/* Gate + session controls (compact overlay strip) */}
+    <div className="flex flex-wrap items-end gap-2.5 border-b border-border bg-card/50 px-4 py-2.5 sm:px-6">
+      {events.length > 1 && <form className="grid min-w-0 max-w-60 flex-1 gap-1" key={eventId}><label htmlFor="scan-event" className="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Event</label><select id="scan-event" name="eventId" defaultValue={eventId} className="min-h-12 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground">{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></form>}
+      <label className="grid min-w-0 flex-1 gap-1 text-sm"><span className="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Gate selector</span>
+        <div className="relative min-h-12">
+          <ScanLine className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" aria-hidden="true" />
+          <input aria-label="Gate name" className="min-h-12 w-full rounded-md border border-input bg-card py-2 pl-10 pr-3 text-sm font-medium text-foreground" value={gate} onChange={(e) => updateGate(e.target.value)} placeholder="Gate A — Main Entrance" />
+        </div>
       </label>
-      <div className="flex min-h-12 items-center rounded-control border border-border bg-card px-4 py-2 text-sm shadow-sm"><span className="text-muted-foreground">This session</span><strong className="ml-2 text-base tabular-nums">{sessionCount}</strong></div>
+      <div className="flex min-h-12 shrink-0 items-center gap-2 rounded-md border border-border bg-card px-3.5 py-2"><span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">This session</span><strong className="text-base tabular-nums">{sessionCount}</strong></div>
     </div>
 
-    {mode === "camera" ? <>
-      <QrCamera disabled={!serverOnline || gateRequired} paused={Boolean(result) || busy} onScan={(value) => void handleQr(value)} label="Ticket QR camera view" theme="light" />
-      {gateRequired && <p className="px-4 pb-3 text-base font-medium text-warning sm:px-6">Enter the gate name before scanning.</p>}
-    </> : <div className="flex flex-1 flex-col justify-center px-4 py-6 sm:px-6">
-      <form onSubmit={verifySerial} className="mx-auto w-full max-w-2xl rounded-2xl border border-border/70 bg-card p-4 shadow-card sm:p-6">
-        <label className="grid gap-2 text-base font-semibold" htmlFor="ticket-serial">Ticket serial</label>
-        <div className="mt-2 flex gap-2">
-          <input id="ticket-serial" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} inputMode="text" className="min-h-14 min-w-0 flex-1 rounded-control border border-input bg-background px-4 font-mono text-xl font-bold uppercase tracking-wider text-foreground placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:tracking-normal" value={serial} onChange={(e) => setSerial(e.target.value.toUpperCase())} placeholder="KSP-00001" />
-          <Button type="button" size="xl" variant="outline" onClick={() => { setSerial(""); setResult(null); }} disabled={!serial}>Clear</Button>
-        </div>
-        <Button size="xl" className="mt-4 w-full" disabled={!serverOnline || gateRequired || busy || !serial.trim()}>{busy ? "Checking…" : "Verify serial"}</Button>
-      </form>
-      {gateRequired && <p className="mx-auto mt-3 w-full max-w-2xl text-base font-medium text-warning">Enter the gate name before verifying.</p>}
-    </div>}
-    <footer className="flex items-center justify-between gap-3 border-t border-border bg-card/60 px-4 py-3 text-sm text-muted-foreground sm:px-6"><span className="truncate">{serverOnline ? "Connected to admission service" : "Waiting for server connection"}</span><span className="shrink-0 font-medium">{busy ? "Checking…" : mode === "camera" ? "Ready to scan" : "Gate staff"}</span></footer>
+    {/* Viewfinder — fills the remaining height */}
+    <div className="flex flex-1 flex-col">
+      {mode === "camera" ? <>
+        <QrCamera disabled={!serverOnline || gateRequired} paused={Boolean(result) || busy} onScan={(value) => void handleQr(value)} label="Ticket QR camera view" theme="light" className="grow" viewportClassName="min-h-0 grow" />
+        {gateRequired && <p className="px-4 pb-3 text-base font-medium text-warning sm:px-6">Enter the gate name before scanning.</p>}
+      </> : <div className="flex flex-1 flex-col justify-center px-4 py-6 sm:px-6">
+        <form onSubmit={verifySerial} className="mx-auto w-full max-w-2xl rounded-2xl border border-border/70 bg-card p-4 shadow-card sm:p-6">
+          <label className="grid gap-2 text-base font-semibold" htmlFor="ticket-serial">Ticket serial</label>
+          <div className="mt-2 flex gap-2">
+            <input id="ticket-serial" autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false} inputMode="text" className="min-h-14 min-w-0 flex-1 rounded-md border border-input bg-background px-4 font-mono text-xl font-bold uppercase tracking-wider text-foreground placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:tracking-normal" value={serial} onChange={(e) => setSerial(e.target.value.toUpperCase())} placeholder="KSP-00001" />
+            <Button type="button" size="xl" variant="outline" onClick={() => { setSerial(""); setResult(null); }} disabled={!serial}>Clear</Button>
+          </div>
+          <Button size="xl" className="mt-4 w-full" disabled={!serverOnline || gateRequired || busy || !serial.trim()}>{busy ? "Checking…" : "Verify serial"}</Button>
+        </form>
+        {gateRequired && <p className="mx-auto mt-3 w-full max-w-2xl text-base font-medium text-warning">Enter the gate name before verifying.</p>}
+      </div>}
+    </div>
+
+    {/* Dispatch stats footer */}
+    <footer className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border bg-card/60 px-4 py-3 text-sm text-muted-foreground sm:px-6">
+      <span className="flex items-center gap-3">
+        <span className="inline-flex items-center gap-1.5 font-medium"><span className={`inline-block size-2 rounded-full ${serverOnline ? "bg-success" : "bg-warning"}`} aria-hidden="true" /><span className="font-mono text-xs tracking-wider uppercase">Gate dispatch</span></span>
+        <span className="hidden font-mono text-xs sm:inline">Verified <strong className="tabular-nums text-foreground">{sessionCount}</strong></span>
+      </span>
+      <span className="flex items-center gap-4 font-mono text-xs">
+        <Link href="/check-in/recent" className="hover:text-foreground">Attendance</Link>
+        <Link href="/check-in/attempts" className="hover:text-foreground">Attempts</Link>
+        <span aria-live="off" className="tabular-nums">{now ? now.toLocaleTimeString("en-GB", { timeZone: "Africa/Kampala", hour12: false }) : ""} EAT</span>
+      </span>
+    </footer>
 
     {result && <ResultTakeover result={result} onDismiss={dismissResult} canConfirm={Boolean(result.eligible && mode === "manual")} onConfirm={() => void confirm("MANUAL", serial.trim().toUpperCase())} busy={busy} />}
     {result?.code === "NETWORK_ERROR" && mode === "camera" && canRetry && serverOnline && <div className="fixed inset-x-4 bottom-24 z-[80] mx-auto max-w-xl"><Button size="xl" className="w-full" onClick={() => tokenRef.current && void confirm("QR", tokenRef.current)} disabled={busy}>Retry server check</Button></div>}
