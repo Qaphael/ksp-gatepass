@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Check, CircleSlash } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,18 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 import { ServiceError } from "@/lib/api";
-import { getTicket, type TicketDetail } from "@/server/services/tickets.service";
+import { getTicket, getTicketTrace, type TicketDetail } from "@/server/services/tickets.service";
 import { getEvent } from "@/server/services/events.service";
 import { getActiveTicketTemplatePreview } from "@/server/services/ticket-templates.service";
 import { RevokeTicketDialog } from "@/components/tickets/revoke-ticket-dialog";
@@ -28,11 +20,40 @@ import { TicketPreview } from "@/components/tickets/ticket-preview";
 import { TemplateTicketPreview } from "@/components/tickets/template-ticket-preview";
 import { TicketStatusBadge } from "@/components/tickets/ticket-status-badge";
 import { formatCalendarDate, formatTimestamp } from "@/components/tickets/ticket-format";
-import { formatEventTimeRange } from "@/lib/time";
+import { formatEventTimeRange, formatDateTime } from "@/lib/time";
 import { formatUGX } from "@/components/ui/money";
 import { ticketTemplateConfigSchema } from "@/lib/validation/ticket-templates";
+import { DefList, DefRow } from "@/components/ui/def-list";
+import { Timeline } from "@/components/ui/timeline";
+import { Money } from "@/components/ui/money";
 
 export const instant = false;
+
+function timelineEntry(
+  action: string,
+  createdAt: string,
+  actorRole: string | null,
+): { id: string; time: string; label: string; detail?: string } {
+  const labels: Record<string, string> = {
+    "sale.create": "Sale created",
+    "payment.record": "Payment recorded",
+    "payment.reverse": "Payment reversed",
+    "payment.refund": "Payment refunded",
+    "sale.cancel": "Sale cancelled",
+    "sale.refund": "Sale refunded",
+    "ticket.print": "Ticket printed",
+    "ticket.reprint": "Ticket reprinted",
+    "ticket.revoke": "Ticket revoked",
+    "ticket.remove": "Ticket removed",
+    "sale.ticket.lookup": "Ticket lookup",
+  };
+  return {
+    id: `${action}-${createdAt}`,
+    time: formatDateTime(createdAt, "Africa/Kampala", "en-UG", { hour: "2-digit", minute: "2-digit" }),
+    label: labels[action] ?? action.replaceAll("_", " "),
+    detail: actorRole ? `${actorRole ?? "system"}` : undefined,
+  };
+}
 
 export default async function TicketDetailPage({
   params,
@@ -56,14 +77,24 @@ export default async function TicketDetailPage({
     ticket.status !== "REVOKED" && ticket.status !== "CANCELLED";
   const [event, activeTemplate] = printable
     ? await Promise.all([
-      getEvent(ctx, ticket.eventId),
-      getActiveTicketTemplatePreview(ctx, ticket.eventId, ticket.ticketTypeId),
-    ])
+        getEvent(ctx, ticket.eventId),
+        getActiveTicketTemplatePreview(ctx, ticket.eventId, ticket.ticketTypeId),
+      ])
     : [null, null];
   const templateConfig = activeTemplate ? ticketTemplateConfigSchema.safeParse(activeTemplate.config) : null;
   const canRevoke =
     can(ctx.role, "ticket:revoke") &&
     (ticket.status === "AVAILABLE" || ticket.status === "RESERVED");
+
+  const trace = await getTicketTrace(ctx, ticket.id);
+  const saleRecord = trace.sale;
+  const checkIn = trace.checkIn;
+
+  // Merge auditHistory and printHistory into a single timeline, sorted by time.
+  const timelineItems = [
+    ...ticket.auditHistory.map((row) => timelineEntry(row.action, row.createdAt, row.actorRole)),
+    ...ticket.printHistory.map((row) => timelineEntry(row.kind, row.createdAt, row.actorId ?? null)),
+  ].sort((a, b) => b.time.localeCompare(a.time));
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,9 +108,16 @@ export default async function TicketDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-mono text-2xl font-semibold">
-              {ticket.serial}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-mono text-2xl font-semibold">{ticket.serial}</h1>
+              <button
+                className="rounded-md border border-input bg-card px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent"
+                title="Copy serial"
+                aria-label="Copy serial"
+              >
+                <Copy className="size-3.5 shrink-0" aria-hidden="true" />
+              </button>
+            </div>
             <TicketStatusBadge status={ticket.status} />
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -95,12 +133,21 @@ export default async function TicketDetailPage({
             printable={printable}
             hasPrintHistory={ticket.printHistory.length > 0}
           />
+          {saleRecord && ticket.status === "SOLD" ? (
+            <Link
+              href={`/sales/${saleRecord.id}`}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-input bg-card px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent"
+            >
+              <ArrowLeft className="size-3 shrink-0" aria-hidden="true" /> Open sale
+            </Link>
+          ) : null}
           {canRevoke ? (
             <RevokeTicketDialog ticketId={ticket.id} serial={ticket.serial} />
           ) : null}
         </div>
       </div>
 
+      {/* Pass preview */}
       {printable && event ? (
         <Card>
           <CardHeader>
@@ -151,176 +198,118 @@ export default async function TicketDetailPage({
         </Card>
       ) : null}
 
+      {/* Sale record from getTicketTrace */}
+      {saleRecord ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sale record</CardTitle>
+            <CardDescription>
+              The sale this ticket was part of.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Reference</span>
+              <Link href={`/sales/${saleRecord.id}`} className="font-mono text-base font-semibold">{saleRecord.reference}</Link>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Status</span>
+              <span className="font-mono text-base font-semibold">{saleRecord.status.replaceAll("_", " ")}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Seller</span>
+              <span className="font-medium">{saleRecord.sellerName}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Customer</span>
+              <span className="font-medium">{saleRecord.customerName ?? "Not provided"}</span>
+            </div>
+            <div className="sm:col-span-2">
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Total</span>
+                <span className="font-mono text-base font-semibold tabular-nums"><Money amount={saleRecord.totalUgx} /></span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Paid</span>
+                <span className="font-mono text-base font-semibold tabular-nums text-success-foreground"><Money amount={saleRecord.paidNetUgx} /></span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-xs text-muted-foreground">Balance</span>
+                <span className="font-mono text-base font-semibold tabular-nums text-muted-foreground"><Money amount={saleRecord.balanceUgx} /></span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Gate entry */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Gate entry</CardTitle>
+          <CardDescription>
+            Admission record for this ticket.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {checkIn ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Gate</span>
+                <span className="font-medium">{checkIn.gate}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Time</span>
+                <span className="font-mono text-base font-semibold">{formatDateTime(checkIn.checkedInAt, "Africa/Kampala", "en-UG", { hour: "2-digit", minute: "2-digit" })} EAT</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Method</span>
+                <span className="font-medium">{checkIn.method.replaceAll("_", " ")}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Verifier</span>
+                <span className="font-medium">{checkIn.verifierName}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Not admitted yet.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Details */}
       <Card>
         <CardHeader>
           <CardTitle>Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            <Detail label="Status" value={ticket.status} />
-            <Detail label="Event" value={ticket.eventName} />
-            <Detail label="Category" value={ticket.ticketTypeName} />
-            <Detail
-              label="Batch"
-              value={ticket.batchRef ?? "—"}
-              href={ticket.batchId ? `/tickets/batches/${ticket.batchId}` : undefined}
-            />
-            <Detail label="Created" value={formatTimestamp(ticket.createdAt)} />
-            <Detail label="Last updated" value={formatTimestamp(ticket.updatedAt)} />
+          <DefList>
+            <DefRow label="Status">{ticket.status.replaceAll("_", " ")}</DefRow>
+            <DefRow label="Event">{ticket.eventName}</DefRow>
+            <DefRow label="Category">{ticket.ticketTypeName}</DefRow>
+            <DefRow label="Batch">{ticket.batchRef ?? "—"}</DefRow>
+            <DefRow label="Created">{formatTimestamp(ticket.createdAt)}</DefRow>
+            <DefRow label="Last updated">{formatTimestamp(ticket.updatedAt)}</DefRow>
             {ticket.revokeReason ? (
-              <Detail
-                label="Revoke reason"
-                value={`${ticket.revokeReason} (by user ${
-                  ticket.revokedById?.slice(0, 8) ?? "unknown"
-                }…)`}
-              />
+              <DefRow label="Revoke reason">
+                {ticket.revokeReason}{ticket.revokedById ? ` (by user ${ticket.revokedById.slice(0, 8)}…)` : null}
+              </DefRow>
             ) : null}
-          </dl>
+          </DefList>
         </CardContent>
       </Card>
 
+      {/* Timeline */}
       <Card>
         <CardHeader>
-          <CardTitle>Print history</CardTitle>
+          <CardTitle>Timeline</CardTitle>
           <CardDescription>
-            Every printed or exported output of this ticket is traceable.
+            Audit events and print activity for this ticket, newest first.
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-0">
-          {ticket.printHistory.length === 0 ? (
-            <p className="px-4 pb-4 text-sm text-muted-foreground">
-              Never printed.
-            </p>
-          ) : (
-            <div>
-            <div className="grid gap-3 p-4 md:hidden">
-              {ticket.printHistory.map((print) => (
-                <article key={print.id} className="grid gap-2 rounded-lg border p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="font-medium">{print.kind}</p>
-                    <span className="shrink-0 text-base tabular-nums">{print.ticketCount} tickets</span>
-                  </div>
-                  <time className="text-base text-muted-foreground">{formatTimestamp(print.createdAt)}</time>
-                  <p className="text-base text-muted-foreground">By {print.actorId ? `${print.actorId.slice(0, 8)}…` : "—"}</p>
-                </article>
-              ))}
-            </div>
-            <div className="hidden overflow-x-auto md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Output</TableHead>
-                  <TableHead>Tickets</TableHead>
-                  <TableHead>When</TableHead>
-                  <TableHead>By</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ticket.printHistory.map((print) => (
-                  <TableRow key={print.id}>
-                    <TableCell>{print.kind}</TableCell>
-                    <TableCell className="tabular-nums">
-                      {print.ticketCount}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">
-                      {formatTimestamp(print.createdAt)}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {print.actorId ? `${print.actorId.slice(0, 8)}…` : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-            </div>
-          )}
+        <CardContent>
+          <Timeline items={timelineItems} emptyText="No events recorded." />
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Audit history</CardTitle>
-          <CardDescription>
-            Security-relevant actions recorded against this ticket.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {ticket.auditHistory.length === 0 ? (
-            <p className="px-4 pb-4 text-sm text-muted-foreground">
-              No recorded actions yet.
-            </p>
-          ) : (
-            <div>
-            <div className="grid gap-3 p-4 md:hidden">
-              {ticket.auditHistory.map((entry) => (
-                <article key={entry.id} className="grid gap-2 rounded-lg border p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="min-w-0 break-words font-mono text-base font-medium">{entry.action}</span>
-                    <span className="shrink-0 text-base flex items-center gap-1">{entry.outcome === "SUCCESS" ? (<><Check className="size-4 text-success" aria-hidden="true" /><span>Success</span></>) : (<><CircleSlash className="size-4 text-danger" aria-hidden="true" /><span>Failure</span></>)}</span>
-                  </div>
-                  <time className="text-base text-muted-foreground">{formatTimestamp(entry.createdAt)}</time>
-                  <p className="break-words text-base text-muted-foreground">{entry.summary ? JSON.stringify(entry.summary) : "—"}</p>
-                </article>
-              ))}
-            </div>
-            <div className="hidden overflow-x-auto md:block">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Outcome</TableHead>
-                  <TableHead>When</TableHead>
-                  <TableHead>Details</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ticket.auditHistory.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="font-mono text-xs">
-                      {entry.action}
-                    </TableCell>
-                    <TableCell>{entry.outcome}</TableCell>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">
-                      {formatTimestamp(entry.createdAt)}
-                    </TableCell>
-                    <TableCell className="max-w-72 truncate font-mono text-xs text-muted-foreground">
-                      {entry.summary ? JSON.stringify(entry.summary) : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function Detail({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value: string;
-  href?: string;
-}) {
-  return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="font-medium">
-        {href ? (
-          <Link href={href} className="hover:underline">
-            {value}
-          </Link>
-        ) : (
-          value
-        )}
-      </dd>
     </div>
   );
 }

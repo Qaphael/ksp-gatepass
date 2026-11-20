@@ -13,17 +13,15 @@ import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 import { ServiceError } from "@/lib/api";
 import { getBatch } from "@/server/services/ticket-batches.service";
-import { getEvent } from "@/server/services/events.service";
-import { listTickets } from "@/server/services/tickets.service";
+import { getBatchFlow } from "@/server/services/ticket-batches.service";
 import { BatchPrintActions } from "@/components/tickets/batch-print-actions";
-import { TemplateTicketPreview } from "@/components/tickets/template-ticket-preview";
 import { formatTimestamp } from "@/components/tickets/ticket-format";
-import { formatCalendarDate } from "@/components/tickets/ticket-format";
-import { formatEventTimeRange } from "@/lib/time";
 import { listTicketTemplates } from "@/server/services/ticket-templates.service";
 import { ticketTemplateConfigSchema } from "@/lib/validation/ticket-templates";
 import { listTicketTypes } from "@/server/services/ticket-types.service";
 import { formatUGX } from "@/components/ui/money";
+import { StatTile } from "@/components/ui/stat-tile";
+import { DefList, DefRow } from "@/components/ui/def-list";
 
 export const instant = false;
 
@@ -45,16 +43,21 @@ export default async function BatchDetailPage({
     throw error;
   }
 
-  const [event, firstPage, templates, ticketTypes] = await Promise.all([
-    getEvent(ctx, batch.eventId),
-    listTickets(ctx, { batchId: batch.id, page: 1, pageSize: 1 }),
+  const [flow, templates, ticketTypes] = await Promise.all([
+    getBatchFlow(ctx, batch.id),
     can(ctx.role, "template:manage") ? listTicketTemplates(ctx, batch.eventId) : Promise.resolve([]),
     listTicketTypes(ctx, batch.eventId),
   ]);
-  const firstTicket = firstPage.tickets[0];
+
+  const firstTicketType = ticketTypes.find((type) => type.id === batch.ticketTypeId);
+  const grossValue = batch.quantity * (firstTicketType?.priceUgx ?? 0);
+
   const template = templates.find((item) => item.ticketTypeId === batch.ticketTypeId && item.status === "ACTIVE")
     ?? templates.find((item) => item.ticketTypeId === null && item.status === "ACTIVE");
   const templateConfig = template ? ticketTemplateConfigSchema.safeParse(template.config) : null;
+  const canPrint = can(ctx.role, "ticket:print");
+
+  const pct = (value: number) => flow.total ? Math.round((value / flow.total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -68,13 +71,10 @@ export default async function BatchDetailPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-mono text-2xl font-semibold">
-              {batch.batchRef}
-            </h1>
+            <h1 className="font-mono text-2xl font-semibold">{batch.batchRef}</h1>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {batch.eventName} · {batch.ticketTypeName} · {batch.quantity}{" "}
-            tickets
+            {batch.eventName} · {batch.ticketTypeName} · {batch.quantity} tickets
             {batch.label ? ` · ${batch.label}` : ""}
           </p>
         </div>
@@ -88,74 +88,97 @@ export default async function BatchDetailPage({
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Batch summary</CardTitle>
-          <CardDescription>
-            Created {formatTimestamp(batch.createdAt)}
-            {batch.createdById ? ` by user ${batch.createdById.slice(0, 8)}…` : ""}.
-            Every print of this batch is recorded and traceable.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <dt className="text-xs text-muted-foreground">Serial range</dt>
-              <dd className="font-mono font-medium">{batch.serialRange}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Quantity</dt>
-              <dd className="font-medium tabular-nums">{batch.quantity}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted-foreground">Category</dt>
-              <dd className="font-medium">{batch.ticketTypeName}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
+      {/* Spec tiles */}
+      <section aria-label="Batch specification" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label="Serial range" value={batch.serialRange} />
+        <StatTile label="Quantity" value={String(batch.quantity)} />
+        <StatTile label="Price per ticket" value={formatUGX(firstTicketType?.priceUgx ?? 0)} />
+        <StatTile label="Gross value" value={formatUGX(grossValue)} sub={`${batch.quantity} × ${formatUGX(firstTicketType?.priceUgx ?? 0)}`} />
+      </section>
 
-      {firstTicket && template && templateConfig?.success ? (
+      {/* Flow tiles */}
+      <section aria-label="Batch flow" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label="Total" value={String(flow.total)} suffix="tickets" />
+        <StatTile label="With sellers" value={String(flow.withSellers)} percent={pct(flow.withSellers)} sub="Issued to sellers" />
+        <StatTile label="Unissued" value={String(flow.inVault)} percent={pct(flow.inVault)} sub="In vault" />
+        <StatTile label="Checked in" value={String(flow.checkedIn)} percent={pct(flow.checkedIn)} sub="Admitted at gate" />
+      </section>
+
+      {/* Custody list */}
+      {flow.custody && flow.custody.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Active template preview</CardTitle>
+            <CardTitle>Custody by seller</CardTitle>
             <CardDescription>
-              This shows the artwork and fields used for a new print. The PDF
-              arranges tickets on the selected paper layout.
+              Sellers currently holding unsold tickets from this batch.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <TemplateTicketPreview
-              name={template.name}
-              version={template.version}
-              artworkUrl={template.artworkUrl}
-              config={templateConfig.data}
-              serial={firstTicket.serial}
-              qrSrc={`/api/v1/tickets/${firstTicket.id}/qr.png`}
-              categoryColor={ticketTypes.find((type) => type.id === batch.ticketTypeId)?.color ?? "#0F3D2E"}
-              values={{
-                category: batch.ticketTypeName,
-                price: formatUGX(ticketTypes.find((type) => type.id === batch.ticketTypeId)?.priceUgx ?? 0),
-                eventName: event.name,
-                eventDate: formatCalendarDate(event.eventDate),
-                eventTime: formatEventTimeRange(event.startTime, event.endTime),
-                venue: event.address ? `${event.venue}, ${event.address}` : event.venue,
-                footerText: event.ticketFooterText ?? "",
-                organiserContact: event.organiserContact ?? "",
-                authNotice: "Valid only after verification at the gate.",
-              }}
-            />
-            <BatchPrintActions
-              batchId={batch.id}
-              eventId={batch.eventId}
-              quantity={batch.quantity}
-              canPrint={can(ctx.role, "ticket:print")}
-              canExport={can(ctx.role, "inventory:export")}
-              templateReady={true}
-            />
+          <CardContent>
+            <DefList>
+              {flow.custody.map((c) => (
+                <DefRow key={c.sellerId} label={c.sellerName}>
+                  <Link href={`/stock?eventId=${encodeURIComponent(batch.eventId)}`} className="text-sm font-medium text-primary hover:underline truncate min-w-0">
+                    Held {c.held} · Sold {c.sold}
+                  </Link>
+                </DefRow>
+              ))}
+            </DefList>
           </CardContent>
         </Card>
-      ) : firstTicket ? <Card><CardHeader><CardTitle>Ticket design not active</CardTitle><CardDescription>The generic preview is hidden. Activate a measured template for this event and ticket category before printing this batch.</CardDescription></CardHeader><CardContent className="flex flex-col gap-3"><BatchPrintActions batchId={batch.id} eventId={batch.eventId} quantity={batch.quantity} canPrint={can(ctx.role, "ticket:print")} canExport={can(ctx.role, "inventory:export")} templateReady={false} />{can(ctx.role, "template:manage") ? <Button variant="outline" nativeButton={false} render={<Link href={`/events/${batch.eventId}/ticket-templates`} />}>Manage ticket templates</Button> : null}</CardContent></Card> : null}
+      ) : null}
+
+      {/* Print card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Print template</CardTitle>
+          <CardDescription>
+            Active template and print actions for this batch.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              {template ? (
+                <>
+                  <div className="flex items-start gap-1 text-sm">
+                    <span className="font-medium">{template.name}</span>
+                    <span className="text-muted-foreground text-[10px]">v{template.version}</span>
+                  </div>
+                  {template.zonesArePlaceholder ? (
+                    <p className="mt-1 text-xs text-destructive">
+                      Template zones are placeholders — calibration required before production print.
+                    </p>
+                  ) : null}
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Calibration sheet{" "}
+                    {template.calibrationPrintedAt ? (
+                      <>
+                        printed{" "}
+                        <span className="font-medium">{formatTimestamp(template.calibrationPrintedAt.toISOString())}</span>
+                      </>
+                    ) : (
+                      <>
+                        not printed{" "}
+                        <span className="text-destructive font-medium">—</span>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground">No active template for this ticket type.</div>
+              )}
+            </div>
+          </div>
+          <BatchPrintActions
+            batchId={batch.id}
+            eventId={batch.eventId}
+            quantity={batch.quantity}
+            canPrint={canPrint}
+            canExport={can(ctx.role, "inventory:export")}
+            templateReady={Boolean(template && templateConfig?.success && !template.zonesArePlaceholder)}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

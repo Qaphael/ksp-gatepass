@@ -26,11 +26,31 @@ import { formatTimestamp } from "./ticket-format";
 import { TicketStatusBadge } from "./ticket-status-badge";
 import { ResponsiveList } from "@/components/ui/responsive-list";
 import { Serial } from "@/components/ui/serial";
+import { formatDateTime } from "@/lib/time";
+import { cn } from "@/lib/utils";
 
 interface TicketsTableProps {
   tickets: TicketDto[];
   showEvent?: boolean;
   canRemove?: boolean;
+}
+
+function admissionLine(ticket: TicketDto): string {
+  const trace = ticket.trace;
+  if (ticket.status !== "SOLD") return "Unsold";
+  if (!trace?.saleReference) return "Not admitted";
+  if (trace.checkedInAt) {
+    const time = formatDateTime(trace.checkedInAt, "Africa/Kampala", "en-UG", { hour: "2-digit", minute: "2-digit" });
+    return trace.gate ? `Admitted · ${time} · ${trace.gate}` : `Admitted · ${time}`;
+  }
+  return "Not admitted";
+}
+
+function admissionTone(ticket: TicketDto): string {
+  const line = admissionLine(ticket);
+  if (line === "Unsold") return "text-muted-foreground";
+  if (line.startsWith("Admitted")) return "text-success-foreground";
+  return "text-muted-foreground";
 }
 
 /** Inventory rows. Token material never reaches this component (rule 6). */
@@ -77,12 +97,30 @@ export function TicketsTable({ tickets, showEvent = true, canRemove = false }: T
     {canRemove ? <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-3"><p className="text-sm text-muted-foreground">Select available tickets to revoke and remove them from active circulation. Their records remain in the history.</p><Button type="button" variant="destructive" className="min-h-11" disabled={!selectedIds.size} onClick={() => { setError(null); setDialogOpen(true); }}><Ban /> Remove selected{selectedIds.size ? ` (${selectedIds.size})` : ""}</Button></div> : null}
     <ResponsiveList
     cardsUntil="lg"
-    cards={tickets.map((ticket) => <div key={ticket.id} className="flex min-w-0 gap-3 rounded-xl border border-border bg-card p-4">{canRemove && ticket.status === "AVAILABLE" ? <label className="flex min-h-11 min-w-11 shrink-0 items-center justify-center" aria-label={`Select ${ticket.serial}`}><input type="checkbox" className="size-5 accent-primary" checked={selectedIds.has(ticket.id)} disabled={Boolean(selectedEventId && selectedEventId !== ticket.eventId)} onChange={() => toggle(ticket)} /></label> : null}<Link href={`/tickets/${ticket.id}`} className="block min-w-0 flex-1 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2"><Serial className="min-w-0 text-base font-semibold">{ticket.serial}</Serial><TicketStatusBadge status={ticket.status} /></div>
-      <p className="mt-2 truncate text-base font-medium">{ticket.ticketTypeName}</p>
-      {showEvent ? <p className="truncate text-sm text-muted-foreground">{ticket.eventName}</p> : null}
-      <div className="mt-3 flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-1 text-sm text-muted-foreground"><span className="min-w-0 break-all">{ticket.batchRef ?? "No batch"}</span><span className="shrink-0">{formatTimestamp(ticket.createdAt)}</span></div>
-    </Link></div>)}
+    cards={tickets.map((ticket) => {
+      const trace = ticket.trace;
+      const saleRef = trace?.saleReference ?? null;
+      const saleId = trace?.saleId ?? null;
+      const customerName = trace?.customerName ?? null;
+      const customerPhoneMasked = trace?.customerPhoneMasked ?? null;
+      const hasSale = Boolean(saleRef && saleId);
+      return <div key={ticket.id} className="flex min-w-0 gap-3 rounded-xl border border-border bg-card p-4">{canRemove && ticket.status === "AVAILABLE" ? <label className="flex min-h-11 min-w-11 shrink-0 items-center justify-center" aria-label={`Select ${ticket.serial}`}><input type="checkbox" className="size-5 accent-primary" checked={selectedIds.has(ticket.id)} disabled={Boolean(selectedEventId && selectedEventId !== ticket.eventId)} onChange={() => toggle(ticket)} /></label> : null}<Link href={`/tickets/${ticket.id}`} className="block min-w-0 flex-1 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-2"><Serial className="min-w-0 text-base font-semibold">{ticket.serial}</Serial><TicketStatusBadge status={ticket.status} /></div>
+        <p className="mt-1 truncate text-base font-medium">{ticket.ticketTypeName}</p>
+        {showEvent ? <p className="truncate text-sm text-muted-foreground">{ticket.eventName}</p> : null}
+        {hasSale ? (
+          <div className="mt-2 flex flex-col gap-1 text-sm">
+            <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Sale</span>{" "}<Link href={`/sales/${saleId}`} className="text-primary font-medium hover:underline truncate min-w-0">{saleRef}</Link></div>
+            {customerName ? <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Buyer</span>{" "}<span className="font-medium truncate min-w-0">{customerName}</span></div> : null}
+            {customerPhoneMasked ? <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Phone</span>{" "}<span className="font-mono text-muted-foreground">{customerPhoneMasked}</span></div> : null}
+            <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Admission</span>{" "}<span className={cn("font-mono", admissionTone(ticket))}>{admissionLine(ticket)}</span></div>
+          </div>
+        ) : (
+          <div className="mt-2 flex items-start gap-1 text-sm"><span className="text-muted-foreground text-[10px]">Admission</span>{" "}<span className="font-mono text-muted-foreground">Unsold</span></div>
+        )}
+        <div className="mt-2 flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-1 text-sm text-muted-foreground"><span className="min-w-0 break-all">{ticket.batchRef ?? "No batch"}</span><span className="shrink-0">{formatTimestamp(ticket.createdAt)}</span></div>
+      </Link></div>;
+    })}
     table={(
     <Card>
       <CardContent className="overflow-x-auto p-0">
@@ -94,49 +132,69 @@ export function TicketsTable({ tickets, showEvent = true, canRemove = false }: T
               <TableHead>Status</TableHead>
               <TableHead>Category</TableHead>
               {showEvent ? <TableHead>Event</TableHead> : null}
+              <TableHead>Sale / buyer</TableHead>
+              <TableHead>Admission</TableHead>
               <TableHead>Batch</TableHead>
               <TableHead>Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tickets.map((ticket) => (
-              <TableRow key={ticket.id}>
-                {canRemove ? <TableCell><input type="checkbox" aria-label={`Select ${ticket.serial} for removal`} className="size-5 accent-primary" checked={selectedIds.has(ticket.id)} disabled={ticket.status !== "AVAILABLE" || Boolean(selectedEventId && selectedEventId !== ticket.eventId)} onChange={() => toggle(ticket)} /></TableCell> : null}
-                <TableCell className="font-medium whitespace-nowrap">
-                  <Link
-                    href={`/tickets/${ticket.id}`}
-                    className="hover:underline"
-                  >
-                    <Serial>{ticket.serial}</Serial>
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <TicketStatusBadge status={ticket.status} />
-                  {ticket.revokeReason ? (
-                    <p
-                      className="mt-1 max-w-48 truncate text-xs text-muted-foreground"
-                      title={ticket.revokeReason}
+            {tickets.map((ticket) => {
+              const trace = ticket.trace;
+              const saleRef = trace?.saleReference ?? null;
+              const saleId = trace?.saleId ?? null;
+              const customerName = trace?.customerName ?? null;
+              const hasSale = Boolean(saleRef && saleId);
+              return (
+                <TableRow key={ticket.id}>
+                  {canRemove ? <TableCell><input type="checkbox" aria-label={`Select ${ticket.serial} for removal`} className="size-5 accent-primary" checked={selectedIds.has(ticket.id)} disabled={ticket.status !== "AVAILABLE" || Boolean(selectedEventId && selectedEventId !== ticket.eventId)} onChange={() => toggle(ticket)} /></TableCell> : null}
+                  <TableCell className="font-medium whitespace-nowrap">
+                    <Link
+                      href={`/tickets/${ticket.id}`}
+                      className="hover:underline"
                     >
-                      {ticket.revokeReason}
-                    </p>
-                  ) : null}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  {ticket.ticketTypeName}
-                </TableCell>
-                {showEvent ? (
-                  <TableCell className="max-w-40 truncate">
-                    {ticket.eventName}
+                      <Serial>{ticket.serial}</Serial>
+                    </Link>
                   </TableCell>
-                ) : null}
-                <TableCell className="font-mono text-xs whitespace-nowrap">
-                  {ticket.batchRef ?? "—"}
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">
-                  {formatTimestamp(ticket.createdAt)}
-                </TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>
+                    <TicketStatusBadge status={ticket.status} />
+                    {ticket.revokeReason ? (
+                      <p
+                        className="mt-1 max-w-48 truncate text-xs text-muted-foreground"
+                        title={ticket.revokeReason}
+                      >
+                        {ticket.revokeReason}
+                      </p>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    {ticket.ticketTypeName}
+                  </TableCell>
+                  {showEvent ? (
+                    <TableCell className="max-w-40 truncate">
+                      {ticket.eventName}
+                    </TableCell>
+                  ) : null}
+                  <TableCell className="whitespace-nowrap text-sm">
+                    {hasSale ? (
+                      <div className="flex flex-col gap-0.5">
+                        <Link href={`/sales/${saleId}`} className="font-medium hover:underline truncate min-w-0">{saleRef}</Link>
+                        {customerName ? <span className="text-sm text-muted-foreground truncate min-w-0">{customerName}</span> : null}
+                      </div>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-sm">
+                    <span className={cn("font-mono", admissionTone(ticket))}>{admissionLine(ticket)}</span>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs whitespace-nowrap">
+                    {ticket.batchRef ?? "—"}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted-foreground">
+                    {formatTimestamp(ticket.createdAt)}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </CardContent>

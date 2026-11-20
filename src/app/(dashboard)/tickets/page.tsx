@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileDown, Plus } from "lucide-react";
+import { FileDown, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
@@ -18,6 +18,8 @@ import { TicketStatusBadge } from "@/components/tickets/ticket-status-badge";
 import { ResponsiveList } from "@/components/ui/responsive-list";
 import type { TicketStatus } from "@/generated/prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
+import { StatTile } from "@/components/ui/stat-tile";
+import { getReport } from "@/server/services/reports.service";
 
 export const instant = false;
 
@@ -57,6 +59,24 @@ function exportHref(query: TicketListQuery): string {
   return `/api/v1/tickets/export?${params.toString()}`;
 }
 
+/** Aggregate TICKET_INVENTORY report rows into KPI totals. */
+function inventoryKpis(rows: unknown[]): { total: number; sold: number; available: number; revoked: number } {
+  let total = 0;
+  let sold = 0;
+  let available = 0;
+  let revoked = 0;
+  for (const row of rows) {
+    const cells = row as unknown[];
+    const status = cells[1];
+    const count = Number(cells[2]) || 0;
+    total += count;
+    if (status === "SOLD") sold += count;
+    else if (status === "AVAILABLE") available += count;
+    else if (status === "REVOKED") revoked += count;
+  }
+  return { total, sold, available, revoked };
+}
+
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   const ctx = await getSessionContext();
   if (!ctx) redirect("/login");
@@ -80,23 +100,38 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   }
   if (!can(ctx.role, "inventory:read")) redirect("/dashboard");
 
-  const parsed = ticketListQuerySchema.safeParse(flattenParams(await searchParams));
-  // Invalid/garbled filters simply fall back to the default view.
+  const params = await searchParams;
+  const parsed = ticketListQuerySchema.safeParse(flattenParams(params));
   const query = parsed.success ? parsed.data : ticketListQuerySchema.parse({});
 
   const [events, result] = await Promise.all([
     listEvents(ctx),
-    listTickets(ctx, query),
+    listTickets(ctx, { ...query, include: "trace" }),
   ]);
   const ticketTypes = query.eventId
     ? await listTicketTypes(ctx, query.eventId)
     : [];
 
+  // KPI strip from TICKET_INVENTORY report
+  let kpis: { total: number; sold: number; available: number; revoked: number } | null = null;
+  if (query.eventId) {
+    try {
+      const report = await getReport(ctx, { eventId: query.eventId, type: "TICKET_INVENTORY" });
+      kpis = inventoryKpis(report.rows);
+    } catch {
+      // Report not available to this role — fall back to list data.
+    }
+  }
+
   const pages = Math.max(1, Math.ceil(result.total / result.pageSize));
+  const activeFilters = [query.eventId, query.status, query.ticketTypeId, query.batchId, query.search].filter(Boolean).length;
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Ticket inventory" description="Search serials, filter by event, category or inventory status, and open a ticket for its full history." actions={<div className="flex w-full flex-wrap gap-2 sm:w-auto">
+      <PageHeader
+        title="Ticket inventory"
+        description="Search serials, filter by event, category or inventory status, and open a ticket for its full history."
+        actions={<div className="flex w-full flex-wrap gap-2 sm:w-auto">
           {can(ctx.role, "inventory:export") && query.eventId ? (
             <Button
               size="sm"
@@ -113,9 +148,32 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
               <Plus /> Generate tickets
             </Button>
           ) : null}
-        </div>} />
+        </div>}
+      />
 
-      <FilterSheet activeCount={[query.eventId, query.status, query.ticketTypeId, query.search].filter(Boolean).length}><InventoryFilters
+      {/* KPI strip */}
+      {kpis && (
+        <section aria-label="Inventory totals" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatTile label="Total" value={String(kpis.total)} />
+          <StatTile label="Sold" value={String(kpis.sold)} sub="Tickets sold" />
+          <StatTile label="Available" value={String(kpis.available)} sub="Unsold stock" />
+          <StatTile label="Revoked" value={String(kpis.revoked)} sub="Removed from circulation" />
+        </section>
+      )}
+
+      {/* Reset link when filters active */}
+      {activeFilters > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-muted-foreground">
+            {activeFilters} filter{activeFilters > 1 ? "s" : ""} active
+          </span>
+          <Link href="/tickets" className="text-sm font-medium text-primary underline-offset-2 hover:underline flex items-center gap-1">
+            <RefreshCw className="size-4 shrink-0" aria-hidden="true" /> Reset
+          </Link>
+        </div>
+      )}
+
+      <FilterSheet activeCount={activeFilters}><InventoryFilters
         events={events.map((event) => ({ id: event.id, name: event.name }))}
         ticketTypes={ticketTypes.map((type) => ({
           id: type.id,
@@ -124,7 +182,11 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
         initial={query}
       /></FilterSheet>
 
-      <TicketsTable tickets={result.tickets} showEvent={!query.eventId} canRemove={can(ctx.role, "ticket:revoke")} />
+      <TicketsTable
+        tickets={result.tickets}
+        showEvent={!query.eventId}
+        canRemove={can(ctx.role, "ticket:revoke")}
+      />
 
       <div className="flex items-center justify-between text-base text-muted-foreground">
         <span>
