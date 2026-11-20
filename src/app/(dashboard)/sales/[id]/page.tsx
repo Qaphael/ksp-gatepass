@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { Printer, ArrowLeft, CheckCircle2, Clock3 } from "lucide-react";
+import { Printer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaymentForm, ReversePaymentButton, SaleAdminActions } from "@/components/sales/sale-detail-actions";
 import { TicketActions } from "@/components/tickets/ticket-actions";
@@ -9,9 +9,7 @@ import { can } from "@/lib/permissions";
 import { prisma } from "@/lib/db/client";
 import { getSale } from "@/server/services/sales.service";
 import { formatUGX } from "@/components/ui/money";
-import type { PaymentStatus } from "@/generated/prisma/client";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { DefList, DefRow } from "@/components/ui/def-list";
 import { Timeline } from "@/components/ui/timeline";
 import { Serial } from "@/components/ui/serial";
 import { formatDateTime } from "@/lib/time";
@@ -57,7 +55,10 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
   const hasPrintableTicket = ticketRows.some((ticket) => ticket.status !== "CANCELLED" && ticket.status !== "REVOKED");
   const maySeeGate = can(ctx.role, "checkin:read-recent");
 
+  const totalTickets = sale.items.reduce((sum, item) => sum + item.quantity, 0);
+  const admittedTickets = ticketRows.filter((t) => t.checkIn).length;
   const time = (value: string) => formatDateTime(value, "Africa/Kampala", "en-UG", { hour: "2-digit", minute: "2-digit" });
+  const dayTime = (value: string) => formatDateTime(value, "Africa/Kampala", "en-UG", { month: "short", day: "2-digit", year: "numeric" });
 
   return (
     <div className="flex flex-col gap-4">
@@ -65,13 +66,17 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link href="/sales" className="inline-flex min-h-11 items-center text-base text-muted-foreground underline-offset-2 hover:underline">
-            <ArrowLeft className="size-4 shrink-0 mr-2" aria-hidden="true" /> Sales
+            <ArrowLeft className="size-4 shrink-0 mr-2" aria-hidden="true" /> Back to Sales
           </Link>
           <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
             Sale {sale.reference}
             <StatusBadge domain="sale" status={sale.status} className="text-xs px-2" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-card/50 text-muted-foreground font-mono text-[10px] font-semibold">
+              {admittedTickets}/{totalTickets} admitted
+            </span>
           </h1>
-          <p className="text-base text-muted-foreground">{sale.eventName} · {time(sale.createdAt)} EAT</p>
+          <p className="text-base text-muted-foreground">{sale.eventName} · {dayTime(sale.createdAt)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">EAT UTC+3 (Kampala) · {time(sale.createdAt)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {canPrint && hasPrintableTicket ? (
@@ -82,79 +87,87 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
           <Button nativeButton={false} className="min-h-12" variant="outline" render={<a href={`/api/v1/sales/${sale.id}/receipt.pdf`} />}>
             Print receipt
           </Button>
+          {outstanding && sale.balanceUgx > 0 && can(ctx.role, "payment:record") ? (
+            <Button nativeButton={false} className="min-h-12" render={<a href="#collect-balance" />}>
+              Record Balance
+            </Button>
+          ) : null}
         </div>
       </div>
 
-      {/* Parties */}
-      <section className="rounded-lg border border-border p-4">
-        <DefList>
-          <DefRow label="Seller">{sale.seller.displayName}</DefRow>
-          <DefRow label="Customer">{sale.customerName ?? "Not provided"}{sale.customerPhone ? ` · ${sale.customerPhone}` : ""}</DefRow>
-          {sale.customerReference ? <DefRow label="Customer reference">{sale.customerReference}</DefRow> : null}
-        </DefList>
-      </section>
-
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-        {/* Left column: ledger + tickets */}
+        {/* Left column: ledger + parties + tickets */}
         <div className="flex flex-col gap-4">
-          {/* Ledger tile */}
+          {/* Financial ledger tile */}
           <section className="rounded-lg border border-border p-4">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Order total</span>
-                <span className="font-semibold tabular-nums"><Money amount={sale.totalUgx} /></span>
+                <span className="font-mono text-base font-semibold tabular-nums"><Money amount={sale.totalUgx} /></span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Paid</span>
-                <span className="font-semibold tabular-nums text-success-foreground"><Money amount={sale.amountPaidUgx} /></span>
+                <span className="text-muted-foreground">Paid to date</span>
+                <span className="font-mono text-base font-semibold tabular-nums text-success-foreground"><Money amount={sale.amountPaidUgx} /></span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Balance due</span>
-                <span className="font-semibold tabular-nums text-muted-foreground"><Money amount={sale.balanceUgx} /></span>
+                <span className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Balance due</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">AT GATE</span>
+                </span>
+                <span className="font-mono text-base font-semibold tabular-nums text-muted-foreground"><Money amount={sale.balanceUgx} /></span>
               </div>
               <div className="pt-2 border-t border-border/70">
                 <p className="text-xs text-muted-foreground">
-                  Subtotal <span className="font-semibold tabular-nums">{formatUGX(sale.subtotalUgx)}</span>
+                  Subtotal <span className="font-mono text-xs font-semibold tabular-nums">{formatUGX(sale.subtotalUgx)}</span>
                   &nbsp;·&nbsp;
-                  Discount <span className="font-semibold tabular-nums">{formatUGX(sale.discountUgx)}</span>
+                  Discount <span className="font-mono text-xs font-semibold tabular-nums">{formatUGX(sale.discountUgx)}</span>
                 </p>
               </div>
             </div>
           </section>
 
+          {/* Secondary meta: seller + customer cards */}
+          <section className="grid gap-3 lg:grid-cols-2">
+            <div className="rounded-lg border border-border p-4 flex flex-col gap-2">
+              <span className="text-xs text-muted-foreground">Authorized seller</span>
+              <div className="text-base font-semibold">{sale.seller.displayName}</div>
+            </div>
+            <div className="rounded-lg border border-border p-4 flex flex-col gap-2">
+              <span className="text-xs text-muted-foreground">Customer contact</span>
+              <div className="text-base font-semibold truncate">{sale.customerName ?? "Not provided"}</div>
+              {sale.customerPhone ? <div className="text-xs text-muted-foreground">{sale.customerPhone}</div> : null}
+            </div>
+          </section>
+
           {/* Tickets */}
           <section id="sale-tickets" className="scroll-mt-4 rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold">Tickets</h2>
-            </div>
+            <h2 className="text-lg font-semibold">Itemized Passes ({totalTickets})</h2>
             <div className="mt-2 divide-y divide-border">
               {sale.items.map((item) => (
                 <div key={item.id} className="py-3">
                   <div className="flex justify-between gap-3 text-base">
-                    <span>{item.quantity} × {item.ticketTypeName} at {formatUGX(item.unitPriceUgx)}</span>
+                    <span>{item.quantity} × {item.ticketTypeName}</span>
                     <span>{formatUGX(item.lineTotalUgx)}</span>
                   </div>
                   <ul className="mt-2 divide-y">
                     {item.tickets.map((ticket) => {
                       const checkedIn = ticket.checkIn;
                       return (
-                        <li key={ticket.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
+                        <li key={ticket.id} className="flex items-center justify-between gap-3 py-2">
                           <div className="min-w-0">
-                            <p className="font-mono text-base font-semibold tracking-wider"><Serial>{ticket.serial}</Serial></p>
-                            <p className="text-base text-muted-foreground">{ticket.status.replaceAll("_", " ")}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {checkedIn ? (
-                              <span className="flex items-center gap-1 text-[11px] font-mono text-success-foreground">
-                                <CheckCircle2 className="size-3.5 shrink-0" aria-hidden="true" />
-                                Admitted · {time(checkedIn.checkedInAt)}
-                                {checkedIn.gate && maySeeGate ? ` · ${checkedIn.gate}` : null}
-                              </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-base font-semibold tracking-wider"><Serial>{ticket.serial}</Serial></span>
+                              {checkedIn ? (
+                                <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-mono text-[10px] font-semibold">ADMITTED</span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[10px] font-semibold">ISSUED · PENDING GATE</span>
+                              )}
+                            </div>
+                            <p className="text-base text-muted-foreground">{item.ticketTypeName} · {formatUGX(item.unitPriceUgx)}</p>
+                            {checkedIn && maySeeGate ? (
+                              <span className="text-xs text-muted-foreground">Gate · {time(checkedIn.checkedInAt)}</span>
                             ) : (
-                              <span className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground">
-                                <Clock3 className="size-3.5 shrink-0" aria-hidden="true" />
-                                Not yet admitted
-                              </span>
+                              <span className="text-xs text-muted-foreground">Unchecked · Gate pass active</span>
                             )}
                           </div>
                           {canPrint ? (
@@ -168,6 +181,15 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
               ))}
             </div>
           </section>
+
+          {/* Quick POS payment collection */}
+          {outstanding && sale.balanceUgx > 0 && can(ctx.role, "payment:record") ? (
+            <section id="collect-balance" className="rounded-lg border border-border p-4">
+              <h2 className="text-lg font-semibold">Collect Outstanding Balance</h2>
+              <span className="text-xs text-muted-foreground mb-2 block">Due: <span className="font-mono text-base font-semibold tabular-nums text-tertiary">{formatUGX(sale.balanceUgx)}</span></span>
+              <PaymentForm saleId={sale.id} balanceUgx={sale.balanceUgx} />
+            </section>
+          ) : null}
         </div>
 
         {/* Right column: payments + timeline */}
@@ -175,7 +197,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
           {/* Payments */}
           <section className="rounded-lg border border-border p-4">
             <div className="flex items-center justify-between gap-2 mb-3">
-              <h2 className="text-lg font-semibold">Payment history</h2>
+              <h2 className="text-lg font-semibold">Payment Ledger ({sale.payments.length})</h2>
             </div>
             <div className="mt-3 grid gap-3 md:hidden">
               {sale.payments.map((payment) => (
@@ -185,7 +207,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
                       <p className="break-words font-medium">{payment.reference}</p>
                       <p className="text-base text-muted-foreground">{new Date(payment.recordedAt).toLocaleString("en-UG", { timeZone: "Africa/Kampala" })}</p>
                     </div>
-                    <StatusBadge domain="payment" status={payment.status as PaymentStatus} />
+                    <StatusBadge domain="payment" status={payment.status as "RECORDED" | "REVERSED" | "REFUNDED"} className="text-xs" />
                   </div>
                   <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-base">
                     <div>
@@ -225,7 +247,7 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
                         <div className="text-base text-muted-foreground">{new Date(payment.recordedAt).toLocaleString("en-UG", { timeZone: "Africa/Kampala" })}</div>
                       </td>
                       <td className="px-2 py-2">{payment.method.replaceAll("_", " ")}</td>
-                      <td className="px-2 py-2"><StatusBadge domain="payment" status={payment.status as PaymentStatus} /></td>
+                      <td className="px-2 py-2"><StatusBadge domain="payment" status={payment.status as "RECORDED" | "REVERSED" | "REFUNDED"} className="text-xs" /></td>
                       <td className="px-2 py-2 text-right">
                         {can(ctx.role, "payment:reverse") && payment.netAmountUgx > 0 ? <ReversePaymentButton paymentId={payment.id} reference={payment.reference} amountUgx={payment.netAmountUgx} /> : null}
                       </td>
@@ -244,25 +266,12 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
             <p className="mt-3 text-xs text-muted-foreground">
               Payments are recorded by staff. No provider verification is connected.
             </p>
-            {sale.payments.length > 0 ? (
-              <section className="mt-4 rounded-lg border border-border p-4">
-                <h3 className="text-sm font-semibold text-muted-foreground">Recorded by</h3>
-                <ul className="mt-2 space-y-2 text-base">
-                  {sale.payments.map((payment) => (
-                    <li key={payment.id}>
-                      <DefRow label={payment.reference}>{payment.recordedByName}{payment.adjustments.map((adjustment) => <span key={adjustment.id} className="text-muted-foreground"> · {adjustment.type.toLowerCase()} by {adjustment.recordedByName}</span>)}</DefRow>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
-            {outstanding && sale.balanceUgx > 0 && can(ctx.role, "payment:record") ? <PaymentForm saleId={sale.id} balanceUgx={sale.balanceUgx} /> : null}
           </section>
 
           {/* Timeline */}
           <section className="rounded-lg border border-border p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Transaction timeline</h2>
+              <h2 className="text-lg font-semibold">Audit Trail &amp; Admissions</h2>
               <SaleAdminActions saleId={sale.id} reference={sale.reference} totalUgx={sale.totalUgx} canCancel={can(ctx.role, "sale:cancel") && outstanding && sale.amountPaidUgx === 0} canRefund={can(ctx.role, "sale:refund") && outstanding && sale.amountPaidUgx > 0} />
             </div>
             <Timeline

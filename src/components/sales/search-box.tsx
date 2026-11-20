@@ -42,22 +42,22 @@ export function SearchBox({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-2 w-full max-w-md rounded-lg border border-input bg-card px-3 py-2"
+      className="relative w-full max-w-md"
     >
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
+        <SearchIcon className="size-5 shrink-0" aria-hidden="true" />
+      </span>
       <Input
         name="search"
         defaultValue={currentSearch}
-        placeholder="Search by reference, customer name or phone"
-        className="flex-1 min-w-0 border-none bg-transparent focus-visible:ring-0"
+        placeholder="Search REF-…, buyer name, phone…"
+        className="w-full h-12 pl-10 pr-9 bg-card rounded-xl border border-input text-base placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring"
       />
       {value ? (
-        <Button type="button" variant="outline" size="icon-sm" onClick={handleClear} aria-label="Clear search">
+        <Button type="button" variant="outline" size="icon-sm" className="absolute right-3 top-1/2 -translate-y-1/2" onClick={handleClear} aria-label="Clear search">
           <X className="size-4" />
         </Button>
       ) : null}
-      <Button type="submit" variant="outline" size="icon-sm" aria-label="Search">
-        <SearchIcon className="size-4" />
-      </Button>
     </form>
   );
 }

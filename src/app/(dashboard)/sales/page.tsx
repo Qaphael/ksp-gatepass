@@ -9,7 +9,6 @@ import { listEvents } from "@/server/services/events.service";
 import { listSales, getSalesTotals } from "@/server/services/sales.service";
 import { FilterSheet } from "@/components/ui/filter-sheet";
 import { ResponsiveList } from "@/components/ui/responsive-list";
-import type { SaleStatus } from "@/generated/prisma/client";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Money, formatUGX } from "@/components/ui/money";
 import { PageHeader } from "@/components/ui/page-header";
@@ -37,7 +36,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
     getSalesTotals(ctx, query),
   ]);
 
-  const statusOptions: Array<{ label: string; status: SaleStatus | undefined }> = [
+  const statusOptions: Array<{ label: string; status: "PENDING_PAYMENT" | "PARTIALLY_PAID" | "PAID" | "CANCELLED" | "REFUNDED" | undefined }> = [
     { label: "All", status: undefined },
     { label: "Paid", status: "PAID" },
     { label: "Partially paid", status: "PARTIALLY_PAID" },
@@ -45,7 +44,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
     { label: "Cancelled", status: "CANCELLED" },
   ];
 
-  function statusHref(status: SaleStatus | undefined): string {
+  function statusHref(status: "PENDING_PAYMENT" | "PARTIALLY_PAID" | "PAID" | "CANCELLED" | "REFUNDED" | undefined): string {
     const search = new URLSearchParams();
     if (query.eventId) search.set("eventId", query.eventId);
     if (query.search) search.set("search", query.search);
@@ -66,16 +65,16 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Sales"
-        description="Recorded transactions, outstanding balances and payment history."
+        title="Sales Transactions"
+        description="Browse, filter & reconcile ticket sales in real-time."
         actions={can(ctx.role, "sale:create") ? (
-          <Button nativeButton={false} className="min-h-12 w-full sm:w-auto" render={<Link href="/sales/new" />}>
-            <Plus /> New sale
+          <Button nativeButton={false} size="sm" className="min-h-11 text-base" render={<Link href="/sales/new" />}>
+            <Plus className="size-4 shrink-0" aria-hidden="true" /> New Sale
           </Button>
         ) : undefined}
       />
 
-      {/* KPI strip */}
+      {/* KPI Strip: 2x2 bento grid */}
       <section aria-label="Sales totals" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Sales" value={String(totals.saleCount)} />
         <StatTile label="Gross" value={formatUGX(totals.grossUgx)} sub="Total before payments" />
@@ -92,13 +91,13 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
               key={option.label}
               href={statusHref(option.status)}
               className={cn(
-                "inline-flex items-center gap-1.5 min-h-10 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors",
+                "inline-flex items-center gap-1.5 min-h-10 rounded-xl border px-3 py-1.5 text-sm font-medium transition-colors",
                 active
                   ? "bg-accent text-foreground border-transparent"
                   : "bg-card border-border text-muted-foreground hover:bg-muted",
               )}
             >
-              {option.status ? <StatusBadge domain="sale" status={option.status} /> : option.label}
+              {option.status ? <StatusBadge domain="sale" status={option.status} className="text-xs" /> : option.label}
             </Link>
           );
         })}
@@ -130,35 +129,46 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
       </div>
 
       <ResponsiveList
-        cards={result.sales.map((sale) => (
-          <Link
-            key={sale.id}
-            href={`/sales/${sale.id}`}
-            className="block min-w-0 rounded-xl border border-border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{sale.reference}</p>
-                <p className="truncate text-sm text-muted-foreground">{sale.eventName}</p>
+        cards={result.sales.map((sale) => {
+          const ticketTypes = sale.items.map((i) => i.ticketTypeName).join(", ");
+          const ticketCount = sale.items.reduce((sum, item) => sum + item.quantity, 0);
+          return (
+            <Link
+              key={sale.id}
+              href={`/sales/${sale.id}`}
+              className="block min-w-0 rounded-xl border border-border bg-card p-4 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono text-base font-semibold">{sale.reference}</span>
+                    <span className="text-xs text-muted-foreground">{ticketTypes}</span>
+                  </div>
+                  {sale.customerName ? <p className="mt-1 truncate text-sm font-medium">{sale.customerName}</p> : null}
+                  {sale.customerPhone ? <p className="text-xs text-muted-foreground">{sale.customerPhone}</p> : null}
+                </div>
+                <StatusBadge domain="sale" status={sale.status} className="text-xs" />
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="whitespace-nowrap font-mono text-base font-semibold tabular-nums">
-                  <Money amount={sale.totalUgx} />
-                </span>
-                <StatusBadge domain="sale" status={sale.status} />
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div>
+                  <span className="text-xs text-muted-foreground">Amount received</span>
+                  <span className="font-mono text-base font-semibold tabular-nums"><Money amount={sale.totalUgx} /></span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs text-muted-foreground">
+                    {formatDateTime(sale.createdAt, "Africa/Kampala", "en-UG", { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })} EAT
+                  </span>
+                </div>
               </div>
-            </div>
-            <p className="mt-3 text-sm">
-              {sale.seller.displayName}
-              &nbsp;·&nbsp;
-              {sale.items.reduce((sum, item) => sum + item.quantity, 0)} tickets
-              &nbsp;·&nbsp;
-              <time className="font-mono text-muted-foreground">
-                {formatDateTime(sale.createdAt, "Africa/Kampala", "en-UG", { hour: "2-digit", minute: "2-digit" })}
-              </time>
-            </p>
-          </Link>
-        ))}
+              <div className="mt-2 flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">{sale.seller.displayName} · {ticketCount} ticket{ticketCount !== 1 ? "s" : ""}</span>
+                <Link className="text-xs font-medium text-primary underline-offset-2 hover:underline" href={`/sales/${sale.id}`}>
+                  View sale
+                </Link>
+              </div>
+            </Link>
+          );
+        })}
         table={
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-left text-sm">
