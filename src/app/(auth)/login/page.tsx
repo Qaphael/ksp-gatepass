@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
-  BadgeCheck,
   Eye,
   EyeOff,
   KeyRound,
@@ -125,7 +124,7 @@ export default function LoginPage() {
             )}
 
             {/* Sign in form */}
-            <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
+            <form onSubmit={onSubmit} method="post" className="flex flex-col gap-4" noValidate>
               {/* Username/Email field */}
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="identifier" className="text-xs font-medium text-muted-foreground">
@@ -183,15 +182,6 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Role quick-indicator helper pill */}
-              <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <BadgeCheck className="size-4 text-success" />
-                  <span className="truncate text-[10px] font-mono text-muted-foreground">Active Role:</span>
-                </div>
-                <span className="text-[10px] font-mono font-medium text-primary">Admin / Verifier / Seller</span>
-              </div>
-
               {/* Submit button */}
               <Button type="submit" disabled={loading} className="min-h-[48px] w-full font-medium">
                 {loading ? (
@@ -215,25 +205,7 @@ export default function LoginPage() {
                   Ask an administrator
                 </Link>
               </p>
-              <p className="text-[10px] font-mono text-muted-foreground">
-                <Link href="#" className="transition-colors hover:text-foreground">
-                  Help & Support
-                </Link>
-              </p>
             </footer>
-          </div>
-
-          {/* Live system telemetry status pill — mobile only */}
-          <div className="flex items-center justify-center lg:hidden">
-            <div className="inline-flex items-center gap-2 rounded-md bg-muted/50 px-3 py-1.5 text-muted-foreground shadow-card">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-              </span>
-              <span className="text-[10px] font-mono tracking-tight">
-                Server online · Africa/Kampala (EAT)
-              </span>
-            </div>
           </div>
         </div>
       </div>

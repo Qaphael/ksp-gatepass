@@ -24,8 +24,8 @@ export function StatTile({
 }) {
   const clamped = percent === undefined ? undefined : Math.min(100, Math.max(0, Math.round(percent)));
   return (
-    <Card className="min-w-0">
-      <CardContent className={cn("flex flex-col gap-1.5 p-3.5", className)}>
+    <Card size="sm" className="min-w-0">
+      <CardContent className={cn("flex flex-col gap-1.5", className)}>
         <span className="truncate font-mono text-[11px] text-muted-foreground">{label}</span>
         <span className="flex items-baseline gap-1">
           <span className="truncate text-lg font-semibold tabular-nums sm:text-xl">{value}</span>
