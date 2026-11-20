@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogoMark } from "@/components/brand/logo-mark";
 import { getSessionContext } from "@/lib/auth/session";
 
 // Redirects signed-in users; needs the session cookie per request.
@@ -15,16 +13,7 @@ export default async function AuthLayout({
   if (ctx) redirect("/dashboard");
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-muted/40 px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div className="text-center">
-        <Link href="/" className="inline-flex flex-col items-center gap-3">
-          <LogoMark className="size-16 text-primary" />
-          <span className="text-xl font-semibold">KSP GatePass</span>
-        </Link>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Ticket sales and gate verification
-        </p>
-      </div>
+    <main className="min-h-dvh bg-background">
       {children}
     </main>
   );

@@ -3,7 +3,8 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { BrandLockup } from "@/components/brand/logo-mark";
 import { NavLinks, type NavIconName, type NavItem } from "@/components/layout/nav-links";
-import { AppHeader, BottomNav } from "@/components/layout/app-header";
+import { AppHeader } from "@/components/layout/app-header";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { UserMenu } from "@/components/layout/user-menu";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
@@ -71,7 +72,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AppHeader section={currentSection} user={{ displayName: ctx.displayName, role: ctx.role }} />
         <main className="flex min-h-dvh min-w-0 flex-1 flex-col px-4 pt-20 pb-28 sm:px-6 lg:px-8">{children}</main>
       </div>
-      <div className="lg:hidden"><BottomNav /></div>
+      <div className="lg:hidden"><MobileNav items={navItems} /></div>
       <Toaster position="top-center" />
     </div>
   );

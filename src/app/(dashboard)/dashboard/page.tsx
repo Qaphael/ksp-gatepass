@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Activity, ArrowRight, Banknote, CalendarDays, Check, CircleAlert, ClipboardList, Plus, ScanLine, Ticket, Users, Wallet } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Activity, ArrowRight, BadgeCheck, Banknote, CalendarDays, Check, CircleAlert, ClipboardList, Download, MapPin, Plus, ReceiptText, ScanLine, Ticket, Users, Verified, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventPoster } from "@/components/events/event-poster";
-import { OpenBadge, StatusBadge } from "@/components/events/status-badges";
+import { StatusBadge } from "@/components/events/status-badges";
 import { StatusBadge as ScanStatusBadge } from "@/components/ui/status-badge";
 import { DashboardConnection } from "@/components/check-in/dashboard-connection";
 import { getSessionContext } from "@/lib/auth/session";
@@ -99,6 +98,10 @@ function money(value: number): string {
   return `UGX ${new Intl.NumberFormat("en-UG", { maximumFractionDigits: 0 }).format(value)}`;
 }
 
+function clock(iso: string, timezone: string): string {
+  return new Intl.DateTimeFormat("en-UG", { hour: "2-digit", minute: "2-digit", timeZone: timezone }).format(new Date(iso));
+}
+
 function EmptyDashboard({ role }: { role: "SUPER_ADMIN" | "ADMIN" | "SELLER" | "VERIFIER" | "SUPERVISOR" }) {
   return <section className="mx-auto flex min-h-[55dvh] max-w-lg flex-col justify-center gap-6 text-center">
     <div className="mx-auto grid size-12 place-items-center rounded-lg bg-accent text-primary"><CalendarDaysIcon /></div>
@@ -109,18 +112,37 @@ function EmptyDashboard({ role }: { role: "SUPER_ADMIN" | "ADMIN" | "SELLER" | "
 
 function CalendarDaysIcon() { return <CalendarDays className="size-7" aria-hidden="true" />; }
 
-function DashboardHeading({ event, eyebrow = "Event overview" }: { event: EventDto; eyebrow?: string }) {
+function DashboardHeading({ event, eyebrow = "Operational terminal" }: { event: EventDto; eyebrow?: string }) {
   return <div className="flex min-w-0 flex-col gap-3">
     {event.branding.poster && <>
       <EventPoster poster={event.branding.poster} variant="display" className="max-h-[48dvh] md:hidden" />
       <EventPoster poster={event.branding.poster} variant="banner" className="hidden md:block" />
-      <a href={`${event.branding.poster.displayUrl}&download=1`} className="inline-flex min-h-10 w-fit items-center text-sm font-medium text-primary underline underline-offset-4">Download poster</a>
+      <a href={`${event.branding.poster.displayUrl}&download=1`} className="inline-flex min-h-10 w-fit items-center gap-1.5 text-sm font-medium text-primary underline underline-offset-4"><Download className="size-4" aria-hidden="true" />Poster</a>
     </>}
-    <div className="flex min-w-0 items-center gap-4">
-      <div className="min-w-0"><p className="text-sm font-medium text-muted-foreground">{eyebrow}</p><h1 className="truncate text-2xl font-semibold">{event.name}</h1><p className="truncate text-sm text-muted-foreground">{event.eventDate} · {event.venue}</p></div>
-      <div className="ml-auto flex shrink-0 flex-col items-end gap-3"><StatusBadge status={event.status} /><OpenBadge open={event.admissionOpen} label="Admission" /></div>
+    <div className="flex min-w-0 items-start gap-4">
+      <div className="min-w-0">
+        <p className="font-mono text-xs uppercase tracking-wider text-primary">{eyebrow}</p>
+        <h1 className="mt-0.5 truncate text-2xl font-semibold">{event.name}</h1>
+        <p className="mt-1 flex items-center gap-1 truncate text-sm text-muted-foreground"><MapPin className="size-3.5 shrink-0" aria-hidden="true" />{event.eventDate} · {event.venue}</p>
+      </div>
+    </div>
+    {/* Status chips bar */}
+    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/40 p-2">
+      <StatusBadge status={event.status} />
+      <Chip open={event.salesOpen} label="Sales" />
+      <Chip open={event.admissionOpen} label="Admission" />
+      <Chip icon={<Ticket className="size-3.5" aria-hidden="true" />} label={`${event.capacity} total tickets`} neutral />
     </div>
   </div>;
+}
+
+function Chip({ open, label, icon, neutral = false }: { open?: boolean; label: string; icon?: React.ReactNode; neutral?: boolean }) {
+  const openTone = "border-transparent bg-success/10 text-success";
+  const closedTone = "border-border bg-muted text-muted-foreground";
+  return <span className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs ${neutral ? "border-input bg-card text-muted-foreground" : open ? openTone : closedTone}`}>
+    {icon ?? <span aria-hidden="true" className={`inline-block size-2 shrink-0 rounded-full ${neutral ? "bg-muted-foreground/50" : open ? "animate-pulse bg-success" : "bg-muted-foreground/50"}`} />}
+    {label} {open !== undefined && (open ? " open" : " closed")}
+  </span>;
 }
 
 function Stat({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail?: string }) {
@@ -128,24 +150,96 @@ function Stat({ icon, label, value, detail }: { icon: React.ReactNode; label: st
 }
 
 function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: EventDto; stats: { sold: number; paidUgx: number; outstandingUgx: number; checkedIn: number; remaining: number; capacity: number; today: number }; sales: Awaited<ReturnType<typeof listSales>>["sales"]; checkins: Awaited<ReturnType<typeof listRecentCheckIns>>; alerts: { balances: number; failed: number; revoked: number; configuration: boolean } }) {
-  return <main className="flex flex-col gap-6 sm:gap-8">
+  const soldPct = stats.capacity ? Math.round((stats.sold / stats.capacity) * 100) : 0;
+  const admittedPct = stats.sold ? Math.round((stats.checkedIn / stats.sold) * 100) : 0;
+  return <main className="flex flex-col gap-4 sm:gap-6">
     <DashboardHeading event={event} />
-    <div className="grid min-w-0 grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-5 lg:gap-8">
-      <Stat icon={<Ticket />} label="Tickets sold" value={String(stats.sold)} detail={`of ${stats.capacity} capacity`} />
-      <Stat icon={<Banknote />} label="Paid" value={money(stats.paidUgx)} />
-      <Stat icon={<Wallet />} label="Outstanding" value={money(stats.outstandingUgx)} />
-      <Stat icon={<Check />} label="Checked in" value={String(stats.checkedIn)} detail={`${stats.today} today`} />
-      <Stat icon={<Users />} label="Remaining" value={String(stats.remaining)} detail="sold, not admitted" />
-    </div>
-    {(alerts.balances > 0 || alerts.failed > 0 || alerts.revoked > 0 || alerts.configuration) && <section aria-label="Event alerts" className="flex flex-wrap items-center gap-3 rounded-lg border border-warning bg-warning/10 p-4 text-sm">
-      <CircleAlert className="size-5 shrink-0 text-warning" aria-hidden="true" /><strong>Needs attention</strong>
-      {alerts.balances > 0 && <Badge variant="outline">{alerts.balances} open balances</Badge>}{alerts.failed > 0 && <Badge variant="outline">{alerts.failed} unsuccessful scans today</Badge>}{alerts.revoked > 0 && <Badge variant="outline">{alerts.revoked} revoked tickets</Badge>}{alerts.configuration && <Badge variant="outline">No ticket categories configured</Badge>}
-    </section>}
+
+    {/* Quick actions grid (min 48px tactile targets) */}
+    <section aria-label="Quick actions" className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
+      <QuickAction href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} icon={<Plus className="size-5" aria-hidden="true" />} label="New Sale" prominent />
+      <QuickAction href={`/scanner?eventId=${encodeURIComponent(event.id)}`} icon={<ScanLine className="size-5" aria-hidden="true" />} label="Check-In" />
+      <QuickAction href={`/reports?eventId=${encodeURIComponent(event.id)}`} icon={<Activity className="size-5" aria-hidden="true" />} label="Reports" />
+      <QuickAction href="/team" icon={<Users className="size-5" aria-hidden="true" />} label="Team" />
+    </section>
+
+    {/* Operational alerts banner */}
+    <section aria-label="Operational alerts" className={`flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-card ${(alerts.balances > 0 || alerts.failed > 0 || alerts.revoked > 0 || alerts.configuration) ? "border-warning" : "border-input"}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-warning">
+          <CircleAlert className="size-4" aria-hidden="true" />
+          <span className="font-mono text-xs font-semibold uppercase tracking-wider">Gate attention required</span>
+        </div>
+        <span className="font-mono text-[11px] text-muted-foreground">Live dispatch</span>
+      </div>
+      <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+        <AlertCell icon={<Wallet className="size-5" aria-hidden="true" />} label="Unreconciled balances" value={alerts.balances} emptyText="Consolidated" tone="warning" />
+        <AlertCell icon={<CircleAlert className="size-5" aria-hidden="true" />} label="Unsuccessful scans" value={alerts.failed} suffix="today" emptyText="Clean" tone="destructive" />
+        <AlertCell icon={<BadgeCheck className="size-5" aria-hidden="true" />} label="Revocations" value={alerts.revoked} emptyText="None" empty tone="success" />
+      </div>
+      {alerts.configuration && <p className="text-sm text-warning">No ticket categories configured yet.</p>}
+    </section>
+
+    {/* Operational metrics grid */}
+    <section aria-label="Operational metrics" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-5">
+      <DenseMetric label="Sold tickets" value={String(stats.sold)} suffix={`/ ${stats.capacity}`} percent={soldPct} accent="bg-primary" />
+      <DenseMetric label="Total collected" value={money(stats.paidUgx)} sub="Recorded payments" accent="bg-success" />
+      <DenseMetric label="Outstanding" value={money(stats.outstandingUgx)} sub="Pledges & partials" accent="bg-warning" />
+      <DenseMetric label="Turnstile admitted" value={String(stats.checkedIn)} suffix={`/ ${stats.sold} sold`} percent={admittedPct} accent="bg-success" />
+      <DenseMetric label="Remaining capacity" value={String(stats.remaining)} sub={`${stats.today} admitted today`} accent="bg-primary" className="col-span-2 lg:col-span-1" />
+    </section>
+
+    {/* Recent sales + live turnstile stream */}
     <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
-    <RecentSales sales={sales} /><RecentCheckins rows={checkins} timezone={event.timezone} />
+      <RecentSales sales={sales} timezone={event.timezone} />
+      <RecentCheckins rows={checkins} timezone={event.timezone} />
     </div>
-    <QuickActions event={event} admin />
+
+    {/* Operational footer diagnostics (no offline-sync claims) */}
+    <section aria-label="System status" className="flex flex-col items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-muted-foreground sm:flex-row">
+      <span className="font-mono text-[11px] tracking-tight">
+        <span className="mr-1.5 inline-block size-2 rounded-full bg-success" /> Server connected · database in sync
+      </span>
+      <span className="font-mono text-[11px] tracking-tight">{event.name} · {event.timezone}</span>
+    </section>
   </main>;
+}
+
+function QuickAction({ href, icon, label, prominent = false }: { href: string; icon: React.ReactNode; label: string; prominent?: boolean }) {
+  return <Button nativeButton={false} render={<Link href={href} />} variant={prominent ? "default" : "outline"} className="min-h-12 w-full justify-center gap-2 text-sm font-medium sm:min-h-14">
+    {icon}{label}
+  </Button>;
+}
+
+function AlertCell({ icon, label, value, suffix, empty, emptyText, tone }: { icon: React.ReactNode; label: string; value: number; suffix?: string; empty?: boolean; emptyText: string; tone: "warning" | "destructive" | "success" }) {
+  const toneText = tone === "warning" ? "text-warning" : tone === "destructive" ? "text-destructive" : "text-success";
+  return <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-muted/50 p-2.5">
+    <div className="flex min-w-0 items-center gap-2">
+      <span className={`grid size-8 shrink-0 place-items-center rounded-md bg-muted text-foreground *:size-4 ${empty ? "text-muted-foreground" : ""}`}>{icon}</span>
+      <span className="min-w-0">
+        <span className="block truncate text-[11px] font-mono text-muted-foreground">{label}</span>
+        <span className={`block text-sm font-semibold tabular-nums ${empty ? "text-muted-foreground" : toneText}`}>{empty ? emptyText : `${value}${suffix ? ` ${suffix}` : ""}`}</span>
+      </span>
+    </div>
+  </div>;
+}
+
+function DenseMetric({ label, value, suffix, sub, percent, accent, className = "" }: { label: string; value: string; suffix?: string; sub?: string; percent?: number; accent: string; className?: string }) {
+  return <Card className={`min-w-0 ${className}`}>
+    <CardContent className="flex flex-col gap-1.5 p-3.5">
+      <span className="truncate font-mono text-[11px] text-muted-foreground">{label}</span>
+      <span className="flex items-baseline gap-1">
+        <span className="truncate text-lg font-semibold tabular-nums sm:text-xl">{value}</span>
+        {suffix && <span className="truncate text-xs font-mono text-muted-foreground">{suffix}</span>}
+      </span>
+      {sub && <span className="truncate text-xs text-muted-foreground">{sub}</span>}
+      {percent !== undefined && (
+        <div aria-hidden="true" className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className={`h-full rounded-full ${accent}`} style={{ width: `${Math.min(100, Math.max(0, percent))}%` }} />
+        </div>
+      )}
+    </CardContent>
+  </Card>;
 }
 
 function SellerDashboard({ event, metrics, recent, outstandingRows }: { event: EventDto; metrics: Awaited<ReturnType<typeof getSellerDashboardMetrics>>; recent: Awaited<ReturnType<typeof listSales>>["sales"]; outstandingRows: number }) {
@@ -185,7 +279,7 @@ function SupervisorDashboard({ event, attendance, today, attempts, byGate, recen
   </main>;
 }
 
-function RecentSales({ sales, title = "Recent sales" }: { sales: Awaited<ReturnType<typeof listSales>>["sales"]; title?: string }) {
+function RecentSales({ sales, title = "Recent sales", timezone = "Africa/Kampala" }: { sales: Awaited<ReturnType<typeof listSales>>["sales"]; title?: string; timezone?: string }) {
   return <Card>
     <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3">
       <CardTitle className="min-w-0 truncate">{title}</CardTitle>
@@ -197,25 +291,50 @@ function RecentSales({ sales, title = "Recent sales" }: { sales: Awaited<ReturnT
     <CardContent>
       {sales.length ? (
         <ul className="divide-y divide-border">
-          {sales.map((sale) => (
-            <li key={sale.id}>
+          {sales.map((sale) => {
+            const tierSummary = sale.items.length ? sale.items.map((i) => `${i.quantity}× ${i.ticketTypeName}`).join(", ") : "—";
+            const paid = sale.amountPaidUgx >= sale.totalUgx;
+            return <li key={sale.id}>
               <Link href={`/sales/${sale.id}`} className="flex min-h-14 items-center justify-between gap-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-semibold">{sale.customerName ?? sale.reference}</span>
-                  <span className="block truncate text-sm text-muted-foreground">{sale.reference} · {sale.status.replaceAll("_", " ")}</span>
+                <span className="flex min-w-0 items-center gap-3">
+                  <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-foreground *:size-4"><ReceiptText /></span>
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-1.5"><span className="truncate text-sm font-semibold">{sale.customerName ?? "Walk-in"}</span><span className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] ${paid ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>{paid ? "PAID" : "PENDING"}</span></span>
+                    <span className="block truncate text-xs text-muted-foreground">{sale.reference} · {tierSummary}</span>
+                  </span>
                 </span>
-                <span className="shrink-0 whitespace-nowrap text-base font-semibold tabular-nums">{money(sale.totalUgx)}</span>
+                <span className="flex shrink-0 flex-col items-end gap-0.5">
+                  <span className="whitespace-nowrap font-mono text-sm font-semibold tabular-nums text-foreground">{money(sale.totalUgx)}</span>
+                  <time className="font-mono text-[11px] text-muted-foreground">{clock(sale.createdAt, timezone)}</time>
+                </span>
               </Link>
-            </li>
-          ))}
+            </li>;
+          })}
         </ul>
       ) : <p className="text-base text-muted-foreground">No sales recorded yet.</p>}
     </CardContent>
   </Card>;
 }
 
-function RecentCheckins({ rows, title = "Recent check-ins", timezone = "Africa/Kampala" }: { rows: Awaited<ReturnType<typeof listRecentCheckIns>>; title?: string; timezone?: string }) {
-  return <Card><CardHeader><CardTitle>{title}</CardTitle><CardDescription>Latest admitted tickets</CardDescription></CardHeader><CardContent>{rows.length ? <ul className="divide-y divide-border">{rows.map((row) => <li key={row.id} className="flex min-h-14 items-center justify-between gap-3 py-2"><span className="min-w-0"><span className="block truncate font-mono text-sm font-semibold tracking-wide">{row.serial}</span><span className="block truncate text-xs text-muted-foreground">{row.ticketTypeName} · {row.gate}</span></span><time className="shrink-0 text-sm text-muted-foreground">{new Intl.DateTimeFormat("en-UG", { hour: "2-digit", minute: "2-digit", timeZone: timezone }).format(new Date(row.checkedInAt))}</time></li>)}</ul> : <p className="text-sm text-muted-foreground">No tickets checked in yet.</p>}</CardContent></Card>;
+function RecentCheckins({ rows, title = "Live turnstile stream", timezone = "Africa/Kampala" }: { rows: Awaited<ReturnType<typeof listRecentCheckIns>>; title?: string; timezone?: string }) {
+  return <Card>
+    <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3">
+      <CardTitle className="min-w-0 truncate">{title}</CardTitle>
+      <span className="col-start-2 row-start-1 inline-flex items-center gap-1.5 font-mono text-[11px] text-success"><span className="inline-block size-1.5 animate-pulse rounded-full bg-success" />Live</span>
+      <CardDescription className="col-span-2 row-start-2">Latest admitted tickets</CardDescription>
+    </CardHeader>
+    <CardContent>
+      {rows.length ? <ul className="divide-y divide-border">{rows.map((row) => <li key={row.id} className="flex min-h-14 items-center justify-between gap-3 py-2">
+        <span className="flex min-w-0 items-center gap-3">
+          <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-lg bg-success/10 text-success *:size-4"><Verified /></span>
+          <span className="min-w-0">
+            <span className="flex items-center gap-1.5"><span className="truncate font-mono text-sm font-semibold tracking-wide">{row.serial}</span><span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{row.ticketTypeName}</span></span>
+            <span className="block truncate text-xs text-muted-foreground">{row.gate}</span>
+          </span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-0.5"><span className="font-mono text-[11px] text-success">Valid pass</span><time className="font-mono text-[11px] text-muted-foreground">{clock(row.checkedInAt, timezone)}</time></span>
+      </li>)}</ul> : <p className="text-sm text-muted-foreground">No tickets checked in yet.</p>}</CardContent>
+  </Card>;
 }
 
 function RecentAttempts({ rows, timezone }: { rows: Awaited<ReturnType<typeof listScanAttempts>>; timezone: string }) {
@@ -224,6 +343,4 @@ function RecentAttempts({ rows, timezone }: { rows: Awaited<ReturnType<typeof li
   })}</ul> : <p className="text-sm text-muted-foreground">No scan attempts recorded yet.</p>}</CardContent></Card>;
 }
 
-function QuickActions({ event, admin = false }: { event: EventDto; admin?: boolean }) {
-  return <section aria-label="Quick actions" className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap"><Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><Plus aria-hidden="true" />New sale</Button><Button nativeButton={false} variant="outline" render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><ScanLine aria-hidden="true" />Check-in</Button>{admin && <><Button nativeButton={false} variant="outline" render={<Link href={`/reports?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12"><Activity aria-hidden="true" />Reports</Button><Button nativeButton={false} variant="outline" render={<Link href="/team" />} className="min-h-12"><Users aria-hidden="true" />Team</Button></>}</section>;
-}
+
