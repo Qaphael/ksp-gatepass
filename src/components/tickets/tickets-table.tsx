@@ -27,6 +27,7 @@ import { TicketStatusBadge } from "./ticket-status-badge";
 import { ResponsiveList } from "@/components/ui/responsive-list";
 import { Serial } from "@/components/ui/serial";
 import { formatDateTime } from "@/lib/time";
+import { formatUGX } from "@/components/ui/money";
 import { cn } from "@/lib/utils";
 
 interface TicketsTableProps {
@@ -104,22 +105,70 @@ export function TicketsTable({ tickets, showEvent = true, canRemove = false }: T
       const customerName = trace?.customerName ?? null;
       const customerPhoneMasked = trace?.customerPhoneMasked ?? null;
       const hasSale = Boolean(saleRef && saleId);
-      return <div key={ticket.id} className="flex min-w-0 gap-3 rounded-xl border border-border bg-card p-4">{canRemove && ticket.status === "AVAILABLE" ? <label className="flex min-h-11 min-w-11 shrink-0 items-center justify-center" aria-label={`Select ${ticket.serial}`}><input type="checkbox" className="size-5 accent-primary" checked={selectedIds.has(ticket.id)} disabled={Boolean(selectedEventId && selectedEventId !== ticket.eventId)} onChange={() => toggle(ticket)} /></label> : null}<Link href={`/tickets/${ticket.id}`} className="block min-w-0 flex-1 active:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <div className="flex min-w-0 flex-wrap items-start justify-between gap-2"><Serial className="min-w-0 text-base font-semibold">{ticket.serial}</Serial><TicketStatusBadge status={ticket.status} /></div>
-        <p className="mt-1 truncate text-base font-medium">{ticket.ticketTypeName}</p>
-        {showEvent ? <p className="truncate text-sm text-muted-foreground">{ticket.eventName}</p> : null}
-        {hasSale ? (
-          <div className="mt-2 flex flex-col gap-1 text-sm">
-            <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Sale</span>{" "}<Link href={`/sales/${saleId}`} className="text-primary font-medium hover:underline truncate min-w-0">{saleRef}</Link></div>
-            {customerName ? <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Buyer</span>{" "}<span className="font-medium truncate min-w-0">{customerName}</span></div> : null}
-            {customerPhoneMasked ? <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Phone</span>{" "}<span className="font-mono text-muted-foreground">{customerPhoneMasked}</span></div> : null}
-            <div className="flex items-start gap-1"><span className="text-muted-foreground text-[10px]">Admission</span>{" "}<span className={cn("font-mono", admissionTone(ticket))}>{admissionLine(ticket)}</span></div>
+      // Accent bar color by status
+      const accent = ticket.status === "SOLD"
+        ? (trace?.checkedInAt ? "bg-success" : "bg-primary")
+        : ticket.status === "AVAILABLE" ? "bg-muted-foreground"
+        : ticket.status === "REVOKED" || ticket.status === "CANCELLED" ? "bg-destructive"
+        : "bg-muted-foreground";
+      const admissionText = admissionLine(ticket);
+      const priceLabel = ticket.status === "SOLD" ? "Paid" : ticket.status === "AVAILABLE" ? "Price" : ticket.status === "REVOKED" || ticket.status === "CANCELLED" ? "Void" : "Price";
+      return <article key={ticket.id} className="relative flex min-w-0 flex-col gap-2.5 overflow-hidden rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/40">
+        {/* Left accent bar */}
+        <div className={cn("absolute left-0 top-0 bottom-0 w-1", accent)} aria-hidden="true" />
+        {/* Top row: serial + category (left) | status badge (right) */}
+        <div className="flex items-center justify-between gap-2 pl-1">
+          <div className="flex items-center gap-2 min-w-0">
+            {canRemove && ticket.status === "AVAILABLE" ? (
+              <label className="flex min-h-11 min-w-11 shrink-0 items-center justify-center" aria-label={`Select ${ticket.serial}`}>
+                <input type="checkbox" className="size-5 accent-primary" checked={selectedIds.has(ticket.id)} disabled={Boolean(selectedEventId && selectedEventId !== ticket.eventId)} onChange={() => toggle(ticket)} />
+              </label>
+            ) : null}
+            <span className="font-mono text-sm font-bold tracking-tight bg-muted px-2 py-0.5 rounded-md">
+              <Serial>{ticket.serial}</Serial>
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-muted text-muted-foreground font-semibold truncate">
+              {ticket.ticketTypeName}
+            </span>
           </div>
-        ) : (
-          <div className="mt-2 flex items-start gap-1 text-sm"><span className="text-muted-foreground text-[10px]">Admission</span>{" "}<span className="font-mono text-muted-foreground">Unsold</span></div>
-        )}
-        <div className="mt-2 flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-1 text-sm text-muted-foreground"><span className="min-w-0 break-all">{ticket.batchRef ?? "No batch"}</span><span className="shrink-0">{formatTimestamp(ticket.createdAt)}</span></div>
-      </Link></div>;
+          <span className={cn("flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold", admissionTone(ticket) === "text-success-foreground" ? "bg-success/15 text-success" : ticket.status === "REVOKED" || ticket.status === "CANCELLED" ? "bg-destructive/10 text-destructive" : ticket.status === "SOLD" && !trace?.checkedInAt ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+            {ticket.status === "SOLD" && trace?.checkedInAt ? "ADMITTED" : ticket.status === "SOLD" ? "SOLD" : ticket.status.replaceAll("_", " ")}
+          </span>
+        </div>
+        {/* Middle row: buyer name + phone (8 cols) | price (4 cols) */}
+        <div className="grid grid-cols-12 items-baseline gap-1 pl-1">
+          <div className="col-span-8 flex flex-col min-w-0">
+            <Link href={`/tickets/${ticket.id}`} className="text-sm font-medium truncate active:text-primary">
+              {customerName ?? (ticket.status === "AVAILABLE" ? "Unassigned" : ticket.status === "REVOKED" || ticket.status === "CANCELLED" ? "Cancelled" : "—")}
+            </Link>
+            <span className="text-[10px] text-muted-foreground truncate">
+              {customerPhoneMasked ?? (ticket.status === "AVAILABLE" ? (ticket.batchRef ?? "In stock") : showEvent ? ticket.eventName : "—")}
+            </span>
+          </div>
+          <div className="col-span-4 flex flex-col items-end">
+            <span className="text-[10px] text-muted-foreground uppercase">{priceLabel}</span>
+            <span className={cn("font-mono text-sm font-bold", ticket.status === "REVOKED" || ticket.status === "CANCELLED" ? "text-muted-foreground line-through" : "text-foreground")}>
+              {ticket.ticketTypePriceUgx ? formatUGX(ticket.ticketTypePriceUgx) : "—"}
+            </span>
+          </div>
+        </div>
+        {/* Bottom row: admission info + ref (left) | Pass button (right) */}
+        <div className="pt-2 flex items-center justify-between pl-1 bg-muted/30 -mx-3 -mb-3 px-3 py-2">
+          <div className="flex items-center gap-2 min-w-0 text-muted-foreground">
+            <span className={cn("text-[10px] flex items-center gap-1 truncate", admissionTone(ticket))}>
+              {admissionText}
+            </span>
+            {hasSale && saleRef ? <>
+              <span className="inline-block w-1 h-1 rounded-full bg-border" aria-hidden="true" />
+              <span className="text-[10px] truncate"><Link href={`/sales/${saleId}`} className="text-primary font-medium hover:underline">{saleRef}</Link></span>
+            </> : null}
+          </div>
+          <Link href={`/tickets/${ticket.id}`} className="h-8 px-2.5 rounded-md bg-muted hover:bg-accent text-foreground text-[10px] font-semibold flex items-center gap-1 active:scale-95 transition-all">
+            <span>Pass</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </article>;
     })}
     table={(
     <Card>
