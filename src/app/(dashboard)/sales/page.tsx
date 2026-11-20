@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSessionContext } from "@/lib/auth/session";
@@ -20,6 +21,7 @@ import { SearchBox } from "@/components/sales/search-box";
 export const instant = false;
 
 export default async function SalesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  await connection();
   const ctx = await getSessionContext();
   if (!ctx) redirect("/login");
   if (!can(ctx.role, "sale:read-own") && !can(ctx.role, "sale:read-all")) redirect("/dashboard");

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { ArrowLeft, Tickets } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,7 @@ export default async function BatchDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const ctx = await getSessionContext();
   if (!ctx) redirect("/login");
   if (!can(ctx.role, "inventory:read")) redirect("/dashboard");

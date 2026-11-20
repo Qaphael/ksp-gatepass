@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { ArrowLeft, Copy } from "lucide-react";
 import {
   Card,
@@ -60,6 +61,7 @@ export default async function TicketDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await connection();
   const ctx = await getSessionContext();
   if (!ctx) redirect("/login");
   if (!can(ctx.role, "inventory:read")) redirect("/dashboard");

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { FileDown, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSessionContext } from "@/lib/auth/session";
@@ -78,6 +79,7 @@ function inventoryKpis(rows: unknown[]): { total: number; sold: number; availabl
 }
 
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
+  await connection();
   const ctx = await getSessionContext();
   if (!ctx) redirect("/login");
   if (!can(ctx.role, "inventory:read") && can(ctx.role, "sale:read-own")) {
@@ -112,15 +114,18 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
     ? await listTicketTypes(ctx, query.eventId)
     : [];
 
-  // KPI strip from TICKET_INVENTORY report
+  // KPI strip from the TICKET_INVENTORY report. The report is per-event, so when
+  // the list is showing all events we sum one report per event.
+  const kpiEventIds = query.eventId ? [query.eventId] : events.map((event) => event.id);
   let kpis: { total: number; sold: number; available: number; revoked: number } | null = null;
-  if (query.eventId) {
-    try {
-      const report = await getReport(ctx, { eventId: query.eventId, type: "TICKET_INVENTORY" });
-      kpis = inventoryKpis(report.rows);
-    } catch {
-      // Report not available to this role — fall back to list data.
-    }
+  if (kpiEventIds.length) {
+    const reports = await Promise.all(
+      kpiEventIds.map((eventId) =>
+        getReport(ctx, { eventId, type: "TICKET_INVENTORY" }).catch(() => null),
+      ),
+    );
+    const rows = reports.flatMap((report) => report?.rows ?? []);
+    if (rows.length) kpis = inventoryKpis(rows);
   }
 
   const pages = Math.max(1, Math.ceil(result.total / result.pageSize));
@@ -152,14 +157,31 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
       />
 
       {/* KPI strip */}
-      {kpis && (
-        <section aria-label="Inventory totals" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile label="Total" value={String(kpis.total)} />
-          <StatTile label="Sold" value={String(kpis.sold)} sub="Tickets sold" />
-          <StatTile label="Available" value={String(kpis.available)} sub="Unsold stock" />
-          <StatTile label="Revoked" value={String(kpis.revoked)} sub="Removed from circulation" />
-        </section>
-      )}
+      {kpis && (() => {
+        const share = (value: number) => (kpis!.total ? Math.round((value / kpis!.total) * 100) : 0);
+        return (
+          <section aria-label="Inventory totals" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile label="Total" value={String(kpis.total)} sub="Tickets in inventory" />
+            <StatTile
+              label="Sold"
+              value={String(kpis.sold)}
+              sub={`${share(kpis.sold)}% of total`}
+              percent={share(kpis.sold)}
+            />
+            <StatTile
+              label="Available"
+              value={String(kpis.available)}
+              sub={`${share(kpis.available)}% of total`}
+              percent={share(kpis.available)}
+            />
+            <StatTile
+              label="Revoked"
+              value={String(kpis.revoked)}
+              sub={`${share(kpis.revoked)}% of total`}
+            />
+          </section>
+        );
+      })()}
 
       {/* Reset link when filters active */}
       {activeFilters > 0 && (
