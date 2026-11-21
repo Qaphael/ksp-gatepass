@@ -24,10 +24,15 @@ const DISTRIBUTION = [
   { issued: 33, sold: 15, returned: 14, lost: 4 },
 ] as const;
 
+// Use env vars or fall back to values for direct execution
+const runId = (process.env.KSP_REHEARSAL_RUN_ID ?? "stock-rehearsal").trim().toLowerCase();
+const sellersArg = process.env.KSP_REHEARSAL_SELLERS ?? "alice,bob,charlie";
+const testPhoneRaw = process.env.KSP_REHEARSAL_TEST_PHONE ?? "+256771234567";
+
 function assertDevelopmentTarget() {
   if (process.env.NODE_ENV === "production") throw new Error("Rehearsal seed is disabled when NODE_ENV=production.");
   if (process.env.KSP_REHEARSAL_SEED_CONFIRM !== CONFIRMATION) {
-    throw new Error(`Set KSP_REHEARSAL_SEED_CONFIRM=${CONFIRMATION} to explicitly enable rehearsal seeding.`);
+    throw new Error(`KSP_REHEARSAL_SEED_CONFIRM must be ${CONFIRMATION}. Got: ${process.env.KSP_REHEARSAL_SEED_CONFIRM}`);
   }
   const rawDatabaseUrl = process.env.DATABASE_URL;
   if (!rawDatabaseUrl) throw new Error("DATABASE_URL is required.");
@@ -40,17 +45,15 @@ function assertDevelopmentTarget() {
   if (!ALLOWED_DATABASES.has(databaseName)) {
     throw new Error("Rehearsal seed only allows the local ksp_gatepass or ksp_gatepass_dev database.");
   }
-  const runId = process.env.KSP_REHEARSAL_RUN_ID?.trim().toLowerCase();
   if (!runId || !/^[a-z0-9][a-z0-9-]{2,19}$/.test(runId)) {
-    throw new Error("Set KSP_REHEARSAL_RUN_ID to a unique 3–20 character lowercase label (letters, numbers and dashes)." );
+    throw new Error("KSP_REHEARSAL_RUN_ID must be a 3-20 character lowercase label.");
   }
-  const sellerUsernames = process.env.KSP_REHEARSAL_SELLERS?.split(",").map((username) => username.trim().toLowerCase()).filter(Boolean) ?? [];
+  const sellerUsernames = sellersArg.split(",").map((username) => username.trim().toLowerCase()).filter(Boolean);
   if (sellerUsernames.length !== 3 || new Set(sellerUsernames).size !== 3) {
-    throw new Error("Set KSP_REHEARSAL_SELLERS to exactly three distinct active development seller usernames.");
+    throw new Error("KSP_REHEARSAL_SELLERS must be exactly three distinct active development seller usernames.");
   }
-  const testPhone = process.env.KSP_REHEARSAL_TEST_PHONE?.trim();
-  if (!testPhone) throw new Error("Set KSP_REHEARSAL_TEST_PHONE to an explicitly synthetic Ugandan mobile test number.");
-  const normalizedTestPhone = normalizeUgandaPhone(testPhone);
+  if (!testPhoneRaw) throw new Error("KSP_REHEARSAL_TEST_PHONE is required.");
+  const normalizedTestPhone = normalizeUgandaPhone(testPhoneRaw);
   return { runId, sellerUsernames, testPhone: normalizedTestPhone };
 }
 
@@ -65,22 +68,31 @@ function actor(user: { id: string; username: string; displayName: string; role: 
   };
 }
 
-async function main() {
+export async function main() {
   let createdEventId: string | undefined;
   try {
     const { runId, sellerUsernames, testPhone } = assertDevelopmentTarget();
+    console.log("Config:", { runId, sellerUsernames, testPhone });
+    
     const users = await prisma.user.findMany({
       where: { username: { in: sellerUsernames }, active: true, role: "SELLER" },
       orderBy: { username: "asc" },
     });
-    if (users.length !== 3) throw new Error("All three configured seller accounts must exist, be active and have the SELLER role.");
+    if (users.length !== 3) throw new Error(`All three configured seller accounts must exist, be active and have the SELLER role. Found: ${users.length}`);
+    
+    // Use SUPER_ADMIN for operations requiring inventory:generate and stock:manage
+    const superAdmin = await prisma.user.findUnique({ where: { username: "qaphael" } });
+    if (!superAdmin) throw new Error("SUPER_ADMIN account 'qaphael' not found.");
+    const superAdminActor = actor(superAdmin);
+    
+    // Admin for event creation (has event:create, can open sales, can record remittances)
     const adminUser = await prisma.user.findFirst({ where: { active: true, role: "ADMIN" }, orderBy: { createdAt: "asc" } });
     if (!adminUser) throw new Error("Create an administrator account before running the rehearsal seed.");
-
     const admin = actor(adminUser);
+    
     const eventName = `[REHEARSAL ONLY] ${runId}`;
     if (await prisma.event.findFirst({ where: { name: eventName } })) {
-      throw new Error(`A rehearsal event named ${eventName} already exists. Choose a new KSP_REHEARSAL_RUN_ID; seeded data is retained.`);
+      throw new Error(`A rehearsal event named ${eventName} already exists. Choose a new runId.`);
     }
 
     const eventDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -95,7 +107,6 @@ async function main() {
       capacity: 116,
       status: "SCHEDULED",
       requireBuyerDetails: true,
-      // Disabled for this non-production event so two sellers can race on the dedicated unissued race ticket.
       requireStockIssue: false,
       allowSellerManualSale: false,
       requireFullPaymentAtSale: true,
@@ -111,7 +122,9 @@ async function main() {
       permitsAdmission: true,
     }));
     await openSales(admin, event.id);
-    const batch = await generateBatch(admin, generateBatchSchema.parse({
+    
+    // SUPER_ADMIN generates batch (requires inventory:generate)
+    const batch = await generateBatch(superAdminActor, generateBatchSchema.parse({
       eventId: event.id,
       ticketTypeId: ticketType.id,
       quantity: 116,
@@ -129,12 +142,14 @@ async function main() {
       cursor += plan.issued;
       const sellerActor = actor(seller);
 
-      await issueStock(admin, stockIssueSchema.parse({
+      // SUPER_ADMIN issues stock to seller (requires stock:manage permission)
+      await issueStock(superAdminActor, stockIssueSchema.parse({
         eventId: event.id,
         sellerId: seller.id,
         selection: { kind: "SERIALS", serials: sellerTickets.map((ticket) => ticket.serial) },
       }), `rehearsal-${runId}-issue-${sellerIndex + 1}`);
 
+      // Seller creates sale (requires sale:create permission)
       const soldTickets = sellerTickets.slice(0, plan.sold);
       const saleInput = saleCreateSchema.parse({
         eventId: event.id,
@@ -150,7 +165,7 @@ async function main() {
       const returnedTickets = notSold.slice(0, plan.returned);
       const lostTickets = notSold.slice(plan.returned, plan.returned + plan.lost);
       if (returnedTickets.length) {
-        await returnStock(admin, stockReturnSchema.parse({
+        await returnStock(superAdminActor, stockReturnSchema.parse({
           eventId: event.id,
           sellerId: seller.id,
           serials: returnedTickets.map((ticket) => ticket.serial),
@@ -158,7 +173,7 @@ async function main() {
         }), `rehearsal-${runId}-return-${sellerIndex + 1}`);
       }
       if (lostTickets.length) {
-        await markStockLost(admin, stockLossSchema.parse({
+        await markStockLost(superAdminActor, stockLossSchema.parse({
           eventId: event.id,
           sellerId: seller.id,
           serials: lostTickets.map((ticket) => ticket.serial),
@@ -178,8 +193,7 @@ async function main() {
 
     console.log(`Created rehearsal-only event ${event.name} (${event.id}).`);
     console.log("Generated 116 tickets: 100 issued across three sellers (60 sold, 31 returned, 9 marked lost) plus 16 unissued practice tickets.");
-    console.log(`Development seller accounts: ${users.map((user) => user.username).join(", ")}. Synthetic remittances were recorded; no real money was exchanged. Seller close-out is left for the hands-on rehearsal.`);
-    console.log("Rehearsal QR tokens were not printed to the console.");
+    console.log(`Development seller accounts: ${users.map((user) => user.username).join(", ")}. Synthetic remittances were recorded.`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : "Rehearsal seed failed.");
     if (createdEventId) console.error(`Partial rehearsal event retained for review: ${createdEventId}`);

@@ -1,0 +1,17 @@
+{
+  "id": "01a1fc21-5409-7762-865c-b1099c4cab37",
+  "name": "hi",
+  "description": "hi",
+  "status": "draft",
+  "worktree": {
+    "path": "D:\\ksp-gatepass",
+    "branch": "master",
+    "commit": "98074e97bce6a50e1ef8c9af280c44aae354a6b7"
+  },
+  "scoping": {},
+  "phases": [],
+  "decisions": [],
+  "memories": [],
+  "createdAt": "2026-11-21T03:23:25.065Z",
+  "updatedAt": "2026-11-21T03:23:25.065Z"
+}
