@@ -210,10 +210,10 @@ function EventCard({ event }: { event: EventDto }) {
           <span className="truncate">{event.venue}</span>
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
         <StateChip open={event.salesOpen} label="Sales" />
         <StateChip open={event.admissionOpen} label="Admission" />
-        <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center rounded-md border border-border bg-muted px-2 py-1 font-mono text-xs text-muted-foreground">
           <span className="text-foreground tabular-nums">{event.capacity}</span>&nbsp;capacity
         </span>
       </div>

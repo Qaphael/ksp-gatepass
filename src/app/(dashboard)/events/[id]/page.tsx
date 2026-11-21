@@ -69,6 +69,8 @@ export default async function EventDetailPage({
 
   const eventEditable = event.status !== "COMPLETED" && event.status !== "ARCHIVED";
   const canEdit = can(ctx.role, "event:update") && eventEditable;
+  // A single tile reads better full width; two or three use the two-column strip.
+  const singleMetricTile = !attendance && collectedUgx === null;
 
   const sold = ticketProgress.reduce((sum, type) => sum + type.sold, 0);
   const capacity = attendance?.capacity ?? event.capacity;
@@ -139,7 +141,7 @@ export default async function EventDetailPage({
         ) : null}
       </section>
 
-      <section aria-label="Event metrics" className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-3">
+      <section aria-label="Event metrics" className={`grid min-w-0 gap-3 ${singleMetricTile ? "grid-cols-1" : "grid-cols-2"} sm:grid-cols-3`}>
         <StatTile
           label="Sold / capacity"
           value={String(sold)}

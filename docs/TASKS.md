@@ -18,6 +18,7 @@ Note: `scripts/tmp-apply-super-admin-role.ts` and `scripts/tmp-inspect-migration
 - [x] `/events/[id]`: event rules card renders read-only `DefRow`s (admission policy, buyer details, full payment at sale, seller manual sale, stock issue) and links to the edit form via the card action; no new toggles.
 - [x] Kept: EventActions (open/close sales/admission, complete, archive, publish), EventPoster, ticket-templates entry, event details (timezone/windows/organiser/accent/footer/allocated capacity).
 - [x] Excluded per instruction: gate/turnstile counts, anti-passback, offline mesh, PIN, assigned-staff stats, realtime flash banner, vendor payment verification wording.
+- [x] Mobile polish follow-up: metric grid goes full width for a single tile; DefRow values get `break-words`; StateChip / percent / sales-window / capacity chips drop `text-[11px]` to `text-xs`; tier card header wraps; event card chip gap 1.5 → 2.
 
 ## Stitch batch 0.5 — read-only service additions
 

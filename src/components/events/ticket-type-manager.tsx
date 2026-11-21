@@ -295,7 +295,7 @@ export function TicketTypeManager({
             return (
               <li key={type.id} className="min-w-0">
                 <article className="flex h-full min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-card">
-                  <div className="flex min-w-0 items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full border border-border" style={{ backgroundColor: type.color }} />
@@ -325,14 +325,14 @@ export function TicketTypeManager({
                     <div aria-hidden="true" className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
                     </div>
-                    <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+                    <p className="mt-1.5 font-mono text-xs text-muted-foreground">
                       {percent}% allocated
                       {type.allocationLimit !== null ? ` · limit ${type.allocationLimit}` : " · no limit set"}
                     </p>
                   </div>
 
                   {salesWindow ? (
-                    <p className="font-mono text-[11px] text-muted-foreground">Sales {salesWindow}</p>
+                    <p className="font-mono text-xs text-muted-foreground">Sales {salesWindow}</p>
                   ) : null}
 
                   <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
