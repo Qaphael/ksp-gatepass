@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { buildCsv, csvCell } from "../../src/lib/csv";
 import { generateQrToken, hashQrToken } from "../../src/lib/qr/tokens";
-import { formatSerial, isSerialFormat, expandSerialRange, parseSerialRange } from "../../src/lib/serial";
+import { formatSerial, isSerialFormat, expandSerialRange, parseSerialRange, compressSerialRanges } from "../../src/lib/serial";
 
 describe("serial numbers", () => {
   it("formats with the configured prefix and 5-digit padding", () => {
@@ -38,6 +38,12 @@ describe("serial numbers", () => {
     // A single serial range still yields that serial.
     const single = parseSerialRange("KSP-7", "KSP-7");
     expect(single && expandSerialRange(single)).toEqual(["KSP-00007"]);
+  });
+
+  it("compresses serials into inclusive ranges", () => {
+    expect(compressSerialRanges(["KSP-00002", "KSP-00001"])).toEqual(["KSP-00001-KSP-00002"]);
+    expect(compressSerialRanges(["KSP-00007"])).toEqual(["KSP-00007"]);
+    expect(compressSerialRanges(["KSP-00001", "KSP-00003"])).toEqual(["KSP-00001", "KSP-00003"]);
   });
 });
 

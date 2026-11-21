@@ -47,6 +47,44 @@ export function expandSerialRange(range: SerialRange): string[] {
   return serials;
 }
 
+/** One parsed serial: prefix + numeric part. */
+interface SerialRow {
+  value: string;
+  prefix: string;
+  number: number;
+}
+
+/**
+ * Compresses serials into inclusive human-readable ranges: consecutive numbers
+ * of one prefix become `PREFIX-00001-PREFIX-00005`, singletons stay `PREFIX-00007`.
+ */
+export function compressSerialRanges(serials: string[]): string[] {
+  const rows: SerialRow[] = [];
+  for (const raw of serials) {
+    const value = raw.trim().toUpperCase();
+    const match = /^([A-Z0-9][A-Z0-9-]{0,11})-(\d{1,9})$/.exec(value);
+    if (!match) continue;
+    rows.push({ value, prefix: match[1], number: Number(match[2]) });
+  }
+  rows.sort((a, b) => (a.prefix === b.prefix ? a.number - b.number : a.prefix < b.prefix ? -1 : 1));
+  const ranges: Array<{ prefix: string; from: number; to: number }> = [];
+  let run: { prefix: string; from: number; to: number } | null = null;
+  for (const row of rows) {
+    if (run && run.prefix === row.prefix && row.number === run.to + 1) {
+      run = { prefix: run.prefix, from: run.from, to: row.number };
+      continue;
+    }
+    if (run) ranges.push(run);
+    run = { prefix: row.prefix, from: row.number, to: row.number };
+  }
+  if (run) ranges.push(run);
+  return ranges.map((range) =>
+    range.from === range.to
+      ? `${range.prefix}-${String(range.from).padStart(PAD_WIDTH, "0")}`
+      : `${range.prefix}-${String(range.from).padStart(PAD_WIDTH, "0")}-${range.prefix}-${String(range.to).padStart(PAD_WIDTH, "0")}`,
+  );
+}
+
 function parseSerialNumber(value: string): { prefix: string; number: number } | null {
   // The prefix may itself contain dashes, so split on the last dash.
   const match = /^([A-Z0-9][A-Z0-9-]{0,11})-(\d{1,9})$/.exec(value.trim().toUpperCase());

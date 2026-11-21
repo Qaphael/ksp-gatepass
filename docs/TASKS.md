@@ -28,6 +28,18 @@ Note: `scripts/tmp-apply-super-admin-role.ts` and `scripts/tmp-inspect-migration
 - [x] Kept: TICKET_INVENTORY report KPIs, FilterSheet + Reset link, real `TicketStatus` values only, server-sourced data, seller "My tickets" view, Export CSV + Generate + bulk-remove flow.
 - [x] Verified: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit 12 files / 93 tests) and the app build run by the test setup all pass; `/tickets` behind auth responds 307 → `/login`.
 
+## Stitch design copy — seller stock statement (`/stock`)
+
+- [x] Copied the `stitch_ksp_gatepass_pwa/seller_stock_remittance` mockup structure into `/stock`: heading is `My stock` for the seller's own statement (`ownSellerId`) and `Stock statement` for the admin/supervisor seller selection; tile grid via shared `StatTile` — Allocated = `stock.issued`, Sold = `stock.sold`, In hand = `stock.outstanding`, Returned, Lost, Balance owed = `balanceOwedUgx` (via `Money`/`formatUGX`).
+- [x] Takings by method: rows from `takingsByMethodUgx`, skipping zero amounts; totals line shows Takings (`totalTakingsUgx`) and Remitted (`remittedUgx`).
+- [x] Batches: one card per `statement.batches` entry — batchRef, category (`ticketTypeName`), unit price (`Money`), issued / sold / held, integer percent cleared; held serials rendered via new `compressSerialRanges` in `lib/serial`.
+- [x] Remittance trail: rows from `statement.remittances` with amount (`Money`), method, EAT time (Africa/Kampala) and received-by; rows carrying a reversal are labelled `· Reversed`.
+- [x] Seller view: statement block is read-only; Issue stock / Returns-losses / Record remittance / Close-out forms stay gated by `canManage` / `canRemit` (server permissions unchanged; rendered only for admin/supervisor).
+- [x] Remittance form: amount input is digits-only (`type="text"`, inputMode numeric, strip non-digits); "Fill balance" prefills `balanceOwedUgx`; server validation stays authoritative.
+- [x] Added `compressSerialRanges(serials): string[]` in `src/lib/serial.ts` (inclusive ranges `KSP-00001-KSP-00005`, singletons `KSP-00007`) + unit tests in `tests/unit/ticket-library.test.ts`.
+- [x] Kept every existing action, idempotency-key flow and permission check; no server/service/API logic changed.
+- [x] Not built per spec: remittance receipt PDF, "Confirm & Print Receipt", PIN fields, auto-settlement rows, end-of-shift notices.
+
 ## Stitch batch 0.5 — read-only service additions
 
 - [x] `tickets.service`: `getTicketTrace(ctx, ticketId)` (inventory:read) returns sale + check-in summary (never QR tokens); `listTickets` gained optional `include: "trace"` adding compact `{ saleReference, saleId, customerName, customerPhoneMasked, checkedInAt, gate }` via one batched SaleTicket + CheckIn query (masked phone = last 3 digits).
