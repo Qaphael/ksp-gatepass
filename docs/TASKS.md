@@ -20,6 +20,14 @@ Note: `scripts/tmp-apply-super-admin-role.ts` and `scripts/tmp-inspect-migration
 - [x] Excluded per instruction: gate/turnstile counts, anti-passback, offline mesh, PIN, assigned-staff stats, realtime flash banner, vendor payment verification wording.
 - [x] Mobile polish follow-up: metric grid goes full width for a single tile; DefRow values get `break-words`; StateChip / percent / sales-window / capacity chips drop `text-[11px]` to `text-xs`; tier card header wraps; event card chip gap 1.5 → 2.
 
+## Stitch design copy — ticket inventory list (`/tickets`)
+
+- [x] Copied the `stitch_ksp_gatepass_pwa/ticket_inventory` mockup structure into `/tickets`: header gains the `Cap {total}` badge, Export CSV / Generate actions become a two-column grid on mobile, segmented scope control (All tickets / My issued stock) added, verified-stream + serial-sort status strip added, pagination now reads "Showing X–Y of Z entries · page P of N", security & clock footer banner added.
+- [x] Ticket cards: buyer name is no longer a second open-ticket link — the `Pass` action is the single `/tickets/[id]` link; masked buyer phone rendered mono; desktop table "Sale / buyer" cell now also shows the masked phone.
+- [x] Shared: `PageHeader` gained an optional `badge` slot; added `EatClock` (client, live Africa/Kampala EAT) for the footer banner; KPI strip keeps the `StatTile` TICKET_INVENTORY totals (Total / Sold / Available / Revoked).
+- [x] Kept: TICKET_INVENTORY report KPIs, FilterSheet + Reset link, real `TicketStatus` values only, server-sourced data, seller "My tickets" view, Export CSV + Generate + bulk-remove flow.
+- [x] Verified: `pnpm typecheck`, `pnpm lint`, `pnpm test` (unit 12 files / 93 tests) and the app build run by the test setup all pass; `/tickets` behind auth responds 307 → `/login`.
+
 ## Stitch batch 0.5 — read-only service additions
 
 - [x] `tickets.service`: `getTicketTrace(ctx, ticketId)` (inventory:read) returns sale + check-in summary (never QR tokens); `listTickets` gained optional `include: "trace"` adding compact `{ saleReference, saleId, customerName, customerPhoneMasked, checkedInAt, gate }` via one batched SaleTicket + CheckIn query (masked phone = last 3 digits).

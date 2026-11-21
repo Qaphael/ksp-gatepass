@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { FileDown, Plus, RefreshCw } from "lucide-react";
+import { FileDown, Plus, RefreshCw, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
@@ -20,6 +20,7 @@ import { ResponsiveList } from "@/components/ui/responsive-list";
 import type { TicketStatus } from "@/generated/prisma/client";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatTile } from "@/components/ui/stat-tile";
+import { EatClock } from "@/components/tickets/eat-clock";
 import { getReport } from "@/server/services/reports.service";
 
 export const instant = false;
@@ -129,32 +130,47 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   }
 
   const pages = Math.max(1, Math.ceil(result.total / result.pageSize));
+  const pageFrom = (result.page - 1) * result.pageSize + 1;
+  const pageTo = Math.min(result.page * result.pageSize, result.total);
   const activeFilters = [query.eventId, query.status, query.ticketTypeId, query.batchId, query.search].filter(Boolean).length;
+  const canExport = can(ctx.role, "inventory:export") && Boolean(query.eventId);
+  const canGenerate = can(ctx.role, "inventory:generate");
+  const tabClass = (active: boolean) =>
+    `flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-2 text-base font-semibold ${active ? "bg-background text-foreground" : "text-muted-foreground"}`;
 
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Ticket inventory"
+        badge={kpis ? <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 font-mono text-xs font-semibold text-muted-foreground">{kpis.total} Cap</span> : null}
         description="Search serials, filter by event, category or inventory status, and open a ticket for its full history."
-        actions={<div className="flex w-full flex-wrap gap-2 sm:w-auto">
-          {can(ctx.role, "inventory:export") && query.eventId ? (
-            <Button
-              size="sm"
-              className="min-h-11 text-base"
-              variant="outline"
-              nativeButton={false}
-              render={<a href={exportHref(query)} />}
-            >
-              <FileDown /> Export CSV
-            </Button>
-          ) : null}
-          {can(ctx.role, "inventory:generate") ? (
-            <Button nativeButton={false} size="sm" className="min-h-11 text-base" render={<Link href="/tickets/new" />}>
-              <Plus /> Generate tickets
-            </Button>
-          ) : null}
-        </div>}
+        actions={
+          <div className={canExport && canGenerate ? "grid w-full grid-cols-2 gap-2 sm:w-auto" : "flex w-full flex-wrap gap-2 sm:w-auto"}>
+            {canExport ? (
+              <Button
+                size="sm"
+                className="min-h-11 text-base"
+                variant="outline"
+                nativeButton={false}
+                render={<a href={exportHref(query)} />}
+              >
+                <FileDown /> Export CSV
+              </Button>
+            ) : null}
+            {canGenerate ? (
+              <Button nativeButton={false} size="sm" className="min-h-11 text-base" render={<Link href="/tickets/new" />}>
+                <Plus /> Generate tickets
+              </Button>
+            ) : null}
+          </div>
+        }
       />
+
+      {/* Segmented view controller: All tickets vs My issued stock. */}
+      <div className="flex min-h-11 rounded-lg bg-muted p-1" role="tablist" aria-label="Ticket scope">
+        <Link href="/tickets" aria-current="true" className={tabClass(true)}>All tickets</Link>
+        <Link href="/stock" className={tabClass(false)}>My issued stock</Link>
+      </div>
 
       {/* KPI strip */}
       {kpis && (() => {
@@ -204,6 +220,16 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
         initial={query}
       /></FilterSheet>
 
+      {/* Live stream status strip */}
+      <div className="flex items-center justify-between gap-2 px-1 text-sm text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden="true" />
+          <span className="min-w-0 truncate font-medium text-foreground">Verified Stream</span>
+          <span className="shrink-0">Sync: Live</span>
+        </span>
+        <span className="shrink-0 font-mono text-xs">Sort: Serial (ASC)</span>
+      </div>
+
       <TicketsTable
         tickets={result.tickets}
         showEvent={!query.eventId}
@@ -212,8 +238,9 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
 
       <div className="flex items-center justify-between text-base text-muted-foreground">
         <span>
-          {result.total} {result.total === 1 ? "ticket" : "tickets"} · page{" "}
-          {result.page} of {pages}
+          Showing{" "}
+          <strong className="font-semibold text-foreground">{pageFrom}–{pageTo}</strong> of{" "}
+          <strong className="font-semibold text-foreground">{result.total}</strong> entries · page {result.page} of {pages}
         </span>
         <span className="flex gap-2">
           {result.page > 1 ? (
@@ -233,6 +260,15 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
             </Link>
           ) : null}
         </span>
+      </div>
+
+      {/* Security & clock info banner */}
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-muted-foreground">
+        <span className="flex min-w-0 items-center gap-2">
+          <Server className="size-4 shrink-0 text-success" aria-hidden="true" />
+          <span className="truncate">KSP Hotel Server · Gulu Station</span>
+        </span>
+        <EatClock />
       </div>
     </div>
   );

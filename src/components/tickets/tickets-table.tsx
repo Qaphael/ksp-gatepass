@@ -138,10 +138,10 @@ export function TicketsTable({ tickets, showEvent = true, canRemove = false }: T
         {/* Middle row: buyer name + phone (8 cols) | price (4 cols) */}
         <div className="grid grid-cols-12 items-baseline gap-1 pl-1">
           <div className="col-span-8 flex flex-col min-w-0">
-            <Link href={`/tickets/${ticket.id}`} className="text-sm font-medium truncate active:text-primary">
+            <span className="text-sm font-medium truncate">
               {customerName ?? (ticket.status === "AVAILABLE" ? "Unassigned" : ticket.status === "REVOKED" || ticket.status === "CANCELLED" ? "Cancelled" : "—")}
-            </Link>
-            <span className="text-[10px] text-muted-foreground truncate">
+            </span>
+            <span className="text-[10px] font-mono text-muted-foreground truncate">
               {customerPhoneMasked ?? (ticket.status === "AVAILABLE" ? (ticket.batchRef ?? "In stock") : showEvent ? ticket.eventName : "—")}
             </span>
           </div>
@@ -193,6 +193,7 @@ export function TicketsTable({ tickets, showEvent = true, canRemove = false }: T
               const saleRef = trace?.saleReference ?? null;
               const saleId = trace?.saleId ?? null;
               const customerName = trace?.customerName ?? null;
+              const customerPhoneMasked = trace?.customerPhoneMasked ?? null;
               const hasSale = Boolean(saleRef && saleId);
               return (
                 <TableRow key={ticket.id}>
@@ -229,6 +230,7 @@ export function TicketsTable({ tickets, showEvent = true, canRemove = false }: T
                       <div className="flex flex-col gap-0.5">
                         <Link href={`/sales/${saleId}`} className="font-medium hover:underline truncate min-w-0">{saleRef}</Link>
                         {customerName ? <span className="text-sm text-muted-foreground truncate min-w-0">{customerName}</span> : null}
+                        {customerPhoneMasked ? <span className="font-mono text-xs text-muted-foreground truncate min-w-0">{customerPhoneMasked}</span> : null}
                       </div>
                     ) : <span className="text-muted-foreground">—</span>}
                   </TableCell>
