@@ -1,5 +1,14 @@
 # Tasks
 
+## Post-pull verification at `d1f6627`
+
+- [x] Fast-forwarded `master` from `98074e9` to `d1f6627` (15 commits: reports/inventory/sale-detail UI batches, BATCH 4 reports summary strip and payment channel breakdown, lint caching, Super Admin and migration inspection dev scripts).
+- [x] `pnpm install` reports no changes; `pnpm lint`, `pnpm typecheck` and `pnpm test` all pass.
+- [x] Full suite now reports **27 files / 214 tests passing** (previous records in this file and `AGENTS.md` said 25 files / 186-189 tests). The suite still builds the app, migrates and seeds the embedded test database, and runs `next start` on port 3100.
+- [x] Known non-failures unchanged: authenticated-route `HANGING_PROMISE_REJECTION` build warnings and the Vitest post-run Vite-server close timeout.
+
+Note: `scripts/tmp-apply-super-admin-role.ts` and `scripts/tmp-inspect-migrations.ts` were committed in this range despite the `tmp-` prefix; they are not wired into any npm script and should be reviewed or removed before release.
+
 ## Stitch batch 0.5 — read-only service additions
 
 - [x] `tickets.service`: `getTicketTrace(ctx, ticketId)` (inventory:read) returns sale + check-in summary (never QR tokens); `listTickets` gained optional `include: "trace"` adding compact `{ saleReference, saleId, customerName, customerPhoneMasked, checkedInAt, gate }` via one batched SaleTicket + CheckIn query (masked phone = last 3 digits).
