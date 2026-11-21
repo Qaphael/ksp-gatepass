@@ -9,6 +9,16 @@
 
 Note: `scripts/tmp-apply-super-admin-role.ts` and `scripts/tmp-inspect-migrations.ts` were committed in this range despite the `tmp-` prefix; they are not wired into any npm script and should be reviewed or removed before release.
 
+## UI batch 5 — events list and event detail
+
+- [x] `/events`: page renders `EventsTable`; the component gained a `canCreate` prop so the empty state only offers the "Create event" CTA to users with `event:create` (server-side enforcement unchanged).
+- [x] `/events/[id]`: header now renders StatusBadge + Sales/Admission StateChips, event name, date/time via existing `formatEventTimeRange` and venue; dead "Edit details below" button is now an anchor to `#edit-event` (design audit fix).
+- [x] `/events/[id]`: metric strip via `StatTile` — Sold / capacity (sum of `getTicketTypeProgress` sold over attendance capacity, integer percent bar), Admitted / sold (only when `checkin:read-summary` allows; from `getAttendanceSummary`), Collected (only when a report role allows it; via existing `getReport` RECONCILIATION → "Net recorded payments (UGX)"). Money uses `formatUGX`.
+- [x] `/events/[id]`: ticket tiers rendered as one card per ticket type from `getTicketTypeProgress` (name, `Money` price, sold/remaining, integer percent bar, status badges); create/edit actions stay in `TicketTypeManager` (dialog logic untouched) and each card links to `/tickets?eventId=&ticketTypeId=`.
+- [x] `/events/[id]`: event rules card renders read-only `DefRow`s (admission policy, buyer details, full payment at sale, seller manual sale, stock issue) and links to the edit form via the card action; no new toggles.
+- [x] Kept: EventActions (open/close sales/admission, complete, archive, publish), EventPoster, ticket-templates entry, event details (timezone/windows/organiser/accent/footer/allocated capacity).
+- [x] Excluded per instruction: gate/turnstile counts, anti-passback, offline mesh, PIN, assigned-staff stats, realtime flash banner, vendor payment verification wording.
+
 ## Stitch batch 0.5 — read-only service additions
 
 - [x] `tickets.service`: `getTicketTrace(ctx, ticketId)` (inventory:read) returns sale + check-in summary (never QR tokens); `listTickets` gained optional `include: "trace"` adding compact `{ saleReference, saleId, customerName, customerPhoneMasked, checkedInAt, gate }` via one batched SaleTicket + CheckIn query (masked phone = last 3 digits).

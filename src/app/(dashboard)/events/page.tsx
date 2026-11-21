@@ -21,7 +21,7 @@ export default async function EventsPage() {
     <div className="flex flex-col gap-4">
       <PageHeader title="Events" description="Configure dates, capacity, sales and admission windows." actions={can(ctx.role, "event:create") ? <Button nativeButton={false} render={<Link href="/events/new" />}><Plus /> Create event</Button> : undefined} />
 
-      <EventsTable events={events} />
+      <EventsTable events={events} canCreate={can(ctx.role, "event:create")} />
     </div>
   );
 }

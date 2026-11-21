@@ -1,18 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Pencil, Plus } from "lucide-react";
+import { Loader2, Pencil, Plus, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +28,17 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { FormAlert } from "@/components/layout/form-alert";
 import { FieldError } from "@/components/layout/field-error";
+import { formatUGX } from "@/components/ui/money";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 import type { TicketTypeDto } from "@/server/services/ticket-types.service";
+
+/** Sold/remaining counts per category, from `getTicketTypeProgress`. Display only. */
+export interface TicketTypeProgress {
+  id: string;
+  sold: number;
+  remaining: number;
+  total: number;
+}
 
 interface TicketTypeManagerProps {
   eventId: string;
@@ -43,6 +46,7 @@ interface TicketTypeManagerProps {
   /** Event remains editable (not completed/archived). */
   eventEditable: boolean;
   ticketTypes: TicketTypeDto[];
+  progress?: TicketTypeProgress[];
 }
 
 interface FormState {
@@ -107,6 +111,7 @@ export function TicketTypeManager({
   canManage,
   eventEditable,
   ticketTypes,
+  progress = [],
 }: TicketTypeManagerProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -162,19 +167,22 @@ export function TicketTypeManager({
   }
 
   const editable = canManage && eventEditable;
+  const progressById = new Map(progress.map((row) => [row.id, row]));
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <CardTitle>Ticket categories</CardTitle>
-            <CardDescription>
-              Prices are integer UGX. Quantities together may never exceed event
-              capacity. An earlier closing time on the same date is treated as
-              the following morning.
-            </CardDescription>
-          </div>
+    <section aria-labelledby="ticket-tiers-heading" className="flex min-w-0 flex-col gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="ticket-tiers-heading" className="text-lg font-semibold">Ticket tiers</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Prices are integer UGX. Quantities together may never exceed event capacity. An
+            earlier closing time on the same date is treated as the following morning.
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="font-mono text-xs text-muted-foreground">
+            {ticketTypes.length} {ticketTypes.length === 1 ? "category" : "categories"}
+          </span>
           {editable ? (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger
@@ -262,117 +270,92 @@ export function TicketTypeManager({
             </Dialog>
           ) : null}
         </div>
-      </CardHeader>
-      <CardContent>
-        {ticketTypes.length === 0 ? (
+      </div>
+
+      {ticketTypes.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-4">
           <p className="text-base text-muted-foreground">
             {editable
               ? "No ticket categories yet. Add one to start defining prices."
               : "No ticket categories configured yet."}
           </p>
-        ) : (
-          <div>
-          <div className="grid gap-3 md:hidden">
-            {ticketTypes.map((type) => (
-              <article key={type.id} className="grid gap-3 rounded-xl border bg-card p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-2">
-                    <span aria-hidden="true" className="mt-1 size-3 shrink-0 rounded-full border" style={{ backgroundColor: type.color }} />
+        </div>
+      ) : (
+        <ul className="grid min-w-0 gap-3 lg:grid-cols-2">
+          {ticketTypes.map((type) => {
+            const row = progressById.get(type.id);
+            const sold = row?.sold ?? 0;
+            const total = row?.total ?? type.allocationLimit ?? 0;
+            const remaining = row?.remaining ?? Math.max(0, total - sold);
+            const percent = total > 0 ? Math.min(100, Math.round((sold / total) * 100)) : 0;
+            const soldOut = total > 0 && remaining === 0;
+            const salesWindow = type.salesOpensAtLocal && type.salesClosesAtLocal
+              ? `${type.salesOpensAtLocal} → ${type.salesClosesAtLocal}`
+              : null;
+            return (
+              <li key={type.id} className="min-w-0">
+                <article className="flex h-full min-w-0 flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-card">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="break-words font-semibold">{type.name}</h3>
-                      {type.description ? <p className="mt-1 text-base text-muted-foreground">{type.description}</p> : null}
-                    </div>
-                  </div>
-                  {editable ? <Button variant="outline" size="icon" aria-label={`Edit ${type.name}`} onClick={() => openEdit(type)}><Pencil /></Button> : null}
-                </div>
-                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-t pt-3 text-base">
-                  <div><dt className="text-muted-foreground">Price</dt><dd className="font-semibold tabular-nums">UGX {type.priceUgx.toLocaleString("en-UG")}</dd></div>
-                  <div><dt className="text-muted-foreground">Limit</dt><dd className="tabular-nums">{type.allocationLimit === null ? "No limit" : type.allocationLimit}</dd></div>
-                  <div className="col-span-2"><dt className="text-muted-foreground">Sales window</dt><dd>{type.salesOpensAtLocal && type.salesClosesAtLocal ? `${type.salesOpensAtLocal} – ${type.salesClosesAtLocal}` : "No scheduled window"}</dd></div>
-                </dl>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className={type.status === "ACTIVE" ? "border-transparent bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}>{type.status === "ACTIVE" ? "Active" : "Inactive"}</Badge>
-                  {!type.permitsAdmission ? <Badge variant="outline" className="border-border bg-muted text-muted-foreground">No admission</Badge> : null}
-                </div>
-              </article>
-            ))}
-          </div>
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-3 font-medium">Category</th>
-                  <th className="py-2 pr-3 font-medium">Price</th>
-                  <th className="py-2 pr-3 font-medium">Limit</th>
-                  <th className="py-2 pr-3 font-medium">Sales window</th>
-                  <th className="py-2 pr-3 font-medium">Status</th>
-                  <th className="py-2 font-medium" />
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {ticketTypes.map((type) => (
-                  <tr key={type.id}>
-                    <td className="py-2.5 pr-3">
-                      <p className="flex items-center gap-2 font-medium"><span aria-hidden="true" className="size-3 shrink-0 rounded-full border" style={{ backgroundColor: type.color }} />{type.name}</p>
-                      {type.description ? (
-                        <p className="text-xs text-muted-foreground">
-                          {type.description}
-                        </p>
-                      ) : null}
-                    </td>
-                    <td className="py-2.5 pr-3 tabular-nums">
-                      {type.priceUgx.toLocaleString("en-UG")} UGX
-                    </td>
-                    <td className="py-2.5 pr-3 tabular-nums">
-                      {type.allocationLimit === null ? "—" : type.allocationLimit}
-                    </td>
-                    <td className="py-2.5 pr-3 text-xs text-muted-foreground">
-                      {type.salesOpensAtLocal && type.salesClosesAtLocal
-                        ? `${type.salesOpensAtLocal} → ${type.salesClosesAtLocal}`
-                        : "—"}
-                    </td>
-                    <td className="py-2.5 pr-3">
-                      <div className="flex flex-wrap gap-1">
-                        <Badge
-                          variant="outline"
-                          className={
-                            type.status === "ACTIVE"
-                              ? "border-transparent bg-success/10 text-success"
-                              : "border-border bg-muted text-muted-foreground"
-                          }
-                        >
-                          {type.status === "ACTIVE" ? "Active" : "Inactive"}
-                        </Badge>
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full border border-border" style={{ backgroundColor: type.color }} />
+                        <h3 className="min-w-0 truncate text-base font-semibold">{type.name}</h3>
+                        {type.status !== "ACTIVE" ? (
+                          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">Inactive</Badge>
+                        ) : null}
+                        {soldOut ? (
+                          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">Sold out</Badge>
+                        ) : null}
                         {!type.permitsAdmission ? (
-                          <Badge
-                            variant="outline"
-                            className="border-border bg-muted text-muted-foreground"
-                          >
-                            No admission
-                          </Badge>
+                          <Badge variant="outline" className="border-border bg-muted text-muted-foreground">No admission</Badge>
                         ) : null}
                       </div>
-                    </td>
-                    <td className="py-2.5 text-right">
-                      {editable ? (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          aria-label={`Edit ${type.name}`}
-                          onClick={() => openEdit(type)}
-                        >
-                          <Pencil />
-                        </Button>
+                      <p className="mt-1 font-mono text-base font-semibold tabular-nums">{formatUGX(type.priceUgx)}</p>
+                      {type.description ? (
+                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{type.description}</p>
                       ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                    </div>
+                    <div className="shrink-0 text-right font-mono text-xs">
+                      <p className="text-foreground tabular-nums">{sold} sold</p>
+                      <p className="text-muted-foreground tabular-nums">{remaining} left</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div aria-hidden="true" className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+                    </div>
+                    <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+                      {percent}% allocated
+                      {type.allocationLimit !== null ? ` · limit ${type.allocationLimit}` : " · no limit set"}
+                    </p>
+                  </div>
+
+                  {salesWindow ? (
+                    <p className="font-mono text-[11px] text-muted-foreground">Sales {salesWindow}</p>
+                  ) : null}
+
+                  <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+                    {editable ? (
+                      <Button variant="outline" size="sm" aria-label={`Edit ${type.name}`} onClick={() => openEdit(type)}>
+                        <Pencil /> Edit tier
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      nativeButton={false}
+                      render={<Link href={`/tickets?eventId=${encodeURIComponent(eventId)}&ticketTypeId=${encodeURIComponent(type.id)}`} />}
+                    >
+                      <Ticket /> View tickets
+                    </Button>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
