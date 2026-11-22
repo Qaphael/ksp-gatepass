@@ -83,8 +83,14 @@ export function TicketActions({
   }
 
   return (
-    <Button size="sm" disabled={pending} onClick={() => void download()}>
-      {pending ? <Loader2 className="animate-spin" /> : <Printer />}
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={pending}
+      onClick={() => void download()}
+      className="h-12 rounded-lg gap-2 px-3"
+    >
+      {pending ? <Loader2 className="animate-spin size-4" /> : <Printer className="size-4.5" />}
       {hasPrintHistory ? `Reprint ${serial}` : `Print ${serial}`}
     </Button>
   );

@@ -68,7 +68,9 @@ export function PanelHeader({
         <span
           className={cn(
             "flex items-center gap-1 whitespace-nowrap font-mono text-[11px] text-muted-foreground",
-            children instanceof HTMLAnchorElement ||
+            // Check for link-like React elements (Link, <a>, or string with arrow)
+            (typeof children === "object" && children !== null && "type" in children &&
+              (children.type === "a" || (typeof children.type === "object" && children.type !== null && (children.type as { displayName?: string; name?: string }).displayName === "Link") || (typeof children.type === "object" && children.type !== null && (children.type as { displayName?: string; name?: string }).name === "Link"))) ||
               (typeof children === "string" && children.includes("→"))
               ? "min-h-11 px-1.5 py-0.5"
               : "",

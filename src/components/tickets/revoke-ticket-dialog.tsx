@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Loader2 } from "lucide-react";
+import { Ban, Loader2, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,8 +62,13 @@ export function RevokeTicketDialog({ ticketId, serial }: RevokeTicketDialogProps
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="destructive" size="sm" className="min-h-11 text-base">
-            <Ban /> Revoke ticket
+          <Button
+            variant="destructive"
+            size="sm"
+            className="h-12 rounded-lg gap-2 px-3"
+          >
+            <ShieldOff className="size-4.5" />
+            Revoke ticket
           </Button>
         }
       />
