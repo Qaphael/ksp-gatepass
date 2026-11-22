@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventPoster } from "@/components/events/event-poster";
 import { StatusBadge } from "@/components/events/status-badges";
-import { StatusBadge as ScanStatusBadge, StatusBadge as SaleStatusBadge } from "@/components/ui/status-badge";
+import { StatusBadge as SaleStatusBadge } from "@/components/ui/status-badge";
+import { StatusBadge as ScanStatusBadge } from "@/components/ui/status-badge";
 import { DashboardConnection } from "@/components/check-in/dashboard-connection";
-import { StatTile } from "@/components/ui/stat-tile";
+import { Chip } from "@/components/ui/chip";
+import { MetricTile } from "@/components/ui/metric-tile";
+import { TileRow, TileRowList } from "@/components/ui/tile-row";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 import { ROLE_LABELS } from "@/lib/role";
@@ -125,9 +128,9 @@ function DashboardHeading({ event, eyebrow = "Operational terminal", chips }: { 
     <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/40 p-2">
       {chips ?? <>
         <StatusBadge status={event.status} />
-        <span className="inline-flex items-center gap-1.5 rounded border border-border bg-card px-2 py-1 font-mono text-xs text-muted-foreground">{event.salesOpen ? "Sales open" : "Sales closed"}</span>
-        <span className="inline-flex items-center gap-1.5 rounded border border-border bg-card px-2 py-1 font-mono text-xs text-muted-foreground">{event.admissionOpen ? "Admission open" : "Admission closed"}</span>
-        <span className="inline-flex items-center gap-1.5 rounded border border-input bg-card px-2 py-1 font-mono text-xs text-muted-foreground"><Ticket className="size-3.5" aria-hidden="true" />{event.capacity} total tickets</span>
+        <Chip tone={event.salesOpen ? "success" : "warning"}><Check className="size-3" /> {event.salesOpen ? "Sales open" : "Sales closed"}</Chip>
+        <Chip tone={event.admissionOpen ? "success" : "warning"}><Check className="size-3" /> {event.admissionOpen ? "Admission open" : "Admission closed"}</Chip>
+        <Chip tone="neutral"><Ticket className="size-3.5" aria-hidden="true" />{event.capacity} total tickets</Chip>
       </>}
     </div>
   </div>;
@@ -144,14 +147,8 @@ function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: Even
   return <main className="flex flex-col gap-4 sm:gap-6">
     <DashboardHeading event={event} chips={
       <>
-        <span className="inline-flex items-center gap-1.5 rounded border border-border bg-card px-2 py-1 font-mono text-xs">
-          {event.salesOpen ? <Check className="size-3 text-success" aria-hidden="true" /> : <X className="size-3 text-muted-foreground" aria-hidden="true" />}
-          {event.salesOpen ? "Sales open" : "Sales closed"}
-        </span>
-        <span className="inline-flex items-center gap-1.5 rounded border border-border bg-card px-2 py-1 font-mono text-xs">
-          {event.admissionOpen ? <Check className="size-3 text-success" aria-hidden="true" /> : <X className="size-3 text-muted-foreground" aria-hidden="true" />}
-          {event.admissionOpen ? "Admission open" : "Admission closed"}
-        </span>
+        <Chip tone={event.salesOpen ? "success" : "warning"}><Check className="size-3" /> {event.salesOpen ? "Sales open" : "Sales closed"}</Chip>
+        <Chip tone={event.admissionOpen ? "success" : "warning"}><Check className="size-3" /> {event.admissionOpen ? "Admission open" : "Admission closed"}</Chip>
       </>
     } />
 
@@ -164,25 +161,65 @@ function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: Even
     </section>
 
     {/* Operational alerts strip */}
-    <section aria-label="Operational alerts" className="rounded-xl border bg-card p-4 shadow-card">
-      {alertsClear ? (
-        <p className="text-sm text-muted-foreground">No alerts</p>
-      ) : (
-        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
-          <AlertCell icon={<Wallet className="size-5" aria-hidden="true" />} label="Unreconciled balances" value={alerts.balances} tone="warning" />
-          <AlertCell icon={<CircleAlert className="size-5" aria-hidden="true" />} label="Unsuccessful scans" value={alerts.failed} suffix="today" tone="destructive" />
-          <AlertCell icon={<BadgeCheck className="size-5" aria-hidden="true" />} label="Revocations" value={alerts.revoked} tone="success" />
-        </div>
-      )}
-    </section>
+    <Card className="border-border/70 bg-card">
+      <CardContent className="p-4">
+        {alertsClear ? (
+          <p className="text-sm text-muted-foreground">No alerts</p>
+        ) : (
+          <TileRowList className="gap-2">
+            <TileRow
+              icon={<Wallet />}
+              title="Unreconciled balances"
+              rightValue={formatUGX(alerts.balances)}
+              tone="warning"
+            />
+            <TileRow
+              icon={<CircleAlert />}
+              title="Unsuccessful scans"
+              rightValue={`${alerts.failed}`}
+              rightTime="today"
+              tone="destructive"
+            />
+            <TileRow
+              icon={<BadgeCheck />}
+              title="Revocations"
+              rightValue={formatUGX(alerts.revoked)}
+              tone="success"
+            />
+          </TileRowList>
+        )}
+      </CardContent>
+    </Card>
 
-    {/* Operational metrics grid via StatTile */}
+    {/* Operational metrics grid via MetricTile */}
     <section aria-label="Operational metrics" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-5">
-      <StatTile label="Sold tickets" value={String(stats.sold)} suffix={`/ ${stats.capacity}`} percent={soldPct} />
-      <StatTile label="Total collected" value={formatUGX(stats.paidUgx)} sub="Recorded payments" />
-      <StatTile label="Outstanding" value={formatUGX(stats.outstandingUgx)} sub="Pledges & partials" />
-      <StatTile label="Admitted" value={String(stats.checkedIn)} suffix={`/ ${stats.sold} sold`} percent={admittedPct} />
-      <StatTile label="Remaining capacity" value={String(stats.remaining)} sub={`${stats.today} admitted today`} />
+      <MetricTile
+        label="Sold tickets"
+        value={String(stats.sold)}
+        suffix={`/ ${stats.capacity}`}
+        percent={soldPct}
+      />
+      <MetricTile
+        label="Total collected"
+        amount={stats.paidUgx}
+        sub="Recorded payments"
+      />
+      <MetricTile
+        label="Outstanding"
+        amount={stats.outstandingUgx}
+        sub="Pledges & partials"
+      />
+      <MetricTile
+        label="Admitted"
+        value={String(stats.checkedIn)}
+        suffix={`/ ${stats.sold} sold`}
+        percent={admittedPct}
+      />
+      <MetricTile
+        label="Remaining capacity"
+        value={String(stats.remaining)}
+        sub={`${stats.today} admitted today`}
+      />
     </section>
 
     {/* Recent sales + latest turnstile stream */}
@@ -197,19 +234,6 @@ function QuickAction({ href, icon, label, prominent = false }: { href: string; i
   return <Button nativeButton={false} render={<Link href={href} />} variant={prominent ? "default" : "outline"} className="min-h-12 w-full justify-center gap-2 text-sm font-medium sm:min-h-14">
     {icon}{label}
   </Button>;
-}
-
-function AlertCell({ icon, label, value, suffix, empty, emptyText, tone }: { icon: React.ReactNode; label: string; value: number; suffix?: string; empty?: boolean; emptyText?: string; tone: "warning" | "destructive" | "success" }) {
-  const toneText = tone === "warning" ? "text-warning" : tone === "destructive" ? "text-destructive" : "text-success";
-  return <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-muted/50 p-2.5">
-    <div className="flex min-w-0 items-center gap-2">
-      <span className={`grid size-8 shrink-0 place-items-center rounded-md bg-muted text-foreground *:size-4 ${empty ? "text-muted-foreground" : ""}`}>{icon}</span>
-      <span className="min-w-0">
-        <span className="block truncate text-[11px] font-mono text-muted-foreground">{label}</span>
-        <span className={`block text-sm font-semibold tabular-nums ${empty ? "text-muted-foreground" : toneText}`}>{empty ? (emptyText ?? String(value)) : `${value}${suffix ? ` ${suffix}` : ""}`}</span>
-      </span>
-    </div>
-  </div>;
 }
 
 function SellerDashboard({ event, metrics, recent, outstandingRows }: { event: EventDto; metrics: Awaited<ReturnType<typeof getSellerDashboardMetrics>>; recent: Awaited<ReturnType<typeof listSales>>["sales"]; outstandingRows: number }) {
@@ -319,7 +343,8 @@ function RecentCheckins({ rows, title = "Latest turnstile admissions", timezone 
             {variant === "admin" ? <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{row.ticketTypeName}</span> : <time className="font-mono text-[11px] text-muted-foreground">{time}</time>}
           </span>
         </li>;
-      })}</ul> : <p className="text-sm text-muted-foreground">No tickets checked in yet.</p>}</CardContent>
+      })}</ul> : <p className="text-sm text-muted-foreground">No tickets checked in yet.</p>}
+    </CardContent>
   </Card>;
 }
 
@@ -328,5 +353,3 @@ function RecentAttempts({ rows, timezone }: { rows: Awaited<ReturnType<typeof li
     return <li key={row.id} className="flex min-h-14 items-center justify-between gap-3 py-2"><span className="min-w-0"><span className="block truncate text-sm font-semibold">{row.serial ?? "Unrecognized ticket"}</span><span className="block truncate text-xs text-muted-foreground">{row.method} · {row.gate ?? "No gate"} · <time>{formatDateTime(row.attemptedAt, timezone, "en-UG", { hour: "2-digit", minute: "2-digit" })}</time></span></span><ScanStatusBadge domain="scan" status={row.resultCode} /></li>;
   })}</ul> : <p className="text-sm text-muted-foreground">No scan attempts recorded yet.</p>}</CardContent></Card>;
 }
-
-
