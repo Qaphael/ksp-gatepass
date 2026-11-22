@@ -301,8 +301,8 @@ function AdminDashboard({
       </section>
 
       {/* Operational alerts strip */}
-      <Card className="border-border/50 bg-card">
-        <CardContent className="p-3">
+      <Card className="border-border/50 bg-card data-[size=sm]">
+        <CardContent>
           {alertsClear ? (
             <p className="text-sm text-muted-foreground">All clear — no outstanding balances, failed scans, or revocations today</p>
           ) : (
@@ -364,14 +364,14 @@ function AdminDashboard({
       {/* Main chart: live admission curve today vs capacity */}
       <section aria-label="Admission trend" className="lg:col-span-3">
         <Card className="border-border/50 bg-card data-[size=sm]">
-          <CardHeader className="flex flex-col gap-2 p-3 pb-1">
+          <CardHeader className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">Admission today</CardTitle>
               <span className="font-mono text-[11px] text-muted-foreground">{localEventDay(event)}</span>
             </div>
             <CardDescription className="text-sm text-muted-foreground">Cumulative admissions vs capacity — updated in real time</CardDescription>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
+          <CardContent>
             <AdmissionChart
               admitted={stats.checkedIn}
               capacity={stats.capacity}
@@ -457,7 +457,7 @@ function VerifierDashboard({
       <DashboardHeading event={event} />
       <DashboardConnection eventId={event.id} />
       <Card className="border-border/50 bg-card data-[size=sm]">
-        <CardContent className="flex flex-col gap-4 p-3">
+        <CardContent className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-md bg-muted/50 text-foreground">
               <Check className="size-5" aria-hidden="true" />
@@ -515,11 +515,11 @@ function SupervisorDashboard({
       </div>
       <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-4">
         <Card className="border-border/50 bg-card data-[size=sm]">
-          <CardHeader className="p-3 pb-1">
+          <CardHeader>
             <CardTitle className="text-lg font-semibold">Admissions by gate</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">Today&apos;s successful check-ins</CardDescription>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
+          <CardContent>
             {gates.size ? (
               <ul className="divide-y divide-border/50">
                 {[...gates].sort((a, b) => b[1] - a[1]).map(([gate, value]) => (
@@ -553,7 +553,7 @@ function RecentSales({
 }) {
   return (
     <Card className="border-border/50 bg-card data-[size=sm]">
-      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-3 pb-1">
+      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2">
         <CardTitle className="min-w-0 truncate text-lg font-semibold">{title}</CardTitle>
         <Link
           href="/sales"
@@ -564,7 +564,7 @@ function RecentSales({
         </Link>
         <CardDescription className="col-span-2 row-start-2 text-sm text-muted-foreground">Latest recorded transactions</CardDescription>
       </CardHeader>
-      <CardContent className="p-3 pt-0">
+      <CardContent>
         {sales.length ? (
           <ul className="divide-y divide-border/50">
             {sales.map((sale) => {
@@ -633,12 +633,12 @@ function RecentCheckins({
 }) {
   return (
     <Card className="border-border/50 bg-card data-[size=sm]">
-      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-3 pb-1">
+      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2">
         <CardTitle className="min-w-0 truncate text-lg font-semibold">{title}</CardTitle>
         <span className="col-start-2 row-start-1 font-mono text-[11px] text-muted-foreground">Latest</span>
         <CardDescription className="col-span-2 row-start-2 text-sm text-muted-foreground">Latest admitted tickets</CardDescription>
       </CardHeader>
-      <CardContent className="p-3 pt-0">
+      <CardContent>
         {rows.length ? (
           <ul className="divide-y divide-border/50">
             {rows.map((row) => {
@@ -692,11 +692,11 @@ function RecentAttempts({
 }: { rows: Awaited<ReturnType<typeof listScanAttempts>>; timezone: string }) {
   return (
     <Card className="border-border/50 bg-card data-[size=sm]">
-      <CardHeader className="p-3 pb-1">
+      <CardHeader>
         <CardTitle className="text-lg font-semibold">Recent scan outcomes</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">Latest ticket checks for this event</CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      <CardContent>
         {rows.length ? (
           <ul className="divide-y divide-border/50">
             {rows.map((row) => (
