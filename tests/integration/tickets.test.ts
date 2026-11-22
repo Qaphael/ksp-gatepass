@@ -338,3 +338,196 @@ describe("CSV export", () => {
     }
   });
 });
+
+describe("ticket trace reads", () => {
+  async function soldFixture(quantity = 3, options: { paid?: boolean; checkIn?: boolean } = {}) {
+    const event = await admin.post("/api/v1/events", {
+      name: unique("Trace Event"),
+      venue: "KSP Hotel Gulu",
+      status: "SCHEDULED",
+      eventDate: "2026-12-05",
+      startTime: "18:00",
+      endTime: "23:00",
+      capacity: 50,
+      requireBuyerDetails: false,
+    });
+    expect(event.status).toBe(201);
+    const traceEventId = event.body.event.id as string;
+    await admin.post(`/api/v1/events/${traceEventId}/open-sales`);
+
+    const type = await admin.post(`/api/v1/events/${traceEventId}/ticket-types`, {
+      name: unique("Trace General"),
+      priceUgx: 15_000,
+    });
+    const typeId = type.body.ticketType.id as string;
+
+    const batch = await admin.post("/api/v1/ticket-batches", {
+      eventId: traceEventId,
+      ticketTypeId: typeId,
+      quantity,
+      serialPrefix: newPrefix(),
+    });
+    expect(batch.status).toBe(201);
+
+    const sale = await admin.json("/api/v1/sales", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": unique("trace-sale") },
+      body: JSON.stringify({
+        eventId: traceEventId,
+        customerName: "Trace Buyer",
+        customerPhone: "0772123456",
+        items: [{ ticketTypeId: typeId, quantity: 1 }],
+        ...(options.paid === false ? {} : { initialPayment: { amountUgx: 5_000, method: "CASH" } }),
+      }),
+    });
+    expect(sale.status).toBe(201);
+
+    if (options.checkIn) {
+      await admin.post(`/api/v1/events/${traceEventId}/open-admission`);
+      const ticket = await prisma.ticket.findFirstOrThrow({
+        where: { eventId: traceEventId, status: "SOLD" },
+      });
+      const confirmed = await admin.json("/api/v1/check-in/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": unique("trace-checkin") },
+        body: JSON.stringify({
+          eventId: traceEventId,
+          method: "MANUAL",
+          serial: ticket.serial,
+          gate: "Gate A",
+        }),
+      });
+      expect(confirmed.status).toBe(200);
+    }
+
+    return {
+      eventId: traceEventId,
+      typeId,
+      batchId: batch.body.batch.id as string,
+      saleId: sale.body.sale.id as string,
+      saleReference: sale.body.sale.reference as string,
+    };
+  }
+
+  it("returns the full sale and check-in trace for one ticket", async () => {
+    const fixture = await soldFixture(3, { checkIn: true });
+    const ticket = await prisma.ticket.findFirstOrThrow({
+      where: { eventId: fixture.eventId, status: "SOLD" },
+    });
+
+    const trace = await admin.get(`/api/v1/tickets/${ticket.id}/trace`);
+    expect(trace.status).toBe(200);
+
+    expect(trace.body.sale.id).toBe(fixture.saleId);
+    expect(trace.body.sale.reference).toBe(fixture.saleReference);
+    expect(trace.body.sale.status).toBe("PARTIALLY_PAID");
+    expect(trace.body.sale.customerName).toBe("Trace Buyer");
+    expect(trace.body.sale.customerPhone).toBe("0772123456");
+    expect(trace.body.sale.totalUgx).toBe(15_000);
+    expect(trace.body.sale.paidNetUgx).toBe(5_000);
+    expect(trace.body.sale.balanceUgx).toBe(10_000);
+    expect(typeof trace.body.sale.sellerName).toBe("string");
+    expect(typeof trace.body.sale.createdAt).toBe("string");
+    expect(new Date(trace.body.sale.createdAt).toISOString()).toBe(trace.body.sale.createdAt);
+
+    expect(trace.body.checkIn.checkedInAt).toBeTruthy();
+    expect(trace.body.checkIn.gate).toBe("Gate A");
+    expect(trace.body.checkIn.method).toBe("MANUAL");
+    expect(typeof trace.body.checkIn.verifierName).toBe("string");
+
+    // No token material ever leaves the trace endpoint.
+    const record = await prisma.ticket.findUniqueOrThrow({ where: { id: ticket.id } });
+    const raw = JSON.stringify(trace.body);
+    expect(raw).not.toContain(record.tokenHash);
+    expect(raw).not.toContain(record.tokenEnc);
+    expect(raw).not.toMatch(/tokenHash|tokenEnc/);
+  });
+
+  it("returns null sale and null check-in for unsold stock", async () => {
+    const fixture = await soldFixture(3);
+    const available = await prisma.ticket.findFirstOrThrow({
+      where: { eventId: fixture.eventId, status: "AVAILABLE" },
+    });
+
+    const trace = await admin.get(`/api/v1/tickets/${available.id}/trace`);
+    expect(trace.status).toBe(200);
+    expect(trace.body.sale).toBeNull();
+    expect(trace.body.checkIn).toBeNull();
+  });
+
+  it("returns 404 for an unknown ticket", async () => {
+    const missing = await admin.get("/api/v1/tickets/does-not-exist/trace");
+    expect(missing.status).toBe(404);
+  });
+
+  it("denies the trace to roles without inventory:read", async () => {
+    const fixture = await soldFixture(1);
+    const ticket = await prisma.ticket.findFirstOrThrow({
+      where: { eventId: fixture.eventId },
+    });
+
+    for (const client of [seller, verifier, supervisor]) {
+      const denied = await client.get(`/api/v1/tickets/${ticket.id}/trace`);
+      expect(denied.status).toBe(403);
+      expect(denied.body.error.code).toBe("FORBIDDEN");
+    }
+
+    const anonymous = await fetch(
+      `${process.env.TEST_BASE_URL ?? "http://127.0.0.1:3100"}/api/v1/tickets/${ticket.id}/trace`,
+    );
+    expect(anonymous.status).toBe(401);
+  });
+
+  it("adds a compact trace to every list row when include=trace", async () => {
+    const fixture = await soldFixture(3, { checkIn: true });
+
+    const listed = await admin.get(
+      `/api/v1/tickets?eventId=${fixture.eventId}&include=trace&pageSize=100`,
+    );
+    expect(listed.status).toBe(200);
+    expect(listed.body.tickets).toHaveLength(3);
+    expect(listed.body.total).toBe(3);
+
+    const sold = listed.body.tickets.find(
+      (t: { status: string }) => t.status === "SOLD",
+    );
+    expect(sold).toBeDefined();
+    expect(sold.trace.saleId).toBe(fixture.saleId);
+    expect(sold.trace.saleReference).toBe(fixture.saleReference);
+    expect(sold.trace.saleStatus).toBe("PARTIALLY_PAID");
+    expect(sold.trace.customerName).toBe("Trace Buyer");
+    // The phone is masked down to its last three digits.
+    expect(sold.trace.customerPhoneMasked).toBe("***456");
+    expect(sold.trace.customerPhoneMasked).not.toContain("0772123456");
+    expect(sold.trace.paidNetUgx).toBe(5_000);
+    expect(sold.trace.balanceUgx).toBe(10_000);
+    expect(sold.trace.checkedInAt).toBeTruthy();
+    expect(sold.trace.gate).toBe("Gate A");
+
+    // Unsold rows carry a null sale but still get a trace object.
+    const available = listed.body.tickets.find(
+      (t: { status: string }) => t.status === "AVAILABLE",
+    );
+    expect(available).toBeDefined();
+    expect(available.trace.saleId).toBeNull();
+    expect(available.trace.saleStatus).toBeNull();
+    expect(available.trace.paidNetUgx).toBeNull();
+    expect(available.trace.balanceUgx).toBeNull();
+    expect(available.trace.checkedInAt).toBeNull();
+
+    // The plain list carries no trace at all.
+    const plain = await admin.get(`/api/v1/tickets?eventId=${fixture.eventId}&pageSize=100`);
+    expect(plain.status).toBe(200);
+    expect(plain.body.tickets.every((t: { trace?: unknown }) => t.trace === undefined)).toBe(true);
+  });
+
+  it("denies the traced list to roles without inventory:read", async () => {
+    const fixture = await soldFixture(1);
+    for (const client of [seller, verifier, supervisor]) {
+      const denied = await client.get(
+        `/api/v1/tickets?eventId=${fixture.eventId}&include=trace`,
+      );
+      expect(denied.status).toBe(403);
+    }
+  });
+});
