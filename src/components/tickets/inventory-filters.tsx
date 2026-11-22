@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, X, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,6 +36,7 @@ interface InventoryFiltersProps {
     ticketTypeId?: string;
     search?: string;
   };
+  variant?: "inline" | "sheet";
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -50,7 +51,7 @@ const STATUS_LABELS: Record<string, string> = {
  * Inventory search + filters (PRD 5.5). Server-rendered list pages get their
  * data from the URL, so applying filters just navigates with query params.
  */
-export function InventoryFilters({ events, ticketTypes, initial }: InventoryFiltersProps) {
+export function InventoryFilters({ events, ticketTypes, initial, variant = "sheet" }: InventoryFiltersProps) {
   const router = useRouter();
   const [eventId, setEventId] = useState(initial.eventId ?? ALL);
   const [status, setStatus] = useState(initial.status ?? ALL);
@@ -92,6 +93,95 @@ export function InventoryFilters({ events, ticketTypes, initial }: InventoryFilt
     setSearch("");
     setTypes([]);
     router.push("/tickets");
+  }
+
+  const isInline = variant === "inline";
+
+  if (isInline) {
+    return (
+      <form onSubmit={apply} className="flex flex-col gap-2.5" noValidate>
+        {/* Search input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4.5 text-muted-foreground" aria-hidden="true" />
+          <Input
+            id="ticket-search"
+            placeholder="Search serial, e.g. KSP-00001"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); (e.currentTarget as HTMLInputElement).form?.requestSubmit(); } }}
+            className="h-12 rounded-lg bg-muted border-transparent pl-10 pr-9 text-base"
+          />
+          {search && (
+            <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => setSearch("")} aria-label="Clear search">
+              <X className="size-4" />
+            </Button>
+          )}
+        </div>
+
+        {/* Chip row with selects and Reset */}
+        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 py-0.5">
+          <Select
+            value={eventId}
+            onValueChange={(value) => {
+              if (value) void onEventChange(value);
+            }}
+          >
+            <SelectTrigger aria-label="Filter by event" className="h-9 rounded-lg bg-muted text-[11px] font-mono min-w-0 px-2">
+              <SelectValue placeholder="Event" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All events</SelectItem>
+              {events.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={status}
+            onValueChange={(value) => setStatus(value ?? ALL)}
+          >
+            <SelectTrigger aria-label="Filter by status" className="h-9 rounded-lg bg-muted text-[11px] font-mono min-w-0 px-2">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All statuses</SelectItem>
+              {TICKET_STATUSES.map((ticketStatus) => (
+                <SelectItem key={ticketStatus} value={ticketStatus}>
+                  {STATUS_LABELS[ticketStatus]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {eventId !== ALL && (
+            <Select
+              value={ticketTypeId}
+              onValueChange={(value) => setTicketTypeId(value ?? ALL)}
+              disabled={loadingTypes}
+            >
+              <SelectTrigger aria-label="Filter by category" className="h-9 rounded-lg bg-muted text-[11px] font-mono min-w-0 px-2">
+                <SelectValue placeholder={loadingTypes ? "Loading…" : "Category"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All categories</SelectItem>
+                {types.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={clear} aria-label="Reset filters">
+            <RotateCcw className="size-4" />
+          </Button>
+        </div>
+      </form>
+    );
   }
 
   return (

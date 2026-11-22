@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { FileDown, Plus, RefreshCw, Server } from "lucide-react";
+import { FileDown, Plus, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
@@ -13,15 +13,16 @@ import { listSales } from "@/server/services/sales.service";
 import { saleListQuerySchema } from "@/lib/validation/sales";
 import { InventoryFilters } from "@/components/tickets/inventory-filters";
 import { TicketsTable } from "@/components/tickets/tickets-table";
-import { FilterSheet } from "@/components/ui/filter-sheet";
+import { ResponsiveList } from "@/components/ui/responsive-list";
 import { Serial } from "@/components/ui/serial";
 import { TicketStatusBadge } from "@/components/tickets/ticket-status-badge";
-import { ResponsiveList } from "@/components/ui/responsive-list";
 import type { TicketStatus } from "@/generated/prisma/client";
-import { PageHeader } from "@/components/ui/page-header";
-import { StatTile } from "@/components/ui/stat-tile";
-import { EatClock } from "@/components/tickets/eat-clock";
 import { getReport } from "@/server/services/reports.service";
+import { getAttendanceSummary } from "@/server/services/check-in.service";
+import { Chip } from "@/components/ui/chip";
+import { SegmentedLinks } from "@/components/ui/segmented-links";
+import { MetricTile } from "@/components/ui/metric-tile";
+import { prisma } from "@/lib/db/client";
 
 export const instant = false;
 
@@ -59,24 +60,6 @@ function exportHref(query: TicketListQuery): string {
   if (query.batchId) params.set("batchId", query.batchId);
   if (query.search) params.set("search", query.search);
   return `/api/v1/tickets/export?${params.toString()}`;
-}
-
-/** Aggregate TICKET_INVENTORY report rows into KPI totals. */
-function inventoryKpis(rows: unknown[]): { total: number; sold: number; available: number; revoked: number } {
-  let total = 0;
-  let sold = 0;
-  let available = 0;
-  let revoked = 0;
-  for (const row of rows) {
-    const cells = row as unknown[];
-    const status = cells[1];
-    const count = Number(cells[2]) || 0;
-    total += count;
-    if (status === "SOLD") sold += count;
-    else if (status === "AVAILABLE") available += count;
-    else if (status === "REVOKED") revoked += count;
-  }
-  return { total, sold, available, revoked };
 }
 
 export default async function TicketsPage({ searchParams }: TicketsPageProps) {
@@ -129,147 +112,184 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
     if (rows.length) kpis = inventoryKpis(rows);
   }
 
+  // Attendance summary for "Admitted" KPI
+  let attendance: { checkedIn: number; ticketsSold: number } | null = null;
+  if (query.eventId) {
+    const summary = await getAttendanceSummary(ctx, query.eventId).catch(() => null);
+    if (summary) {
+      attendance = { checkedIn: summary.checkedIn, ticketsSold: summary.ticketsSold };
+    }
+  }
+
   const pages = Math.max(1, Math.ceil(result.total / result.pageSize));
   const pageFrom = (result.page - 1) * result.pageSize + 1;
   const pageTo = Math.min(result.page * result.pageSize, result.total);
-  const activeFilters = [query.eventId, query.status, query.ticketTypeId, query.batchId, query.search].filter(Boolean).length;
   const canExport = can(ctx.role, "inventory:export") && Boolean(query.eventId);
   const canGenerate = can(ctx.role, "inventory:generate");
-  const tabClass = (active: boolean) =>
-    `flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-2 text-base font-semibold ${active ? "bg-background text-foreground" : "text-muted-foreground"}`;
+  const canStockReadAll = can(ctx.role, "stock:read-all");
+  const canRemove = can(ctx.role, "ticket:revoke");
+
+  // Capacity from event
+  let capacity: number | null = null;
+  if (query.eventId) {
+    const event = await prisma.event.findUnique({ where: { id: query.eventId }, select: { capacity: true } });
+    capacity = event?.capacity ?? null;
+  }
+
+  // Find selected event name for the chip
+  const selectedEvent = events.find((e) => e.id === query.eventId);
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        title="Ticket inventory"
-        badge={kpis ? <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 font-mono text-xs font-semibold text-muted-foreground">{kpis.total} Cap</span> : null}
-        description="Search serials, filter by event, category or inventory status, and open a ticket for its full history."
-        actions={
-          <div className={canExport && canGenerate ? "grid w-full grid-cols-2 gap-2 sm:w-auto" : "flex w-full flex-wrap gap-2 sm:w-auto"}>
-            {canExport ? (
-              <Button
-                size="sm"
-                className="min-h-11 text-base"
-                variant="outline"
-                nativeButton={false}
-                render={<a href={exportHref(query)} />}
-              >
-                <FileDown /> Export CSV
-              </Button>
-            ) : null}
-            {canGenerate ? (
-              <Button nativeButton={false} size="sm" className="min-h-11 text-base" render={<Link href="/tickets/new" />}>
-                <Plus /> Generate tickets
-              </Button>
-            ) : null}
-          </div>
-        }
-      />
-
-      {/* Segmented view controller: All tickets vs My issued stock. */}
-      <div className="flex min-h-11 rounded-lg bg-muted p-1" role="tablist" aria-label="Ticket scope">
-        <Link href="/tickets" aria-current="true" className={tabClass(true)}>All tickets</Link>
-        <Link href="/stock" className={tabClass(false)}>My issued stock</Link>
+      {/* Title block */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">Ticket inventory</h1>
+          {selectedEvent && capacity !== null && (
+            <Chip tone="neutral" className="mt-1">{capacity.toLocaleString()} cap</Chip>
+          )}
+          <p className="mt-1 text-xs text-muted-foreground">
+            Search serials, filter by event, category or inventory status, and open a ticket for its full history.
+          </p>
+        </div>
+        <div className={canExport && canGenerate ? "grid w-full grid-cols-2 gap-2 sm:w-auto" : "flex w-full flex-wrap gap-2 sm:w-auto"}>
+          {canExport ? (
+            <Button
+              size="sm"
+              className="min-h-12 text-base"
+              variant="outline"
+              nativeButton={false}
+              render={<a href={exportHref(query)} />}
+            >
+              <FileDown className="size-4" /> Export CSV
+            </Button>
+          ) : null}
+          {canGenerate ? (
+            <Button nativeButton={false} size="sm" className="min-h-12 text-base gap-2" render={<Link href="/tickets/new" />}>
+              <Plus className="size-4" /> Generate
+            </Button>
+          ) : null}
+        </div>
       </div>
 
-      {/* KPI strip */}
-      {kpis && (() => {
-        const share = (value: number) => (kpis!.total ? Math.round((value / kpis!.total) * 100) : 0);
-        return (
-          <section aria-label="Inventory totals" className="grid min-w-0 grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Total" value={String(kpis.total)} sub="Tickets in inventory" />
-            <StatTile
-              label="Sold"
-              value={String(kpis.sold)}
-              sub={`${share(kpis.sold)}% of total`}
-              percent={share(kpis.sold)}
-            />
-            <StatTile
-              label="Available"
-              value={String(kpis.available)}
-              sub={`${share(kpis.available)}% of total`}
-              percent={share(kpis.available)}
-            />
-            <StatTile
-              label="Revoked"
-              value={String(kpis.revoked)}
-              sub={`${share(kpis.revoked)}% of total`}
-            />
-          </section>
-        );
-      })()}
-
-      {/* Reset link when filters active */}
-      {activeFilters > 0 && (
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-muted-foreground">
-            {activeFilters} filter{activeFilters > 1 ? "s" : ""} active
-          </span>
-          <Link href="/tickets" className="text-sm font-medium text-primary underline-offset-2 hover:underline flex items-center gap-1">
-            <RefreshCw className="size-4 shrink-0" aria-hidden="true" /> Reset
-          </Link>
-        </div>
+      {/* SegmentedLinks: All tickets | Issued stock */}
+      {canStockReadAll && (
+        <SegmentedLinks
+          links={[
+            { href: "/tickets", label: "All tickets", count: result.total, active: true },
+            { href: "/stock", label: "Issued stock", icon: <Store className="size-4" /> },
+          ]}
+        />
       )}
 
-      <FilterSheet activeCount={activeFilters}><InventoryFilters
+      {/* KPI grid */}
+      {kpis && attendance && (
+        <section aria-label="Inventory totals" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <MetricTile
+            variant="compact"
+            label="Total"
+            value={String(kpis.total)}
+            tone="default"
+          />
+          <MetricTile
+            variant="compact"
+            label="Sold"
+            value={String(kpis.sold)}
+            tone="primary"
+            percent={kpis.total > 0 ? Math.round((kpis.sold / kpis.total) * 100) : 0}
+            sub={`of ${kpis.total}`}
+          />
+          <MetricTile
+            variant="compact"
+            label="Admitted"
+            value={String(attendance.checkedIn)}
+            tone="success"
+            percent={attendance.ticketsSold > 0 ? Math.round((attendance.checkedIn / attendance.ticketsSold) * 100) : 0}
+            sub={`${attendance.checkedIn > 0 ? Math.round((attendance.checkedIn / attendance.ticketsSold) * 100) : 0}% of sold`}
+          />
+          <MetricTile
+            variant="compact"
+            label="Unsold pool"
+            value={String(kpis.available)}
+            tone="default"
+            percent={kpis.total > 0 ? Math.round((kpis.available / kpis.total) * 100) : 0}
+            sub={`of ${kpis.total}`}
+          />
+        </section>
+      )}
+
+      {/* Filters inline */}
+      <InventoryFilters
+        variant="inline"
         events={events.map((event) => ({ id: event.id, name: event.name }))}
         ticketTypes={ticketTypes.map((type) => ({
           id: type.id,
           name: type.name,
         }))}
         initial={query}
-      /></FilterSheet>
+      />
 
-      {/* Live stream status strip */}
-      <div className="flex items-center justify-between gap-2 px-1 text-sm text-muted-foreground">
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="size-2 shrink-0 rounded-full bg-success" aria-hidden="true" />
-          <span className="min-w-0 truncate font-medium text-foreground">Verified Stream</span>
-          <span className="shrink-0">Sync: Live</span>
-        </span>
-        <span className="shrink-0 font-mono text-xs">Sort: Serial (ASC)</span>
+      {/* List meta row */}
+      <div className="flex items-center justify-between px-1 text-[11px] font-mono text-muted-foreground">
+        <span>Showing <strong className="text-foreground">{pageFrom}–{pageTo}</strong> of <strong className="text-foreground">{result.total}</strong></span>
+        <span>Sort: Serial</span>
       </div>
 
       <TicketsTable
         tickets={result.tickets}
         showEvent={!query.eventId}
-        canRemove={can(ctx.role, "ticket:revoke")}
+        canRemove={canRemove}
       />
 
-      <div className="flex items-center justify-between text-base text-muted-foreground">
-        <span>
-          Showing{" "}
-          <strong className="font-semibold text-foreground">{pageFrom}–{pageTo}</strong> of{" "}
-          <strong className="font-semibold text-foreground">{result.total}</strong> entries · page {result.page} of {pages}
-        </span>
-        <span className="flex gap-2">
+      {/* Pager */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-[11px] font-mono text-muted-foreground">
+        <span>Showing <strong className="text-foreground">{pageFrom}–{pageTo}</strong> of <strong className="text-foreground">{result.total}</strong> · page {result.page} of {pages}</span>
+        <div className="grid grid-cols-2 gap-2">
           {result.page > 1 ? (
             <Link
               href={pageHref(query, result.page - 1)}
-              className="inline-flex min-h-11 items-center rounded-md border border-border px-3 underline underline-offset-2 hover:text-foreground"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-3"
             >
               Previous
             </Link>
-          ) : null}
+          ) : (
+            <span className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-3 opacity-60">
+              Previous
+            </span>
+          )}
           {result.page < pages ? (
             <Link
               href={pageHref(query, result.page + 1)}
-              className="inline-flex min-h-11 items-center rounded-md border border-border px-3 underline underline-offset-2 hover:text-foreground"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-3"
             >
-              <span className="md:hidden">Load more</span><span className="hidden md:inline">Next</span>
+              Next
             </Link>
-          ) : null}
-        </span>
-      </div>
-
-      {/* Security & clock info banner */}
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-muted-foreground">
-        <span className="flex min-w-0 items-center gap-2">
-          <Server className="size-4 shrink-0 text-success" aria-hidden="true" />
-          <span className="truncate">KSP Hotel Server · Gulu Station</span>
-        </span>
-        <EatClock />
+          ) : (
+            <span className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border px-3 opacity-60">
+              Next
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
+}
+
+
+/** Aggregate TICKET_INVENTORY report rows into KPI totals. */
+function inventoryKpis(rows: unknown[]): { total: number; sold: number; available: number; revoked: number } {
+  let total = 0;
+  let sold = 0;
+  let available = 0;
+  let revoked = 0;
+  for (const row of rows) {
+    const cells = row as unknown[];
+    const status = cells[1];
+    const count = Number(cells[2]) || 0;
+    total += count;
+    if (status === "SOLD") sold += count;
+    else if (status === "AVAILABLE") available += count;
+    else if (status === "REVOKED") revoked += count;
+  }
+  return { total, sold, available, revoked };
 }
