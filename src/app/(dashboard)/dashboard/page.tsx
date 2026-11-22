@@ -363,15 +363,15 @@ function AdminDashboard({
 
       {/* Main chart: live admission curve today vs capacity */}
       <section aria-label="Admission trend" className="lg:col-span-3">
-        <Card className="border-border/50 bg-card">
-          <CardHeader className="flex flex-col gap-2 p-4 pb-2">
+        <Card className="border-border/50 bg-card data-[size=sm]">
+          <CardHeader className="flex flex-col gap-2 p-3 pb-1">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">Admission today</CardTitle>
               <span className="font-mono text-[11px] text-muted-foreground">{localEventDay(event)}</span>
             </div>
             <CardDescription className="text-sm text-muted-foreground">Cumulative admissions vs capacity — updated in real time</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-3 pt-0">
             <AdmissionChart
               admitted={stats.checkedIn}
               capacity={stats.capacity}
@@ -456,8 +456,8 @@ function VerifierDashboard({
     <main className="mx-auto flex w-full max-w-xl flex-col gap-4 sm:gap-6">
       <DashboardHeading event={event} />
       <DashboardConnection eventId={event.id} />
-      <Card className="border-border/50 bg-card">
-        <CardContent className="flex flex-col gap-4 p-4 sm:p-6">
+      <Card className="border-border/50 bg-card data-[size=sm]">
+        <CardContent className="flex flex-col gap-4 p-3">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-md bg-muted/50 text-foreground">
               <Check className="size-5" aria-hidden="true" />
@@ -514,12 +514,12 @@ function SupervisorDashboard({
         <Stat icon={<ScanLine className="size-4" />} label="Repeat scans" value={String(repeated)} detail="Already admitted · today" />
       </div>
       <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-4">
-        <Card className="border-border/50 bg-card">
-          <CardHeader className="p-4 pb-2">
+        <Card className="border-border/50 bg-card data-[size=sm]">
+          <CardHeader className="p-3 pb-1">
             <CardTitle className="text-lg font-semibold">Admissions by gate</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">Today&apos;s successful check-ins</CardDescription>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-3 pt-0">
             {gates.size ? (
               <ul className="divide-y divide-border/50">
                 {[...gates].sort((a, b) => b[1] - a[1]).map(([gate, value]) => (
@@ -552,8 +552,8 @@ function RecentSales({
   variant?: "default" | "admin";
 }) {
   return (
-    <Card className="border-border/50 bg-card">
-      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-4 pb-2">
+    <Card className="border-border/50 bg-card data-[size=sm]">
+      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-3 pb-1">
         <CardTitle className="min-w-0 truncate text-lg font-semibold">{title}</CardTitle>
         <Link
           href="/sales"
@@ -564,7 +564,7 @@ function RecentSales({
         </Link>
         <CardDescription className="col-span-2 row-start-2 text-sm text-muted-foreground">Latest recorded transactions</CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      <CardContent className="p-3 pt-0">
         {sales.length ? (
           <ul className="divide-y divide-border/50">
             {sales.map((sale) => {
@@ -632,13 +632,13 @@ function RecentCheckins({
   variant?: "default" | "admin";
 }) {
   return (
-    <Card className="border-border/50 bg-card">
-      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-4 pb-2">
+    <Card className="border-border/50 bg-card data-[size=sm]">
+      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-3 pb-1">
         <CardTitle className="min-w-0 truncate text-lg font-semibold">{title}</CardTitle>
         <span className="col-start-2 row-start-1 font-mono text-[11px] text-muted-foreground">Latest</span>
         <CardDescription className="col-span-2 row-start-2 text-sm text-muted-foreground">Latest admitted tickets</CardDescription>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      <CardContent className="p-3 pt-0">
         {rows.length ? (
           <ul className="divide-y divide-border/50">
             {rows.map((row) => {
@@ -691,8 +691,8 @@ function RecentAttempts({
   timezone,
 }: { rows: Awaited<ReturnType<typeof listScanAttempts>>; timezone: string }) {
   return (
-    <Card className="border-border/50 bg-card">
-      <CardHeader className="p-4 pb-2">
+    <Card className="border-border/50 bg-card data-[size=sm]">
+      <CardHeader className="p-3 pb-1">
         <CardTitle className="text-lg font-semibold">Recent scan outcomes</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">Latest ticket checks for this event</CardDescription>
       </CardHeader>
