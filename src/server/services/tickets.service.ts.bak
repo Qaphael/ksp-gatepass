@@ -1,0 +1,471 @@
+import type { CheckInMethod, PrintKind, Prisma, SaleStatus, TicketStatus } from "@/generated/prisma/client";
+import { recordAudit, sanitizeAuditData } from "@/lib/audit";
+import type { AuthContext } from "@/lib/auth/session";
+import { prisma } from "@/lib/db/client";
+import type {
+  BulkRemoveTicketsInput,
+  RevokeTicketInput,
+  TicketExportQuery,
+  TicketListQuery,
+} from "@/lib/validation/tickets";
+import { conflict, notFound, requirePermission, validationError } from "./errors";
+
+/**
+ * Ticket inventory reads and lifecycle actions (PRD 5.5, 7.1, 7.5).
+ *
+ * `tokenHash` and `tokenEnc` never leave this module: the DTO type does not
+ * contain them, so a serialised ticket can never leak a token (AGENTS rule 6).
+ */
+
+export interface TicketDto {
+  id: string;
+  serial: string;
+  status: TicketStatus;
+  eventId: string;
+  eventName: string;
+  ticketTypeId: string;
+  ticketTypeName: string;
+  ticketTypeColor: string;
+  ticketTypePriceUgx: number;
+  batchId: string | null;
+  batchRef: string | null;
+  revokeReason: string | null;
+  revokedById: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Compact sale/check-in summary; present only when `listTickets` runs with `include: "trace"`. */
+  trace?: TicketTraceCompact;
+}
+
+/** Compact trace added per row when a ticket list requests `include: "trace"`. */
+export interface TicketTraceCompact {
+  saleReference: string | null;
+  saleId: string | null;
+  customerName: string | null;
+  /** Only the last three digits of the phone number, e.g. `***123`. */
+  customerPhoneMasked: string | null;
+  checkedInAt: string | null;
+  gate: string | null;
+}
+
+const DTO_INCLUDE = {
+  event: { select: { name: true } },
+  ticketType: { select: { name: true, color: true, priceUgx: true } },
+  batch: { select: { batchRef: true } },
+} as const;
+
+type TicketRecord = Prisma.TicketGetPayload<{ include: typeof DTO_INCLUDE }>;
+
+function toDto(ticket: NonNullable<TicketRecord>): TicketDto {
+  return {
+    id: ticket.id,
+    serial: ticket.serial,
+    status: ticket.status,
+    eventId: ticket.eventId,
+    eventName: ticket.event.name,
+    ticketTypeId: ticket.ticketTypeId,
+    ticketTypeName: ticket.ticketType.name,
+    ticketTypeColor: ticket.ticketType.color,
+    ticketTypePriceUgx: ticket.ticketType.priceUgx,
+    batchId: ticket.batchId,
+    batchRef: ticket.batch?.batchRef ?? null,
+    revokeReason: ticket.revokeReason,
+    revokedById: ticket.revokedById,
+    createdAt: ticket.createdAt.toISOString(),
+    updatedAt: ticket.updatedAt.toISOString(),
+  };
+}
+
+export interface TicketListResult {
+  tickets: TicketDto[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Adds a compact sale/check-in summary to every ticket on the page, using one
+ * batched SaleTicket + CheckIn query. Buyers are only visible to roles that may
+ * already read them (`inventory:read` is required by `listTickets`; the phone
+ * is masked to its last three digits). Never exposes QR tokens.
+ */
+async function attachTrace(tickets: NonNullable<TicketRecord>[]): Promise<TicketTraceCompact[]> {
+  const ids = tickets.map((t) => t.id);
+  if (!ids.length) return [];
+  const [saleRows, checkInRows] = await Promise.all([
+    prisma.saleTicket.findMany({
+      where: { ticketId: { in: ids } },
+      include: {
+        sale: {
+          select: { id: true, reference: true, status: true, totalUgx: true, customerName: true, customerPhone: true, payments: { include: { adjustments: true } } },
+        },
+      },
+    }),
+    prisma.checkIn.findMany({
+      where: { ticketId: { in: ids } },
+      select: { ticketId: true, checkedInAt: true, gate: true },
+    }),
+  ]);
+  const saleByTicket = new Map<string, NonNullable<typeof saleRows>[number]["sale"]>();
+  for (const row of saleRows) {
+    if (!saleByTicket.has(row.ticketId)) saleByTicket.set(row.ticketId, row.sale);
+  }
+  const checkInByTicket = new Map<string, { checkedInAt: Date; gate: string }>();
+  for (const row of checkInRows) {
+    if (!checkInByTicket.has(row.ticketId)) checkInByTicket.set(row.ticketId, { checkedInAt: row.checkedInAt, gate: row.gate });
+  }
+  return tickets.map((ticket) => {
+    const sale = saleByTicket.get(ticket.id);
+    const checkIn = checkInByTicket.get(ticket.id);
+    const paidNetUgx = sale
+      ? sale.payments.reduce(
+          (sum, payment) =>
+            sum + payment.amountUgx - payment.adjustments.reduce((adjustmentSum, adjustment) => adjustmentSum + adjustment.amountUgx, 0),
+          0,
+        )
+      : 0;
+    return {
+      saleReference: sale?.reference ?? null,
+      saleId: sale?.id ?? null,
+      customerName: sale?.customerName ?? null,
+      customerPhoneMasked: sale?.customerPhone ? `***${sale.customerPhone.slice(-3)}` : null,
+      saleStatus: sale?.status ?? null,
+      paidNetUgx: sale ? paidNetUgx : null,
+      balanceUgx: sale ? Math.max(0, sale.totalUgx - paidNetUgx) : null,
+      checkedInAt: checkIn?.checkedInAt.toISOString() ?? null,
+      gate: checkIn?.gate ?? null,
+    };
+  });
+}
+
+/** Maps page tickets to DTOs, adding compact traces when `include: "trace"`. */
+async function toListDtos(tickets: NonNullable<TicketRecord>[], include: TicketListQuery["include"]): Promise<TicketDto[]> {
+  if (include !== "trace") return tickets.map((t) => toDto(t as TicketRecord));
+  const traces = await attachTrace(tickets);
+  return tickets.map((t, index) => ({ ...toDto(t as TicketRecord), trace: traces[index] }));
+}
+
+export async function listTickets(
+  ctx: AuthContext,
+  query: TicketListQuery,
+): Promise<TicketListResult> {
+  requirePermission(ctx.role, "inventory:read");
+
+  const search = query.search?.toUpperCase();
+  const where = {
+    ...(query.eventId ? { eventId: query.eventId } : {}),
+    ...(query.status ? { status: query.status } : {}),
+    ...(query.ticketTypeId ? { ticketTypeId: query.ticketTypeId } : {}),
+    ...(query.batchId ? { batchId: query.batchId } : {}),
+    ...(search ? { serial: { contains: search } } : {}),
+  };
+
+  const [total, tickets] = await Promise.all([
+    prisma.ticket.count({ where }),
+    prisma.ticket.findMany({
+      where,
+      include: DTO_INCLUDE,
+      orderBy: { serial: "asc" },
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
+    }),
+  ]);
+
+  return {
+    tickets: await toListDtos(tickets, query.include),
+    total,
+    page: query.page,
+    pageSize: query.pageSize,
+  };
+}
+
+export interface TicketDetail extends TicketDto {
+  /** Audit rows that target this ticket (revoke/print/corrections…). */
+  auditHistory: Array<{
+    id: string;
+    action: string;
+    actorId: string | null;
+    actorRole: string | null;
+    outcome: string;
+    summary: unknown;
+    createdAt: string;
+  }>;
+  /** Traceable print/export history (PRD 5.6 rule 6). */
+  printHistory: Array<{
+    id: string;
+    kind: PrintKind;
+    actorId: string | null;
+    ticketCount: number;
+    createdAt: string;
+  }>;
+}
+
+export async function getTicket(ctx: AuthContext, id: string): Promise<TicketDetail> {
+  requirePermission(ctx.role, "inventory:read");
+  const ticket = await prisma.ticket.findUnique({ where: { id }, include: DTO_INCLUDE });
+  if (!ticket) throw notFound("Ticket not found.");
+
+  const [auditRows, printRows] = await Promise.all([
+    prisma.auditLog.findMany({
+      where: { targetType: "ticket", targetId: id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    prisma.printBatch.findMany({
+      where: { ticketId: id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+  ]);
+
+  return {
+    ...toDto(ticket as TicketRecord),
+    auditHistory: auditRows.map((row) => ({
+      id: row.id,
+      action: row.action,
+      actorId: row.actorId,
+      actorRole: row.actorRole,
+      outcome: row.outcome,
+      summary: row.summary,
+      createdAt: row.createdAt.toISOString(),
+    })),
+    printHistory: printRows.map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      actorId: row.actorId,
+      ticketCount: row.ticketCount,
+      createdAt: row.createdAt.toISOString(),
+    })),
+  };
+}
+
+export interface TicketTrace {
+  sale: {
+    id: string;
+    reference: string;
+    status: SaleStatus;
+    customerName: string | null;
+    customerPhone: string | null;
+    sellerName: string;
+    totalUgx: number;
+    paidNetUgx: number;
+    balanceUgx: number;
+    createdAt: string;
+  } | null;
+  checkIn: {
+    checkedInAt: string;
+    gate: string;
+    method: CheckInMethod;
+    verifierName: string;
+  } | null;
+}
+
+/**
+ * Full read-only trace of a ticket's sale and admission. Requires
+ * `inventory:read`. Never returns QR tokens, and buyer details are only
+ * surfaced to roles that may already read sales.
+ */
+export async function getTicketTrace(ctx: AuthContext, ticketId: string): Promise<TicketTrace> {
+  requirePermission(ctx.role, "inventory:read");
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: ticketId },
+    include: {
+      saleTickets: {
+        take: 1,
+        include: {
+          sale: {
+            select: {
+              id: true,
+              reference: true,
+              status: true,
+              customerName: true,
+              customerPhone: true,
+              totalUgx: true,
+              createdAt: true,
+              seller: { select: { displayName: true } },
+              payments: { include: { adjustments: true } },
+            },
+          },
+        },
+      },
+      checkIn: {
+        select: {
+          checkedInAt: true,
+          gate: true,
+          method: true,
+          verifier: { select: { displayName: true } },
+        },
+      },
+    },
+  });
+  if (!ticket) throw notFound("Ticket not found.");
+  const sale = ticket.saleTickets[0]?.sale ?? null;
+  const paidNetUgx = sale
+    ? sale.payments.reduce(
+        (sum, payment) =>
+          sum + payment.amountUgx - payment.adjustments.reduce((adjustmentSum, adjustment) => adjustmentSum + adjustment.amountUgx, 0),
+        0,
+      )
+    : 0;
+  return {
+    sale: sale
+      ? {
+          id: sale.id,
+          reference: sale.reference,
+          status: sale.status,
+          customerName: sale.customerName,
+          customerPhone: sale.customerPhone,
+          sellerName: sale.seller.displayName,
+          totalUgx: sale.totalUgx,
+          paidNetUgx,
+          balanceUgx: Math.max(0, sale.totalUgx - paidNetUgx),
+          createdAt: sale.createdAt.toISOString(),
+        }
+      : null,
+    checkIn: ticket.checkIn
+      ? {
+          checkedInAt: ticket.checkIn.checkedInAt.toISOString(),
+          gate: ticket.checkIn.gate,
+          method: ticket.checkIn.method,
+          verifierName: ticket.checkIn.verifier.displayName,
+        }
+      : null,
+  };
+}
+
+/**
+ * Revokes inventory with a mandatory reason (business rule 11). Sold tickets
+ * are deliberately refused: cancelling a sale is the Phase 3 workflow and must
+ * not be reachable by quietly revoking stock. Revocation never un-happens.
+ */
+export async function revokeTicket(
+  ctx: AuthContext,
+  id: string,
+  input: RevokeTicketInput,
+): Promise<TicketDto> {
+  requirePermission(ctx.role, "ticket:revoke");
+
+  const ticket = await prisma.ticket.findUnique({ where: { id } });
+  if (!ticket) throw notFound("Ticket not found.");
+  if (ticket.status === "REVOKED") throw conflict("That ticket is already revoked.");
+  if (ticket.status === "CANCELLED") {
+    throw conflict("A cancelled ticket cannot be revoked.");
+  }
+  if (ticket.status === "SOLD") {
+    throw conflict(
+      "Sold tickets cannot be revoked here — cancel the sale instead so stock and money stay consistent.",
+    );
+  }
+
+  const updated = await prisma.ticket.update({
+    where: { id },
+    data: { status: "REVOKED", revokeReason: input.reason, revokedById: ctx.userId },
+    include: DTO_INCLUDE,
+  });
+
+  await recordAudit({
+    actorId: ctx.userId,
+    actorRole: ctx.role,
+    action: "ticket.revoke",
+    targetType: "ticket",
+    targetId: id,
+    eventId: ticket.eventId,
+    summary: { serial: ticket.serial, reason: input.reason, previousStatus: ticket.status },
+  });
+  return toDto(updated as TicketRecord);
+}
+
+/**
+ * Removes available stock from circulation without erasing its serial, token
+ * hash, or audit trail. Repeating the same actor/reason request is a no-op.
+ */
+export async function bulkRemoveTickets(ctx: AuthContext, input: BulkRemoveTicketsInput): Promise<TicketDto[]> {
+  requirePermission(ctx.role, "ticket:revoke");
+  const initial = await prisma.ticket.findMany({
+    where: { id: { in: input.ticketIds } },
+    select: { id: true, eventId: true },
+  });
+  if (initial.length !== input.ticketIds.length) throw notFound("One or more tickets were not found.");
+  const eventIds = new Set(initial.map((ticket) => ticket.eventId));
+  if (eventIds.size !== 1) throw validationError("Remove tickets from one event at a time.");
+  const eventId = initial[0].eventId;
+
+  return prisma.$transaction(async (tx) => {
+    const lockedEvent = await tx.$queryRawUnsafe<Array<{ id: string }>>(
+      'SELECT id FROM "Event" WHERE id = $1 FOR UPDATE', eventId,
+    );
+    if (!lockedEvent[0]) throw notFound("Event not found.");
+    await tx.$queryRawUnsafe<Array<{ id: string }>>(
+      'SELECT id FROM "Ticket" WHERE id = ANY($1::text[]) ORDER BY id FOR UPDATE', input.ticketIds,
+    );
+
+    const tickets = await tx.ticket.findMany({ where: { id: { in: input.ticketIds } }, include: DTO_INCLUDE });
+    if (tickets.length !== input.ticketIds.length || tickets.some((ticket) => ticket.eventId !== eventId)) {
+      throw notFound("One or more tickets were not found.");
+    }
+    const alreadyRemoved = tickets.filter((ticket) =>
+      ticket.status === "REVOKED" && ticket.revokedById === ctx.userId && ticket.revokeReason === input.reason,
+    );
+    const toRemove = tickets.filter((ticket) => !alreadyRemoved.some((removed) => removed.id === ticket.id));
+    if (toRemove.some((ticket) => ticket.status !== "AVAILABLE")) {
+      throw conflict("Only available tickets can be removed. Sold, cancelled, and previously revoked tickets keep their history.");
+    }
+
+    if (toRemove.length) {
+      const updated = await tx.ticket.updateMany({
+        where: { id: { in: toRemove.map((ticket) => ticket.id) }, status: "AVAILABLE" },
+        data: { status: "REVOKED", revokeReason: input.reason, revokedById: ctx.userId },
+      });
+      if (updated.count !== toRemove.length) throw conflict("Ticket inventory changed. Refresh the list and try again.");
+      for (const ticket of toRemove) {
+        await tx.auditLog.create({
+          data: {
+            actorId: ctx.userId,
+            actorRole: ctx.role,
+            action: "ticket.remove",
+            targetType: "ticket",
+            targetId: ticket.id,
+            eventId: ticket.eventId,
+            summary: sanitizeAuditData({ serial: ticket.serial, reason: input.reason, previousStatus: ticket.status, method: "bulk" }) as Prisma.InputJsonValue,
+          },
+        });
+      }
+    }
+    const result = await tx.ticket.findMany({ where: { id: { in: input.ticketIds } }, include: DTO_INCLUDE });
+    return result.map((ticket) => toDto(ticket as TicketRecord));
+  }, { maxWait: 10_000, timeout: 30_000 });
+}
+
+/** Authorised inventory export (PRD 5.5 / 10.3) — never includes tokens. */
+export async function exportTickets(
+  ctx: AuthContext,
+  query: TicketExportQuery,
+): Promise<TicketDto[]> {
+  requirePermission(ctx.role, "inventory:export");
+
+  const search = query.search?.toUpperCase();
+  const tickets = await prisma.ticket.findMany({
+    where: {
+      eventId: query.eventId,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.ticketTypeId ? { ticketTypeId: query.ticketTypeId } : {}),
+      ...(query.batchId ? { batchId: query.batchId } : {}),
+      ...(search ? { serial: { contains: search } } : {}),
+    },
+    include: DTO_INCLUDE,
+    orderBy: { serial: "asc" },
+    take: 50_000,
+  });
+
+  await recordAudit({
+    actorId: ctx.userId,
+    actorRole: ctx.role,
+    action: "inventory.export",
+    targetType: "event",
+    targetId: query.eventId,
+    eventId: query.eventId,
+    summary: { count: tickets.length, filters: { ...query } },
+  });
+
+  return tickets.map((t) => toDto(t as TicketRecord));
+}

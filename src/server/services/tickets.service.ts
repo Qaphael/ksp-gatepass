@@ -44,6 +44,9 @@ export interface TicketTraceCompact {
   customerName: string | null;
   /** Only the last three digits of the phone number, e.g. `***123`. */
   customerPhoneMasked: string | null;
+  saleStatus: SaleStatus | null;
+  paidNetUgx: number | null;
+  balanceUgx: number | null;
   checkedInAt: string | null;
   gate: string | null;
 }
@@ -97,7 +100,7 @@ async function attachTrace(tickets: NonNullable<TicketRecord>[]): Promise<Ticket
       where: { ticketId: { in: ids } },
       include: {
         sale: {
-          select: { id: true, reference: true, customerName: true, customerPhone: true },
+          select: { id: true, reference: true, status: true, totalUgx: true, customerName: true, customerPhone: true, payments: { include: { adjustments: true } } },
         },
       },
     }),
@@ -117,11 +120,21 @@ async function attachTrace(tickets: NonNullable<TicketRecord>[]): Promise<Ticket
   return tickets.map((ticket) => {
     const sale = saleByTicket.get(ticket.id);
     const checkIn = checkInByTicket.get(ticket.id);
+    const paidNetUgx = sale
+      ? sale.payments.reduce(
+          (sum, payment) =>
+            sum + payment.amountUgx - payment.adjustments.reduce((adjustmentSum, adjustment) => adjustmentSum + adjustment.amountUgx, 0),
+          0,
+        )
+      : 0;
     return {
       saleReference: sale?.reference ?? null,
       saleId: sale?.id ?? null,
       customerName: sale?.customerName ?? null,
       customerPhoneMasked: sale?.customerPhone ? `***${sale.customerPhone.slice(-3)}` : null,
+      saleStatus: sale?.status ?? null,
+      paidNetUgx: sale ? paidNetUgx : null,
+      balanceUgx: sale ? Math.max(0, sale.totalUgx - paidNetUgx) : null,
       checkedInAt: checkIn?.checkedInAt.toISOString() ?? null,
       gate: checkIn?.gate ?? null,
     };
