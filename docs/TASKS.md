@@ -9,6 +9,16 @@
 
 Note: `scripts/tmp-apply-super-admin-role.ts` and `scripts/tmp-inspect-migrations.ts` were committed in this range despite the `tmp-` prefix; they are not wired into any npm script and should be reviewed or removed before release.
 
+## Merged `origin/claude/kind-hertz-1ae9b5` — Ticket trace & batch flow read endpoints
+
+- [x] Merged branch (2 commits: `5989155`, `f919e8e`) into `master` at `1c844cf`
+- [x] Added `GET /api/v1/tickets/[id]/trace` — full sale + check-in history (requires `inventory:read`, never returns QR tokens, masks phone to last 3 digits)
+- [x] Added `GET /api/v1/ticket-batches/[id]/flow` — batch flow summary (requires `inventory:read`, custody breakdown only with `stock:read-all`)
+- [x] Service updates: `getTicketTrace()`, compact trace in `listTickets` with `include: "trace"`, `getBatchFlow()`
+- [x] RBAC: 403 for seller/verifier/supervisor, 401 for anonymous
+- [x] Added 6 integration tests (`tests/integration/tickets.test.ts`): single-ticket trace, unsold stock null trace, 404 unknown, role denials, list with trace, list role denials
+- [x] All 221 tests pass, `pnpm lint` clean (1 pre-existing warning), `pnpm typecheck` passes
+
 ## UI batch 5 — events list and event detail
 
 - [x] `/events`: page renders `EventsTable`; the component gained a `canCreate` prop so the empty state only offers the "Create event" CTA to users with `event:create` (server-side enforcement unchanged).

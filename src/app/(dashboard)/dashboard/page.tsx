@@ -198,22 +198,26 @@ function AdminDashboard({ event, stats, sales, checkins, alerts }: { event: Even
         value={String(stats.sold)}
         suffix={`/ ${stats.capacity}`}
         percent={soldPct}
+        tone="success"
       />
       <MetricTile
         label="Total collected"
         amount={stats.paidUgx}
         sub="Recorded payments"
+        tone="success"
       />
       <MetricTile
         label="Outstanding"
         amount={stats.outstandingUgx}
         sub="Pledges & partials"
+        tone="warning"
       />
       <MetricTile
         label="Admitted"
         value={String(stats.checkedIn)}
         suffix={`/ ${stats.sold} sold`}
         percent={admittedPct}
+        tone="success"
       />
       <MetricTile
         label="Remaining capacity"

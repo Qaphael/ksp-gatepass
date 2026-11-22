@@ -164,9 +164,6 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
               </div>
               <div className="mt-2 flex items-center gap-3">
                 <span className="text-xs text-muted-foreground">{sale.seller.displayName} · {ticketCount} ticket{ticketCount !== 1 ? "s" : ""}</span>
-                <Link className="text-xs font-medium text-primary underline-offset-2 hover:underline" href={`/sales/${sale.id}`}>
-                  View sale
-                </Link>
               </div>
             </Link>
           );

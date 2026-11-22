@@ -64,17 +64,17 @@ export function MetricTile({
       </div>
 
       {amount !== undefined ? (
-        <>
+        <div className="mt-2 flex flex-col gap-0.5">
           <span className="text-[11px] font-mono text-muted-foreground">UGX</span>
           <span
             className={cn(
-              "mt-1 truncate text-base font-mono font-semibold tabular-nums",
+              "truncate text-base font-mono font-semibold tabular-nums",
               toneClasses[tone],
             )}
           >
             {amount.toLocaleString()}
           </span>
-        </>
+        </div>
       ) : (
         <div className="mt-2 flex items-baseline gap-1">
           <span className={cn("truncate font-mono text-[22px] font-semibold tabular-nums")} >

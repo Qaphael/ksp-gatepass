@@ -377,7 +377,7 @@ describe("ticket trace reads", () => {
         customerName: "Trace Buyer",
         customerPhone: "0772123456",
         items: [{ ticketTypeId: typeId, quantity: 1 }],
-        ...(options.paid === false ? {} : { initialPayment: { amountUgx: 5_000, method: "CASH" } }),
+        ...(options.paid === false ? {} : { initialPayment: { amountUgx: 15_000, method: "CASH" } }),
       }),
     });
     expect(sale.status).toBe(201);
@@ -420,12 +420,12 @@ describe("ticket trace reads", () => {
 
     expect(trace.body.sale.id).toBe(fixture.saleId);
     expect(trace.body.sale.reference).toBe(fixture.saleReference);
-    expect(trace.body.sale.status).toBe("PARTIALLY_PAID");
+    expect(trace.body.sale.status).toBe("PAID");
     expect(trace.body.sale.customerName).toBe("Trace Buyer");
     expect(trace.body.sale.customerPhone).toBe("0772123456");
     expect(trace.body.sale.totalUgx).toBe(15_000);
-    expect(trace.body.sale.paidNetUgx).toBe(5_000);
-    expect(trace.body.sale.balanceUgx).toBe(10_000);
+    expect(trace.body.sale.paidNetUgx).toBe(15_000);
+    expect(trace.body.sale.balanceUgx).toBe(0);
     expect(typeof trace.body.sale.sellerName).toBe("string");
     expect(typeof trace.body.sale.createdAt).toBe("string");
     expect(new Date(trace.body.sale.createdAt).toISOString()).toBe(trace.body.sale.createdAt);
@@ -494,13 +494,13 @@ describe("ticket trace reads", () => {
     expect(sold).toBeDefined();
     expect(sold.trace.saleId).toBe(fixture.saleId);
     expect(sold.trace.saleReference).toBe(fixture.saleReference);
-    expect(sold.trace.saleStatus).toBe("PARTIALLY_PAID");
+    expect(sold.trace.saleStatus).toBe("PAID");
     expect(sold.trace.customerName).toBe("Trace Buyer");
     // The phone is masked down to its last three digits.
     expect(sold.trace.customerPhoneMasked).toBe("***456");
     expect(sold.trace.customerPhoneMasked).not.toContain("0772123456");
-    expect(sold.trace.paidNetUgx).toBe(5_000);
-    expect(sold.trace.balanceUgx).toBe(10_000);
+    expect(sold.trace.paidNetUgx).toBe(15_000);
+    expect(sold.trace.balanceUgx).toBe(0);
     expect(sold.trace.checkedInAt).toBeTruthy();
     expect(sold.trace.gate).toBe("Gate A");
 
