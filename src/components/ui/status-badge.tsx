@@ -28,10 +28,10 @@ type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 type StatusDefinition = { label: string; icon: LucideIcon; tone: Tone };
 
 const TONE_CLASSES: Record<Tone, string> = {
-  success: "border-transparent bg-success text-success-foreground",
-  warning: "border-transparent bg-warning text-warning-foreground",
-  danger: "border-transparent bg-danger text-danger-foreground",
-  info: "border-transparent bg-info text-info-foreground",
+  success: "border-success/30 text-success bg-success/5",
+  warning: "border-warning/30 text-warning bg-warning/5",
+  danger: "border-destructive/30 text-destructive bg-destructive/5",
+  info: "border-info/30 text-info bg-info/5",
   neutral: "border-border bg-muted text-muted-foreground",
 };
 
@@ -97,8 +97,8 @@ export function StatusBadge({
   const Icon = definition.icon;
 
   return (
-    <Badge variant="outline" className={cn(TONE_CLASSES[definition.tone], className)}>
-      <Icon aria-hidden="true" />
+    <Badge variant="outline" className={cn(TONE_CLASSES[definition.tone], "font-mono text-[11px]", className)}>
+      <Icon className="size-3" aria-hidden="true" />
       {definition.label}
     </Badge>
   );

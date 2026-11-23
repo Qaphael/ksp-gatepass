@@ -11,6 +11,7 @@ import { listEvents } from "@/server/services/events.service";
 import { availableReports, getReport } from "@/server/services/reports.service";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const instant = false;
@@ -103,10 +104,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   return <div className="flex flex-col gap-4">
     <PageHeader title="Reports" description="Event sales, payments, attendance and reconciliation from server records." />
     <FilterSheet activeCount={activeCount}><form className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 md:rounded-lg md:border md:border-border/70 md:bg-card md:p-4 md:shadow-card lg:p-5">
-      <label className="grid min-w-0 gap-1.5 text-sm font-semibold">Event<select name="eventId" defaultValue={event?.id ?? ""} className="block h-12 min-h-12 w-full min-w-0 truncate rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm">{events.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <label className="grid min-w-0 gap-1.5 text-sm font-semibold">Report<select name="type" defaultValue={selectedType} className="block h-12 min-h-12 w-full min-w-0 truncate rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm">{catalog.map((item) => <option key={item.type} value={item.type}>{item.title}</option>)}</select></label>
-      <label className="grid min-w-0 gap-1.5 text-sm font-semibold">From<input type="date" name="from" defaultValue={one(params, "from")} className="block h-12 min-h-12 w-full min-w-0 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm" /></label>
-      <label className="grid min-w-0 gap-1.5 text-sm font-semibold">To<input type="date" name="to" defaultValue={one(params, "to")} className="block h-12 min-h-12 w-full min-w-0 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm" /></label>
+      <label className="grid min-w-0 gap-1.5 text-sm font-medium">Event<Select defaultValue={event?.id ?? ""}><SelectTrigger className="h-12 min-h-12 w-full min-w-0 truncate rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm"><SelectValue placeholder="All events" /></SelectTrigger><SelectContent>{events.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent></Select></label>
+      <label className="grid min-w-0 gap-1.5 text-sm font-medium">Report<Select defaultValue={selectedType}><SelectTrigger className="h-12 min-h-12 w-full min-w-0 truncate rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm"><SelectValue /></SelectTrigger><SelectContent>{catalog.map((item) => <SelectItem key={item.type} value={item.type}>{item.title}</SelectItem>)}</SelectContent></Select></label>
+      <label className="grid min-w-0 gap-1.5 text-sm font-medium">From<input type="date" name="from" defaultValue={one(params, "from")} className="h-12 min-h-12 w-full min-w-0 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm" /></label>
+      <label className="grid min-w-0 gap-1.5 text-sm font-medium">To<input type="date" name="to" defaultValue={one(params, "to")} className="h-12 min-h-12 w-full min-w-0 rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm" /></label>
       <Button type="submit" className="h-12 min-h-12 w-full self-end md:col-span-2 md:w-auto md:justify-self-end lg:col-span-4 lg:justify-self-end">Run report</Button>
     </form></FilterSheet>
     {data ? <><section className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border/70 bg-card p-4 shadow-card sm:p-5"><div className="min-w-0"><h2 className="text-xl font-semibold">{data.title}</h2><p className="mt-1 text-sm text-muted-foreground">{data.eventName} · Values reflect staff-recorded transactions.</p></div>{canExport && query && <div className="flex shrink-0 gap-2"><a className="inline-flex min-h-11 items-center whitespace-nowrap rounded-control border border-border bg-background px-4 text-sm font-semibold hover:bg-muted" href={exportUrl(query, "csv")}>Export CSV</a><a className="inline-flex min-h-11 items-center whitespace-nowrap rounded-control border border-border bg-background px-4 text-sm font-semibold hover:bg-muted" href={exportUrl(query, "pdf")}>Export PDF</a></div>}</section>
@@ -124,7 +125,6 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
                   label={tile.label}
                   value={formatSummary(tile.value)}
                   sub={percent === undefined ? undefined : `${percent}% of gross recorded`}
-                  percent={tile.label === "Net recorded payments" || tile.label === "Outstanding" ? percent : undefined}
                 />
               );
             })}

@@ -121,18 +121,19 @@ function reportNumber(rows: (string | number | null)[][], label: string): number
 function EmptyDashboard({ role }: { role: "SUPER_ADMIN" | "ADMIN" | "SELLER" | "VERIFIER" | "SUPERVISOR" }) {
   return (
     <section className="mx-auto flex min-h-[55dvh] max-w-lg flex-col justify-center gap-6 text-center px-4">
-      <div className="mx-auto grid size-12 place-items-center rounded-lg bg-muted/50 text-foreground">
+      <div className="mx-auto grid size-12 place-items-center rounded-md bg-muted/50 text-foreground">
         <CalendarDays className="size-7" aria-hidden="true" />
       </div>
-      <div>
-        <h1 className="text-2xl font-semibold">No event is ready</h1>
-        <p className="mt-4 text-base text-muted-foreground">
-          An administrator needs to configure an event before your {ROLE_LABELS[role].toLowerCase()} dashboard can show event activity.
+      <div className="space-y-3">
+        <h1 className="text-2xl font-medium">No event is ready</h1>
+        <p className="text-sm text-muted-foreground">
+          An administrator needs to configure an event before your {ROLE_LABELS[role].toLowerCase()} dashboard can show event activity
         </p>
       </div>
       {(role === "ADMIN" || role === "SUPER_ADMIN") && (
-        <Button nativeButton={false} render={<Link href="/events/new" />}>
-          Create event <ArrowRight className="size-4" aria-hidden="true" />
+        <Button nativeButton={false} render={<Link href="/events/new" />} className="min-h-11 w-fit justify-center gap-1.5 text-sm font-medium mx-auto">
+          <Plus className="size-4" aria-hidden="true" />
+          Create event
         </Button>
       )}
     </section>
@@ -157,8 +158,8 @@ function DashboardHeading({ event, chips }: { event: EventDto; chips?: React.Rea
       )}
       <div className="flex min-w-0 items-start gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-3xl font-semibold tracking-tight">{event.name}</h1>
-          <p className="mt-1 flex items-center gap-1 truncate text-sm text-muted-foreground">
+          <h1 className="truncate text-3xl font-medium">{event.name}</h1>
+          <p className="mt-2 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
             <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
             {event.eventDate} · {event.venue}
           </p>
@@ -198,8 +199,8 @@ function Stat({ icon, label, value, detail }: { icon: React.ReactNode; label: st
           </span>
           <span className="min-w-0 text-sm font-medium text-muted-foreground">{label}</span>
         </div>
-        <p className="mt-3 break-words text-2xl font-semibold tabular-nums sm:text-3xl">{value}</p>
-        {detail && <p className="mt-1 text-sm leading-snug text-muted-foreground">{detail}</p>}
+        <p className="mt-3 break-words text-2xl font-medium tabular-nums sm:text-3xl">{value}</p>
+        {detail && <p className="mt-2 text-sm text-muted-foreground">{detail}</p>}
       </CardContent>
     </Card>
   );
@@ -225,18 +226,18 @@ function AdmittedMetric({
     <Card className="min-w-0 relative overflow-hidden">
       <CardContent className="p-4 relative z-10">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate font-mono text-[11px] text-muted-foreground">{label}</span>
+          <span className="truncate font-mono text-[12px] text-muted-foreground">{label}</span>
         </div>
         <div className="mt-1 flex items-baseline justify-between gap-2">
           <div className="flex items-baseline gap-1 min-w-0">
-            <span className="truncate font-mono text-[28px] font-semibold tabular-nums text-foreground">{value}</span>
-            <span className="truncate font-mono text-[11px] text-muted-foreground">{suffix}</span>
+            <span className="truncate font-mono text-[28px] font-medium tabular-nums text-foreground">{value}</span>
+            <span className="truncate font-mono text-[12px] text-muted-foreground">{suffix}</span>
           </div>
           <div className="flex items-center gap-1 whitespace-nowrap shrink-0">
-            <span className="font-mono text-[11px] font-semibold text-warning">{clamped}%</span>
+            <span className="font-mono text-[12px] font-medium text-warning">{clamped}%</span>
           </div>
         </div>
-        <p className="mt-1 truncate text-[11px] text-muted-foreground">{today} admitted today · {capacity} capacity</p>
+        <p className="mt-2 truncate text-[12px] text-muted-foreground">{today} admitted today · {capacity} capacity</p>
         {/* Signature: amber progress line */}
         <div className="mt-3 h-1 w-full bg-muted">
           <div className="h-full bg-warning" style={{ width: `${clamped}%` }} aria-hidden="true" />
@@ -270,7 +271,6 @@ function AdminDashboard({
   checkins: Awaited<ReturnType<typeof listRecentCheckIns>>;
   alerts: { balances: number; failed: number; revoked: number; configuration: boolean };
 }) {
-  const soldPct = stats.capacity ? Math.round((stats.sold / stats.capacity) * 100) : 0;
   const admittedPct = stats.sold ? Math.round((stats.checkedIn / stats.sold) * 100) : 0;
   const alertsClear = alerts.balances === 0 && alerts.failed === 0 && alerts.revoked === 0;
 
@@ -293,7 +293,7 @@ function AdminDashboard({
       />
 
       {/* Quick actions grid (min 44px tactile targets) */}
-      <section aria-label="Quick actions" className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4">
+      <section aria-label="Quick actions" className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
         <QuickAction href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} icon={<Plus className="size-4" aria-hidden="true" />} label="New sale" prominent />
         <QuickAction href={`/scanner?eventId=${encodeURIComponent(event.id)}`} icon={<ScanLine className="size-4" aria-hidden="true" />} label="Check-in" />
         <QuickAction href={`/reports?eventId=${encodeURIComponent(event.id)}`} icon={<Activity className="size-4" aria-hidden="true" />} label="Reports" />
@@ -301,12 +301,12 @@ function AdminDashboard({
       </section>
 
       {/* Operational alerts strip */}
-      <Card className="border-border/50 bg-card data-[size=sm]">
-        <CardContent>
+      <Card className="border-border/50 bg-card">
+        <CardContent className="p-4">
           {alertsClear ? (
             <p className="text-sm text-muted-foreground">All clear — no outstanding balances, failed scans, or revocations today</p>
           ) : (
-            <TileRowList className="gap-1">
+            <TileRowList className="gap-2">
               {alerts.balances > 0 && (
                 <TileRow
                   icon={<Wallet className="size-4" />}
@@ -346,8 +346,8 @@ function AdminDashboard({
       </Card>
 
       {/* Compact stats row */}
-      <section aria-label="Key metrics" className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-        <MetricTile label="Sold tickets" value={String(stats.sold)} suffix={`/ ${stats.capacity}`} percent={soldPct} variant="compact" />
+      <section aria-label="Key metrics" className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+        <MetricTile label="Sold tickets" value={String(stats.sold)} suffix={`/ ${stats.capacity}`} variant="compact" />
         <MetricTile label="Total collected" amount={stats.paidUgx} sub="Recorded payments" variant="compact" />
         <MetricTile label="Outstanding" amount={stats.outstandingUgx} sub="Pledges & partials" variant="compact" tone="warning" />
         <AdmittedMetric
@@ -363,15 +363,15 @@ function AdminDashboard({
 
       {/* Main chart: live admission curve today vs capacity */}
       <section aria-label="Admission trend" className="lg:col-span-3">
-        <Card className="border-border/50 bg-card data-[size=sm]">
-          <CardHeader className="flex flex-col gap-2">
+        <Card className="border-border/50 bg-card">
+          <CardHeader className="p-4 pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Admission today</CardTitle>
-              <span className="font-mono text-[11px] text-muted-foreground">{localEventDay(event)}</span>
+              <CardTitle className="text-lg font-medium">Admission today</CardTitle>
+              <span className="font-mono text-[12px] text-muted-foreground">{localEventDay(event)}</span>
             </div>
             <CardDescription className="text-sm text-muted-foreground">Cumulative admissions vs capacity — updated in real time</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             <AdmissionChart
               admitted={stats.checkedIn}
               capacity={stats.capacity}
@@ -383,7 +383,7 @@ function AdminDashboard({
       </section>
 
       {/* Recent sales + latest turnstile stream */}
-      <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-4">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
         <RecentSales sales={sales} timezone={event.timezone} variant="admin" />
         <RecentCheckins rows={checkins} timezone={event.timezone} variant="admin" />
       </div>
@@ -402,7 +402,7 @@ function QuickAction({
       nativeButton={false}
       render={<Link href={href} />}
       variant={prominent ? "default" : "outline"}
-      className="min-h-11 w-full justify-center gap-1.5 text-sm font-medium sm:min-h-12"
+      className="min-h-12 w-full justify-center gap-2 text-sm font-medium"
     >
       {icon}
       {label}
@@ -424,11 +424,11 @@ function SellerDashboard({
   return (
     <main className="flex flex-col gap-4 sm:gap-6">
       <DashboardHeading event={event} />
-      <Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-11 w-full justify-center text-sm">
+      <Button nativeButton={false} render={<Link href={`/sales/new?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12 w-full justify-center gap-2 text-sm font-medium">
         <Plus className="size-4" aria-hidden="true" />
         New sale
       </Button>
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+      <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
         <Stat icon={<Ticket className="size-4" />} label="Sales today" value={String(metrics.salesCount)} />
         <Stat icon={<Banknote className="size-4" />} label="Sales value" value={formatUGX(metrics.salesValueUgx)} detail="Today · UGX" />
         <Stat icon={<Banknote className="size-4" />} label="Received net today" value={formatUGX(metrics.receivedNetUgx)} detail="Recorded payments less adjustments" />
@@ -456,22 +456,22 @@ function VerifierDashboard({
     <main className="mx-auto flex w-full max-w-xl flex-col gap-4 sm:gap-6">
       <DashboardHeading event={event} />
       <DashboardConnection eventId={event.id} />
-      <Card className="border-border/50 bg-card data-[size=sm]">
-        <CardContent className="flex flex-col gap-4">
+      <Card className="border-border/50 bg-card">
+        <CardContent className="p-4 space-y-4">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-md bg-muted/50 text-foreground">
               <Check className="size-5" aria-hidden="true" />
             </span>
             <div>
               <p className="text-base font-medium">Successful check-ins · {day}</p>
-              <p className="mt-1 text-3xl font-semibold tabular-nums">{count}</p>
+              <p className="mt-1 text-3xl font-medium tabular-nums">{count}</p>
             </div>
           </div>
-          <Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12 w-full justify-center text-sm">
+          <Button nativeButton={false} render={<Link href={`/scanner?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-12 w-full justify-center gap-2 text-sm font-medium">
             <ScanLine className="size-4" aria-hidden="true" />
             Scan ticket
           </Button>
-          <Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-11 w-full justify-center text-sm">
+          <Button nativeButton={false} variant="outline" render={<Link href={`/check-in/manual?eventId=${encodeURIComponent(event.id)}`} />} className="min-h-11 w-full justify-center gap-2 text-sm font-medium">
             <ClipboardList className="size-4" aria-hidden="true" />
             Enter serial
           </Button>
@@ -507,19 +507,19 @@ function SupervisorDashboard({
   return (
     <main className="flex flex-col gap-4 sm:gap-6">
       <DashboardHeading event={event} />
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4 lg:gap-6">
+      <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
         <Stat icon={<Check className="size-4" />} label="Admissions" value={String(attendance.checkedIn)} detail={`${today} today`} />
         <Stat icon={<Activity className="size-4" />} label="Admission rate" value={`${rate}%`} detail={`${attendance.checkedIn} of ${attendance.ticketsSold} sold tickets`} />
         <Stat icon={<CircleAlert className="size-4" />} label="Failed scans" value={String(failed)} detail="Today" />
         <Stat icon={<ScanLine className="size-4" />} label="Repeat scans" value={String(repeated)} detail="Already admitted · today" />
       </div>
-      <div className="grid min-w-0 gap-3 lg:grid-cols-2 lg:gap-4">
-        <Card className="border-border/50 bg-card data-[size=sm]">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Admissions by gate</CardTitle>
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:gap-6">
+        <Card className="border-border/50 bg-card">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-lg font-medium">Admissions by gate</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">Today&apos;s successful check-ins</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0">
             {gates.size ? (
               <ul className="divide-y divide-border/50">
                 {[...gates].sort((a, b) => b[1] - a[1]).map(([gate, value]) => (
@@ -552,9 +552,9 @@ function RecentSales({
   variant?: "default" | "admin";
 }) {
   return (
-    <Card className="border-border/50 bg-card data-[size=sm]">
-      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2">
-        <CardTitle className="min-w-0 truncate text-lg font-semibold">{title}</CardTitle>
+    <Card className="border-border/50 bg-card">
+      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-4 pb-2">
+        <CardTitle className="min-w-0 truncate text-lg font-medium">{title}</CardTitle>
         <Link
           href="/sales"
           className="col-start-2 row-start-1 inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 text-sm font-medium text-primary transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -564,7 +564,7 @@ function RecentSales({
         </Link>
         <CardDescription className="col-span-2 row-start-2 text-sm text-muted-foreground">Latest recorded transactions</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         {sales.length ? (
           <ul className="divide-y divide-border/50">
             {sales.map((sale) => {
@@ -572,7 +572,7 @@ function RecentSales({
                 ? sale.items.map((i) => `${i.quantity}× ${i.ticketTypeName}`).join(", ")
                 : "—";
               const time = formatDateTime(sale.createdAt, timezone, "en-UG", { hour: "2-digit", minute: "2-digit" });
-              const customerName = sale.customerName ?? "Cash customer";
+              const customerName = sale.customerName ?? "Walk-in customer";
               return (
                 <li key={sale.id}>
                   <Link href={`/sales/${sale.id}`} className="flex min-h-12 items-center justify-between gap-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -584,7 +584,7 @@ function RecentSales({
                         {variant === "admin" ? (
                           <>
                             <span className="block truncate text-sm font-medium">{customerName}</span>
-                            <time className="font-mono text-[11px] text-muted-foreground">{time}</time>
+                            <time className="font-mono text-[12px] text-muted-foreground">{time}</time>
                           </>
                         ) : (
                           <>
@@ -598,13 +598,13 @@ function RecentSales({
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-0.5">
-                      <span className="whitespace-nowrap font-mono text-sm font-semibold tabular-nums text-foreground">
+                      <span className="whitespace-nowrap font-mono text-sm font-medium tabular-nums text-foreground">
                         {formatUGX(sale.totalUgx)}
                       </span>
                       {variant === "admin" ? (
                         <SaleStatusBadge domain="sale" status={sale.status} />
                       ) : (
-                        <time className="font-mono text-[11px] text-muted-foreground">{time}</time>
+                        <time className="font-mono text-[12px] text-muted-foreground">{time}</time>
                       )}
                     </span>
                   </Link>
@@ -632,13 +632,13 @@ function RecentCheckins({
   variant?: "default" | "admin";
 }) {
   return (
-    <Card className="border-border/50 bg-card data-[size=sm]">
-      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2">
-        <CardTitle className="min-w-0 truncate text-lg font-semibold">{title}</CardTitle>
-        <span className="col-start-2 row-start-1 font-mono text-[11px] text-muted-foreground">Latest</span>
+    <Card className="border-border/50 bg-card">
+      <CardHeader className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 p-4 pb-2">
+        <CardTitle className="min-w-0 truncate text-lg font-medium">{title}</CardTitle>
+        <span className="col-start-2 row-start-1 font-mono text-[12px] text-muted-foreground">Latest</span>
         <CardDescription className="col-span-2 row-start-2 text-sm text-muted-foreground">Latest admitted tickets</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         {rows.length ? (
           <ul className="divide-y divide-border/50">
             {rows.map((row) => {
@@ -652,14 +652,14 @@ function RecentCheckins({
                     <span className="min-w-0">
                       {variant === "admin" ? (
                         <>
-                          <span className="block truncate font-mono text-sm font-semibold tracking-wide">{row.serial}</span>
-                          <time className="font-mono text-[11px] text-muted-foreground">{time}</time>
+                          <span className="block truncate font-mono text-sm font-medium">{row.serial}</span>
+                          <time className="font-mono text-[12px] text-muted-foreground">{time}</time>
                         </>
                       ) : (
                         <>
                           <span className="flex items-center gap-1.5">
-                            <span className="truncate font-mono text-sm font-semibold tracking-wide">{row.serial}</span>
-                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{row.ticketTypeName}</span>
+                            <span className="truncate font-mono text-sm font-medium">{row.serial}</span>
+                            <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{row.ticketTypeName}</span>
                           </span>
                           <span className="block truncate text-xs text-muted-foreground">{row.gate}</span>
                         </>
@@ -667,11 +667,11 @@ function RecentCheckins({
                     </span>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-0.5">
-                    <span className="font-mono text-[11px] text-success">Valid pass</span>
+                    <span className="font-mono text-[12px] text-success">Valid pass</span>
                     {variant === "admin" ? (
-                      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{row.ticketTypeName}</span>
+                      <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">{row.ticketTypeName}</span>
                     ) : (
-                      <time className="font-mono text-[11px] text-muted-foreground">{time}</time>
+                      <time className="font-mono text-[12px] text-muted-foreground">{time}</time>
                     )}
                   </span>
                 </li>
@@ -691,12 +691,12 @@ function RecentAttempts({
   timezone,
 }: { rows: Awaited<ReturnType<typeof listScanAttempts>>; timezone: string }) {
   return (
-    <Card className="border-border/50 bg-card data-[size=sm]">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">Recent scan outcomes</CardTitle>
+    <Card className="border-border/50 bg-card">
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="text-lg font-medium">Recent scan outcomes</CardTitle>
         <CardDescription className="text-sm text-muted-foreground">Latest ticket checks for this event</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         {rows.length ? (
           <ul className="divide-y divide-border/50">
             {rows.map((row) => (
@@ -812,7 +812,7 @@ function AdmissionChart({
           y={chartHeight * (1 - capacity / maxVal) - 4}
           textAnchor="end"
           fontSize="9"
-          fontFamily="monospace"
+          fontFamily="var(--font-mono)"
           fill="hsl(var(--muted-foreground))"
           opacity="0.6"
         >
@@ -823,7 +823,7 @@ function AdmissionChart({
           x={(data.length - 1) / (points - 1) * 1000 + 8}
           y={chartHeight * (1 - admitted / maxVal) + 4}
           fontSize="10"
-          fontFamily="monospace"
+          fontFamily="var(--font-mono)"
           fontWeight="500"
           fill="hsl(var(--warning))"
         >
@@ -839,18 +839,18 @@ function AdmissionChart({
         <span>23:59</span>
       </div>
       {/* Summary row */}
-      <div className="mt-3 flex items-center justify-between gap-4 text-sm">
+      <div className="mt-4 flex items-center justify-between gap-4 text-sm">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Sold</span>
-          <span className="font-mono font-semibold tabular-nums text-foreground">{sold}</span>
+          <span className="font-mono font-medium tabular-nums text-foreground">{sold}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Admitted today</span>
-          <span className="font-mono font-semibold tabular-nums text-warning">{today}</span>
+          <span className="font-mono font-medium tabular-nums text-warning">{today}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">Rate</span>
-          <span className="font-mono font-semibold tabular-nums text-warning">{sold ? Math.round((admitted / sold) * 100) : 0}%</span>
+          <span className="font-mono font-medium tabular-nums text-warning">{sold ? Math.round((admitted / sold) * 100) : 0}%</span>
         </div>
       </div>
     </div>

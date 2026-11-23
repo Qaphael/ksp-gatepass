@@ -196,24 +196,21 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
             label="Sold"
             value={String(kpis.sold)}
             tone="primary"
-            percent={kpis.total > 0 ? Math.round((kpis.sold / kpis.total) * 100) : 0}
-            sub={`of ${kpis.total}`}
+            sub={`${kpis.sold} of ${kpis.total} total`}
           />
           <MetricTile
             variant="compact"
             label="Admitted"
             value={String(attendance.checkedIn)}
             tone="success"
-            percent={attendance.ticketsSold > 0 ? Math.round((attendance.checkedIn / attendance.ticketsSold) * 100) : 0}
-            sub={`${attendance.checkedIn > 0 ? Math.round((attendance.checkedIn / attendance.ticketsSold) * 100) : 0}% of sold`}
+            sub={`${attendance.checkedIn} of ${attendance.ticketsSold} sold tickets`}
           />
           <MetricTile
             variant="compact"
             label="Unsold pool"
             value={String(kpis.available)}
             tone="default"
-            percent={kpis.total > 0 ? Math.round((kpis.available / kpis.total) * 100) : 0}
-            sub={`of ${kpis.total}`}
+            sub={`${kpis.available} available`}
           />
         </section>
       )}

@@ -2,8 +2,8 @@ import { cn } from "cn";
 
 /**
  * TileRow: a list-row tile component.
- * - Container: flex items-center justify-between gap-2 rounded-sm bg-muted/50 p-2 min-h-14
- * - Left: icon tile (size-8 rounded-lg tinted by tone) + two-line text (title + optional subtitle)
+ * - Container: flex items-center justify-between gap-2 rounded-sm bg-muted/50 p-3 min-h-14
+ * - Left: icon tile (size-8 rounded-lg neutral) + two-line text (title + optional subtitle)
  * - Right: end-aligned two lines (value + optional time)
  *
  * Usage:
@@ -47,11 +47,11 @@ export function TileRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-2 rounded-sm bg-muted/50 p-2 min-h-14",
+        "flex items-center justify-between gap-3 rounded-sm bg-muted/50 p-3 min-h-14",
         className,
       )}
     >
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-3 min-w-0">
         <span
           className={cn(
             "flex items-center justify-center rounded-lg",
@@ -63,7 +63,7 @@ export function TileRow({
           {icon}
         </span>
         <div className="flex flex-col min-w-0">
-          <span className="truncate text-sm font-semibold text-foreground">
+          <span className="truncate text-sm font-medium text-foreground">
             {title}
           </span>
           {subtitle && (
@@ -74,7 +74,7 @@ export function TileRow({
         </div>
       </div>
       <div className="flex flex-col items-end text-right">
-        <span className={cn("font-mono text-sm font-semibold tabular-nums", toneValueClasses[tone])}>
+        <span className={cn("font-mono text-sm font-medium tabular-nums", toneValueClasses[tone])}>
           {rightValue}
         </span>
         {rightTime && (

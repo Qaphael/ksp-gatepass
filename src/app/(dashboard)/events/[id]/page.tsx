@@ -146,16 +146,14 @@ export default async function EventDetailPage({
           label="Sold / capacity"
           value={String(sold)}
           suffix={`/ ${capacity}`}
-          percent={soldPercent}
-          sub={`${Math.max(0, capacity - sold)} capacity remaining`}
+          sub={`${soldPercent}% · ${Math.max(0, capacity - sold)} remaining`}
         />
         {attendance ? (
           <StatTile
             label="Admitted / sold"
             value={String(attendance.checkedIn)}
             suffix={`/ ${sold} sold`}
-            percent={admittedPercent}
-            sub={`${attendance.notYetCheckedIn} not yet admitted`}
+            sub={`${admittedPercent}% · ${attendance.notYetCheckedIn} not yet admitted`}
           />
         ) : null}
         {collectedUgx !== null ? (

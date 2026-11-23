@@ -10,6 +10,7 @@ import { listEvents } from "@/server/services/events.service";
 import { listSales, getSalesTotals } from "@/server/services/sales.service";
 import { FilterSheet } from "@/components/ui/filter-sheet";
 import { ResponsiveList } from "@/components/ui/responsive-list";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Money, formatUGX } from "@/components/ui/money";
 import { PageHeader } from "@/components/ui/page-header";
@@ -112,16 +113,17 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
           <form className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row">
             <label className="grid flex-1 gap-1 text-base">
               Event
-              <select
-                name="eventId"
-                defaultValue={query.eventId ?? ""}
-                className="min-h-12 rounded-md border border-input bg-background px-3 text-base"
-              >
-                <option value="">All events</option>
-                {events.map((event) => (
-                  <option key={event.id} value={event.id}>{event.name}</option>
-                ))}
-              </select>
+              <Select defaultValue={query.eventId ?? ""}>
+                <SelectTrigger className="h-12 min-h-12 w-full min-w-0 truncate rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm">
+                  <SelectValue placeholder="All events" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All events</SelectItem>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
             <Button size="sm" variant="outline" className="min-h-12 text-base" type="submit">
               Filter

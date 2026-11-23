@@ -2,7 +2,7 @@ import { cn } from "cn";
 
 /**
  * Chip: a small state/info label.
- * - Classes: inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-mono
+ * - Classes: inline-flex items-center gap-1.5 rounded-sm px-2.5 py-0.5 text-[12px] font-mono
  * - Icon or dot + label
  * - Tones: success | warning | destructive | info | neutral
  *
@@ -33,7 +33,7 @@ export function Chip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[11px] font-mono",
+        "inline-flex items-center gap-1.5 rounded-sm px-2.5 py-0.5 text-[12px] font-mono",
         toneClasses[tone],
         className,
       )}
