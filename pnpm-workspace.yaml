@@ -1,10 +1,9 @@
 allowBuilds:
-  sharp: false
-  unrs-resolver: false
-  embedded-postgres: true
-  "@embedded-postgres/windows-x64": true
-  "@embedded-postgres/linux-x64": true
-  "@embedded-postgres/linux-arm64": true
-  "@prisma/engines": true
-  prisma: true
+  '@embedded-postgres/windows-x64': true
+  '@prisma/engines': true
   esbuild: true
+  prisma: true
+minimumReleaseAgeExclude:
+  - '@prisma/config@7.11.0-dev.4'
+overrides:
+  '@prisma/config': '7.11.0-dev.4'

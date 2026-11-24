@@ -53,6 +53,7 @@
     "@axe-core/playwright": "4.13.0",
     "@napi-rs/canvas": "1.1.0",
     "@playwright/test": "1.60.0",
+    "@prisma/config": "7.11.0-dev.4",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
