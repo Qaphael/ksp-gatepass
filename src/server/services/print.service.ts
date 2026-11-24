@@ -320,14 +320,22 @@ export async function renderTicketTemplateCalibration(ctx: AuthContext, template
     if ((error as NodeJS.ErrnoException).code === "ENOENT") throw conflict("Ticket template artwork is missing from storage.");
     throw error;
   }
-  const rendered = await renderTemplateCalibrationPdf({
-    config,
-    artwork: { data: artwork, format: template.assetStorageKey.endsWith(".png") ? "png" : "jpeg" },
-    categoryColor: calibrationTicketType?.color,
-    categoryName: calibrationTicketType?.name,
-    categoryPrintLabel: calibrationTicketType?.printLabel,
-    categoryPriceUgx: calibrationTicketType?.priceUgx,
-  });
+  let rendered;
+  try {
+    rendered = await renderTemplateCalibrationPdf({
+      config,
+      artwork: { data: artwork, format: template.assetStorageKey.endsWith(".png") ? "png" : "jpeg" },
+      categoryColor: calibrationTicketType?.color,
+      categoryName: calibrationTicketType?.name,
+      categoryPrintLabel: calibrationTicketType?.printLabel,
+      categoryPriceUgx: calibrationTicketType?.priceUgx,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("QR")) {
+      throw conflict(`The ticket template configuration has invalid QR positioning: ${error.message}`);
+    }
+    throw error;
+  }
   const record = await prisma.printBatch.create({
     data: {
       kind: "SAMPLE",
@@ -428,11 +436,24 @@ export async function reprintBatchOutput(ctx: AuthContext, sourcePrintBatchId: s
   if (source.outputKind === "CALIBRATION") {
     if (!template || !layout) throw conflict("The recorded calibration template version is unavailable.");
     const config = parseTemplateConfig(template);
-    const artwork = await readTicketTemplateArtwork(template.assetStorageKey);
-    pdf = (await renderTemplateCalibrationPdf({
-      config,
-      artwork: { data: artwork, format: template.assetStorageKey.endsWith(".png") ? "png" : "jpeg" },
-    })).pdf;
+    let artwork: Buffer;
+    try {
+      artwork = await readTicketTemplateArtwork(template.assetStorageKey);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") throw conflict("Ticket template artwork is missing from storage.");
+      throw error;
+    }
+    try {
+      pdf = (await renderTemplateCalibrationPdf({
+        config,
+        artwork: { data: artwork, format: template.assetStorageKey.endsWith(".png") ? "png" : "jpeg" },
+      })).pdf;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("QR")) {
+        throw conflict(`The ticket template configuration has invalid QR positioning: ${error.message}`);
+      }
+      throw error;
+    }
   } else if (template && source.outputKind && layout) {
     const serials = recordedSerials ?? [];
     const pageCount = source.outputKind === "SHEET" && serials.length
