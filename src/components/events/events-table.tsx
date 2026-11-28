@@ -15,13 +15,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Frame,
+  FramePanel,
+} from "@/components/reui/frame";
+import {
+  DataGrid,
+  dataGridFeatures,
+  type DataGridFeatures,
+} from "@/components/reui/data-grid/data-grid";
+import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll-area";
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import { type ColumnDef, useTable } from "@tanstack/react-table";
 import { StateChip, StatusBadge } from "@/components/events/status-badges";
 import type { EventDto } from "@/server/services/events.service";
 import { ResponsiveList } from "@/components/ui/responsive-list";
@@ -80,6 +84,79 @@ export function EventsTable({
     [events, filter],
   );
 
+  const columns = useMemo<ColumnDef<DataGridFeatures, EventDto>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Event",
+        size: 220,
+        cell: ({ row }) => (
+          <div className="min-w-0">
+            <Link href={`/events/${row.original.id}`} className="font-medium hover:underline">
+              {row.original.name}
+            </Link>
+            <p className="truncate text-xs font-normal text-muted-foreground">{row.original.venue}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "eventDate",
+        header: "Date",
+        size: 170,
+        cell: ({ row }) => (
+          <div className="whitespace-nowrap">
+            {row.original.eventDate}
+            <p className="text-xs text-muted-foreground">
+              {formatEventTimeRange(row.original.startTime, row.original.endTime)}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        size: 120,
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+      },
+      {
+        id: "windows",
+        header: "Windows",
+        size: 190,
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-1">
+            <StateChip open={row.original.salesOpen} label="Sales" />
+            <StateChip open={row.original.admissionOpen} label="Admission" />
+          </div>
+        ),
+      },
+      {
+        accessorKey: "capacity",
+        header: "Capacity",
+        size: 100,
+        meta: { headerClassName: "text-right", cellClassName: "text-right tabular-nums" },
+      },
+      {
+        id: "manage",
+        header: "",
+        size: 100,
+        meta: { headerClassName: "text-right", cellClassName: "text-right" },
+        cell: ({ row }) => (
+          <Link href={`/events/${row.original.id}`} className="text-sm underline underline-offset-2">
+            Manage
+          </Link>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const table = useTable({
+    features: dataGridFeatures,
+    columns,
+    data: filtered,
+    getRowId: (event) => event.id,
+  });
+
   if (events.length === 0) {
     return (
       <Card>
@@ -128,62 +205,22 @@ export function EventsTable({
         </span>
       </div></FilterSheet>
 
-      <ResponsiveList cards={filtered.map((event) => <EventCard key={event.id} event={event} />)} table={<Card>
-        <CardContent className="overflow-x-auto p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Event</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Windows</TableHead>
-                <TableHead className="text-right">Capacity</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((event) => (
-                <TableRow key={event.id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/events/${event.id}`} className="hover:underline">
-                      {event.name}
-                    </Link>
-                    <p className="text-xs font-normal text-muted-foreground">
-                      {event.venue}
-                    </p>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    {event.eventDate}
-                    <p className="text-xs text-muted-foreground">
-                    {formatEventTimeRange(event.startTime, event.endTime)}
-                    </p>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={event.status} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      <StateChip open={event.salesOpen} label="Sales" />
-                      <StateChip open={event.admissionOpen} label="Admission" />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {event.capacity}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Link
-                      href={`/events/${event.id}`}
-                      className="text-sm underline underline-offset-2"
-                    >
-                      Manage
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>} />
+      <ResponsiveList cards={filtered.map((event) => <EventCard key={event.id} event={event} />)} table={
+        <DataGrid
+          table={table}
+          recordCount={filtered.length}
+          tableLayout={{ dense: true, rowBorder: true, headerBackground: true }}
+          tableClassNames={{ base: "min-w-[720px]" }}
+        >
+          <Frame spacing="default">
+            <FramePanel className="p-0">
+              <DataGridScrollArea orientation="horizontal">
+                <DataGridTable />
+              </DataGridScrollArea>
+            </FramePanel>
+          </Frame>
+        </DataGrid>
+      } />
       {filtered.length === 0 && <div className="rounded-xl border border-dashed p-8 text-center"><p className="text-base">No events match this filter.</p><button type="button" className="mt-2 inline-flex min-h-11 items-center underline" onClick={() => setFilter("all")}>Show all events</button></div>}
     </div>
   );

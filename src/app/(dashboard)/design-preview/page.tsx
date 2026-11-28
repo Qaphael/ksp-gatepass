@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Frame, FramePanel, FrameHeader, FrameTitle, FrameDescription } from "@/components/reui/frame";
 import { getSessionContext } from "@/lib/auth/session";
 
 const colorTokens = [
@@ -85,7 +86,7 @@ export default async function DesignPreviewPage() {
         <h2 id="preview-controls" className="text-lg font-semibold">Controls</h2>
         <div className="grid gap-3">
           <Button>Primary action</Button>
-          <Button size="xl">Large scanner action</Button>
+          <Button size="lg">Large scanner action</Button>
           <Button variant="outline">Secondary action</Button>
           <div className="grid gap-2">
             <Label htmlFor="preview-input">Ticket serial</Label>
@@ -142,6 +143,33 @@ export default async function DesignPreviewPage() {
           <div className="rounded-xl border bg-card p-3 shadow-card">Card shadow</div>
         </div>
         <p className="text-base text-muted-foreground">Spacing samples: 8 px, 16 px and 24 px. Focus ring: brand green on light surfaces, gold on dark surfaces.</p>
+      </section>
+
+      <section aria-labelledby="preview-frame" className="space-y-3">
+        <h2 id="preview-frame" className="text-lg font-semibold">Frames</h2>
+        <Frame>
+          <FramePanel>
+            <FrameHeader>
+              <FrameTitle>Operational panel</FrameTitle>
+              <FrameDescription>One frame, one panel, one header, one content region.</FrameDescription>
+            </FrameHeader>
+            <p className="text-base text-muted-foreground">Frame content uses the shared typography.</p>
+          </FramePanel>
+        </Frame>
+        <Frame stacked>
+          <FramePanel>
+            <FrameHeader>
+              <FrameTitle>Step one</FrameTitle>
+            </FrameHeader>
+            <p className="text-base text-muted-foreground">First step.</p>
+          </FramePanel>
+          <FramePanel>
+            <FrameHeader>
+              <FrameTitle>Step two</FrameTitle>
+            </FrameHeader>
+            <p className="text-base text-muted-foreground">Second step.</p>
+          </FramePanel>
+        </Frame>
       </section>
     </div>
   );

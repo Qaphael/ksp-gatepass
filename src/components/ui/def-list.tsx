@@ -20,8 +20,8 @@ export function DefRow({
 }) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-1 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4", className)}>
-      <dt className="min-w-0 text-base text-muted-foreground sm:shrink-0">{label}</dt>
-      <dd className="min-w-0 break-words text-base text-foreground">{children}</dd>
+      <dt className="min-w-0 text-sm text-muted-foreground sm:shrink-0">{label}</dt>
+      <dd className="min-w-0 break-words text-sm text-foreground">{children}</dd>
     </div>
   );
 }

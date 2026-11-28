@@ -3,12 +3,47 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ClipboardList, Ellipsis, FileBarChart, History, LayoutDashboard, ListChecks, ScanLine, ScanSearch, ScrollText, Settings, ShoppingCart, Ticket, Users, X, CalendarDays, Package } from "lucide-react";
+import {
+  CalendarDays,
+  ClipboardList,
+  Ellipsis,
+  FileBarChart,
+  History,
+  LayoutDashboard,
+  ListChecks,
+  Package,
+  ScanLine,
+  ScanSearch,
+  ScrollText,
+  Settings,
+  ShoppingCart,
+  Ticket,
+  Users,
+} from "lucide-react";
 import { cn } from "cn";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export type NavIconName = "Overview" | "Sell" | "Sales" | "Tickets" | "Check-in" | "Manual" | "Recent" | "Attempts" | "Reports" | "Events" | "Team" | "Audit log" | "Settings" | "Stock";
-export interface NavItem { href: string; label: string; icon?: NavIconName; }
+export type NavIconName =
+  | "Overview"
+  | "Sell"
+  | "Sales"
+  | "Tickets"
+  | "Check-in"
+  | "Manual"
+  | "Recent"
+  | "Attempts"
+  | "Reports"
+  | "Events"
+  | "Team"
+  | "Audit log"
+  | "Settings"
+  | "Stock";
+
+export interface NavItem {
+  href: string;
+  label: string;
+  icon?: NavIconName;
+}
 
 const NAV_ICONS: Record<NavIconName, React.ComponentType<{ className?: string }>> = {
   Overview: LayoutDashboard,
@@ -27,33 +62,160 @@ const NAV_ICONS: Record<NavIconName, React.ComponentType<{ className?: string }>
   Stock: Package,
 };
 
-export function NavLinks({ items, orientation = "horizontal" }: { items: NavItem[]; orientation?: "horizontal" | "vertical" }) {
+const isActive = (pathname: string, href: string) =>
+  pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
+
+/** Desktop rail. */
+export function SidebarNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
-  const [moreOpen, setMoreOpen] = useState(false);
-  const mainItems = items.filter((item) => item.href !== "/events" && item.href !== "/team" && item.href !== "/audit-logs" && item.href !== "/reports" && item.href !== "/account" && item.href !== "/stock");
-  const moreItems = items.filter((item) => !mainItems.includes(item));
-  const isMoreActive = moreItems.some((item) => pathname === item.href || pathname.startsWith(item.href));
-  const more = <Dialog open={moreOpen} onOpenChange={setMoreOpen}>
-    <DialogTrigger className={cn("flex min-h-12 min-w-12 max-w-14 flex-1 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground", isMoreActive && "bg-accent font-semibold text-foreground")} aria-label="More navigation">
-      <Ellipsis className="size-5"/><span className="sr-only">More</span>
-    </DialogTrigger>
-    <DialogContent showCloseButton={false} className="inset-x-0 bottom-0 top-auto left-0 max-h-[85dvh] w-full max-w-none translate-x-0 translate-y-0 gap-4 rounded-t-lg rounded-b-none border p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:inset-x-1/2 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:max-w-sm sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
-      <div className="flex items-center justify-between"><DialogTitle>More areas</DialogTitle><button onClick={() => setMoreOpen(false)} className="grid size-11 place-items-center rounded-md hover:bg-muted" aria-label="Close menu"><X className="size-5"/></button></div>
-      <nav aria-label="More" className="grid gap-1">{moreItems.map((item) => <NavLink key={item.href} item={item} active={pathname === item.href || pathname.startsWith(item.href)} onNavigate={() => setMoreOpen(false)} compact={false}/>)}</nav>
-    </DialogContent>
-  </Dialog>;
-  if (orientation === "vertical") return <nav aria-label="Main" className="flex w-full flex-col gap-1">{items.map((item) => <NavLink key={item.href} item={item} active={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))} compact={false} sidebar/>)}</nav>;
-  return <nav aria-label="Main" className="fixed inset-x-4 bottom-2 z-40 rounded-lg border border-border/80 bg-card/95 p-1 shadow-card backdrop-blur lg:hidden" style={{ bottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}>
-    <div className="mx-auto flex max-w-lg items-stretch justify-around gap-1">{mainItems.map((item) => <NavLink key={item.href} item={item} active={pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href))} compact/>)}{moreItems.length ? more : null}</div>
-  </nav>;
+
+  return (
+    <nav aria-label="Main" className="flex w-full flex-col gap-1">
+      {items.map((item) => {
+        const Icon = NAV_ICONS[item.icon ?? "Overview"];
+        const active = isActive(pathname, item.href);
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "flex min-h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors",
+              active
+                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+            )}
+          >
+            <Icon className="size-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{item.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
 
-function NavLink({ item, active, onNavigate, compact = true, sidebar = false }: { item: NavItem; active: boolean; onNavigate?: () => void; compact?: boolean; sidebar?: boolean }) {
-  const Icon = item.icon ? NAV_ICONS[item.icon] : LayoutDashboard;
-  const activeClass = sidebar ? "font-normal text-foreground" : compact ? "font-normal text-foreground" : "font-normal text-foreground";
-  const inactiveClass = sidebar ? "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground" : "text-muted-foreground hover:text-foreground";
-  const mobileLayout = compact
-    ? "flex min-h-12 min-w-12 max-w-14 flex-1 items-center justify-center rounded-none px-1"
-    : "flex min-h-12 items-center gap-3 rounded-none px-3 text-base";
-  return <Link href={item.href} onClick={onNavigate} aria-label={compact ? item.label : undefined} title={compact ? item.label : undefined} aria-current={active ? "page" : undefined} className={cn(mobileLayout, "transition-colors", active ? activeClass : inactiveClass)}><Icon className="size-5 shrink-0"/><span className={compact ? "sr-only" : undefined}>{item.label}</span></Link>;
+/** Mobile bottom bar: 3 primary destinations plus the rest behind More. */
+export function BottomNav({ items }: { items: NavItem[] }) {
+  const pathname = usePathname();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const primary = items.slice(0, 3);
+  const moreItems = items.slice(3);
+  const tabCount = primary.length + (moreItems.length > 0 ? 1 : 0);
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/90 pb-safe backdrop-blur-xl">
+      <div
+        className="mx-auto grid h-16 max-w-lg items-center gap-1 px-2"
+        style={{ gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))` }}
+      >
+        {primary.map((item) => (
+          <Tab
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={NAV_ICONS[item.icon ?? "Overview"]}
+            active={isActive(pathname, item.href)}
+          />
+        ))}
+        {moreItems.length > 0 && (
+          <TabButton
+            label="More"
+            icon={Ellipsis}
+            active={moreItems.some((item) => isActive(pathname, item.href))}
+            onClick={() => setMoreOpen(true)}
+          />
+        )}
+      </div>
+
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[85dvh] gap-3 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:mx-auto sm:max-w-sm"
+        >
+          <SheetHeader className="px-0 pt-0">
+            <SheetTitle>All areas</SheetTitle>
+          </SheetHeader>
+          <nav aria-label="All areas" className="grid gap-1 overflow-y-auto">
+            {moreItems.map((item) => {
+              const Icon = NAV_ICONS[item.icon ?? "Overview"];
+              const active = isActive(pathname, item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMoreOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex min-h-12 items-center gap-3 rounded-md px-3 text-sm transition-colors",
+                    active
+                      ? "bg-muted font-medium text-foreground"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </SheetContent>
+      </Sheet>
+    </nav>
+  );
+}
+
+function Tab({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex h-full min-h-12 flex-col items-center justify-center gap-0.5 rounded-md transition-colors",
+        active ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+      )}
+    >
+      <Icon className="size-4 shrink-0" aria-hidden="true" />
+      <span className="max-w-full truncate text-xs">{label}</span>
+    </Link>
+  );
+}
+
+function TabButton({
+  label,
+  icon: Icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex h-full min-h-12 flex-col items-center justify-center gap-0.5 rounded-md transition-colors",
+        active ? "bg-muted font-medium text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+      )}
+    >
+      <Icon className="size-4 shrink-0" aria-hidden="true" />
+      <span className="max-w-full truncate text-xs">{label}</span>
+    </button>
+  );
 }

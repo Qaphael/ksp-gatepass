@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Printer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PaymentForm, ReversePaymentButton, SaleAdminActions } from "@/components/sales/sale-detail-actions";
+import { SalePaymentsTable } from "@/components/sales/sale-payments-table";
 import { TicketActions } from "@/components/tickets/ticket-actions";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
@@ -274,44 +275,20 @@ export default async function SaleDetailPage({ params }: { params: Promise<{ id:
               {sale.payments.length === 0 ? <li className="py-3 text-sm text-muted-foreground">No payments recorded.</li> : null}
             </ul>
 
-            {/* Desktop: 5 columns, 5 cells */}
-            <div className="mt-2 hidden overflow-x-auto md:block">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <th className="px-2 py-2 font-medium">Reference / date</th>
-                    <th className="px-2 py-2 font-medium">Method</th>
-                    <th className="px-2 py-2 text-right font-medium">Amount</th>
-                    <th className="px-2 py-2 font-medium">Status</th>
-                    <th className="px-2 py-2 text-right font-medium">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sale.payments.map((payment) => (
-                    <tr key={payment.id} className="border-t border-border align-top">
-                      <td className="px-2 py-2">
-                        <span className="font-mono text-sm font-medium">{payment.reference}</span>
-                        <div className="font-mono text-[11px] text-muted-foreground">{stamp(payment.recordedAt)} EAT</div>
-                      </td>
-                      <td className="px-2 py-2 whitespace-nowrap">{payment.method.replaceAll("_", " ")}</td>
-                      <td className="px-2 py-2 text-right font-mono font-semibold tabular-nums whitespace-nowrap">{formatUGX(payment.amountUgx)}</td>
-                      <td className="px-2 py-2">
-                        <StatusBadge domain="payment" status={payment.status as "RECORDED" | "REVERSED" | "REFUNDED"} className="text-[10px]" />
-                      </td>
-                      <td className="px-2 py-2 text-right">
-                        {can(ctx.role, "payment:reverse") && payment.netAmountUgx > 0 ? (
-                          <ReversePaymentButton paymentId={payment.id} reference={payment.reference} amountUgx={payment.netAmountUgx} />
-                        ) : null}
-                      </td>
-                    </tr>
-                  ))}
-                  {sale.payments.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-2 py-6 text-center text-sm text-muted-foreground">No payments recorded.</td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
+            {/* Desktop: ReUI DataGrid */}
+            <div className="mt-2 hidden md:block">
+              <SalePaymentsTable
+                canReverse={can(ctx.role, "payment:reverse")}
+                payments={sale.payments.map((payment) => ({
+                  id: payment.id,
+                  reference: payment.reference,
+                  recordedAtFormatted: stamp(payment.recordedAt),
+                  method: payment.method,
+                  amountUgx: payment.amountUgx,
+                  netAmountUgx: payment.netAmountUgx,
+                  status: payment.status as "RECORDED" | "REVERSED" | "REFUNDED",
+                }))}
+              />
             </div>
 
             <p className="mt-3 text-xs text-muted-foreground">

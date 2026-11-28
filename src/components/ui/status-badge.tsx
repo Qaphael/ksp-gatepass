@@ -20,19 +20,18 @@ import type {
   ScanResultCode,
   TicketStatus,
 } from "@/generated/prisma/client";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "cn";
+import { Badge } from "@/components/reui/badge";
 
 type Domain = "ticket" | "sale" | "payment" | "event" | "scan";
 type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 type StatusDefinition = { label: string; icon: LucideIcon; tone: Tone };
 
-const TONE_CLASSES: Record<Tone, string> = {
-  success: "border-success/30 text-success bg-success/5",
-  warning: "border-warning/30 text-warning bg-warning/5",
-  danger: "border-destructive/30 text-destructive bg-destructive/5",
-  info: "border-info/30 text-info bg-info/5",
-  neutral: "border-border bg-muted text-muted-foreground",
+const TONE_VARIANTS: Record<Tone, "success-light" | "warning-light" | "destructive-light" | "info-light" | "secondary"> = {
+  success: "success-light",
+  warning: "warning-light",
+  danger: "destructive-light",
+  info: "info-light",
+  neutral: "secondary",
 };
 
 const DEFINITIONS: Record<Domain, Record<string, StatusDefinition>> = {
@@ -97,8 +96,8 @@ export function StatusBadge({
   const Icon = definition.icon;
 
   return (
-    <Badge variant="outline" className={cn(TONE_CLASSES[definition.tone], "font-mono text-[11px]", className)}>
-      <Icon className="size-3" aria-hidden="true" />
+    <Badge variant={TONE_VARIANTS[definition.tone]} className={className}>
+      <Icon aria-hidden="true" />
       {definition.label}
     </Badge>
   );

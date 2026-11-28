@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/reui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,9 +77,7 @@ export function UserMenu({ user }: UserMenuProps) {
         <DropdownMenuGroup>
           <DropdownMenuLabel>
             <p className="truncate font-medium">{user.displayName}</p>
-            <p className="text-xs font-normal text-muted-foreground">
-              {ROLE_LABELS[user.role]}
-            </p>
+            <Badge variant="secondary" className="mt-1">{ROLE_LABELS[user.role]}</Badge>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

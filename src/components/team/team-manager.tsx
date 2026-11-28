@@ -1,17 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, ShieldCheck, UserMinus, UserRound } from "lucide-react";
+import { useTable, type ColumnDef } from "@tanstack/react-table";
+import { PlusIcon, ShieldCheckIcon, UserMinusIcon, UserRoundIcon, UsersIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { ResponsiveList } from "@/components/ui/responsive-list";
-import { ConfirmSheet } from "@/components/ui/confirm-sheet";
-import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/layout/field-error";
+import { FormAlert } from "@/components/layout/form-alert";
+import { Badge } from "@/components/reui/badge";
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+  DataGrid,
+  dataGridFeatures,
+  type DataGridFeatures,
+} from "@/components/reui/data-grid/data-grid";
+import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header";
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination";
+import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll-area";
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table";
+import {
+  Frame,
+  FrameDescription,
+  FrameFooter,
+  FrameHeader,
+  FramePanel,
+  FrameTitle,
+} from "@/components/reui/frame";
+import { Button } from "@/components/ui/button";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 import {
   Dialog,
   DialogContent,
@@ -21,20 +36,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { FormAlert } from "@/components/layout/form-alert";
-import { FieldError } from "@/components/layout/field-error";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Spinner } from "@/components/ui/spinner";
+import type { Role } from "@/generated/prisma/client";
 import { apiFetch, type ApiFailure } from "@/lib/api-client";
 import { ROLE_LABELS } from "@/lib/role";
-import type { Role } from "@/generated/prisma/client";
 import type { UserDto } from "@/server/services/users.service";
 
 const ROLE_VALUES: Role[] = ["ADMIN", "SELLER", "VERIFIER", "SUPERVISOR"];
@@ -53,7 +69,10 @@ interface CreateForm {
   password: string;
   contactPhone: string;
 }
-type PendingUserAction = { kind: "role"; user: UserDto; role: Role } | { kind: "deactivate"; user: UserDto };
+
+type PendingUserAction =
+  | { kind: "role"; user: UserDto; role: Role }
+  | { kind: "deactivate"; user: UserDto };
 
 const EMPTY_FORM: CreateForm = {
   displayName: "",
@@ -64,11 +83,7 @@ const EMPTY_FORM: CreateForm = {
   contactPhone: "",
 };
 
-export function TeamManager({
-  users,
-  currentUserId,
-  canManage,
-}: TeamManagerProps) {
+export function TeamManager({ users, currentUserId, canManage }: TeamManagerProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
@@ -102,16 +117,11 @@ export function TeamManager({
       setSaving(false);
       return;
     }
-    toast.success(`${result.data.user.displayName} added to the team.`);
+    toast.success(`${result.data.user.displayName} added`);
     setForm(EMPTY_FORM);
     setOpen(false);
     setSaving(false);
     router.refresh();
-  }
-
-  async function onChangeRole(user: UserDto, role: Role) {
-    if (role === user.role) return;
-    setPendingUserAction({ kind: "role", user, role });
   }
 
   async function confirmUserAction() {
@@ -119,11 +129,17 @@ export function TeamManager({
     const { user } = pendingUserAction;
     setBusyUserId(user.id);
     try {
-      const result = pendingUserAction.kind === "role"
-        ? await apiFetch<{ user: UserDto }>(`/api/v1/users/${user.id}`, { method: "PATCH", body: JSON.stringify({ role: pendingUserAction.role }) })
-        : await apiFetch<{ user: UserDto }>(`/api/v1/users/${user.id}/deactivate`, { method: "POST" });
+      const result =
+        pendingUserAction.kind === "role"
+          ? await apiFetch<{ user: UserDto }>(`/api/v1/users/${user.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ role: pendingUserAction.role }),
+            })
+          : await apiFetch<{ user: UserDto }>(`/api/v1/users/${user.id}/deactivate`, {
+              method: "POST",
+            });
       if (!result.ok) throw new Error(result.error.message);
-      toast.success(pendingUserAction.kind === "role" ? "Role updated." : "Account deactivated.");
+      toast.success(pendingUserAction.kind === "role" ? "Role updated" : "Account deactivated");
       router.refresh();
       return true;
     } finally {
@@ -131,197 +147,351 @@ export function TeamManager({
     }
   }
 
-  async function onDeactivate(user: UserDto) {
-    setPendingUserAction({ kind: "deactivate", user });
-  }
+  const columns = useMemo<ColumnDef<DataGridFeatures, UserDto>[]>(
+    () => [
+      {
+        accessorKey: "displayName",
+        header: ({ column }) => <DataGridColumnHeader title="Member" column={column} />,
+        cell: ({ row }) => {
+          const user = row.original;
+          const isSelf = user.id === currentUserId;
+          return (
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="truncate text-sm font-medium">
+                {user.displayName}
+                {isSelf ? " (you)" : ""}
+              </span>
+              {user.email ? (
+                <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+              ) : null}
+            </div>
+          );
+        },
+        meta: { headerTitle: "Member" },
+      },
+      {
+        accessorKey: "username",
+        header: ({ column }) => <DataGridColumnHeader title="Username" column={column} />,
+        cell: ({ row }) => (
+          <span className="font-mono text-xs">@{row.original.username}</span>
+        ),
+        meta: { headerTitle: "Username" },
+      },
+      {
+        accessorKey: "role",
+        header: ({ column }) => <DataGridColumnHeader title="Role" column={column} />,
+        cell: ({ row }) => {
+          const user = row.original;
+          const isSelf = user.id === currentUserId;
+          const isSuperAdmin = user.role === "SUPER_ADMIN";
+          if (canManage && !isSelf && !isSuperAdmin) {
+            return (
+              <NativeSelect
+                size="sm"
+                aria-label={`Role for ${user.displayName}`}
+                value={user.role}
+                disabled={busyUserId === user.id}
+                onChange={(e) => {
+                  const nextRole = e.target.value as Role;
+                  if (nextRole !== user.role) {
+                    setPendingUserAction({ kind: "role", user, role: nextRole });
+                  }
+                }}
+              >
+                {ROLE_VALUES.map((role) => (
+                  <NativeSelectOption key={role} value={role}>
+                    {ROLE_LABELS[role]}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            );
+          }
+          return (
+            <span className="text-sm">
+              {ROLE_LABELS[user.role]}
+              {isSuperAdmin ? " · protected" : ""}
+            </span>
+          );
+        },
+        meta: { headerTitle: "Role" },
+      },
+      {
+        accessorKey: "active",
+        header: ({ column }) => <DataGridColumnHeader title="Status" column={column} />,
+        cell: ({ row }) => (
+          <Badge variant={row.original.active ? "success-light" : "outline"}>
+            {row.original.active ? "Active" : "Deactivated"}
+          </Badge>
+        ),
+        meta: { headerTitle: "Status" },
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => {
+          const user = row.original;
+          const isSelf = user.id === currentUserId;
+          const isSuperAdmin = user.role === "SUPER_ADMIN";
+          if (!canManage || !user.active || isSelf || isSuperAdmin) return null;
+          return (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={busyUserId === user.id}
+                onClick={() => setPendingUserAction({ kind: "deactivate", user })}
+              >
+                {busyUserId === user.id ? (
+                  <Spinner />
+                ) : (
+                  <UserMinusIcon aria-hidden="true" />
+                )}
+                Deactivate
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [busyUserId, canManage, currentUserId],
+  );
+
+  const table = useTable({
+    features: dataGridFeatures,
+    data: users,
+    columns,
+    initialState: {
+      pagination: { pageIndex: 0, pageSize: 25 },
+    },
+  });
+
+  const addDialog = canManage ? (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <Button
+            size="sm"
+            onClick={() => {
+              setForm(EMPTY_FORM);
+              setError(null);
+            }}
+          >
+            <PlusIcon aria-hidden="true" />
+            Add member
+          </Button>
+        }
+      />
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Add team member</DialogTitle>
+          <DialogDescription>Set up their profile and sign-in access.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={onCreate} className="flex flex-col gap-4" noValidate>
+          <FormAlert error={error} />
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div className="flex flex-col gap-3">
+              <h3 className="text-muted-foreground flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
+                <UserRoundIcon className="size-3.5" aria-hidden="true" />
+                Personal details
+              </h3>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="user-name">Full name</Label>
+                <Input
+                  id="user-name"
+                  required
+                  autoComplete="name"
+                  value={form.displayName}
+                  onChange={(e) => set("displayName", e.target.value)}
+                  disabled={saving}
+                />
+                <FieldError error={error} field="displayName" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="user-username">Username</Label>
+                <Input
+                  id="user-username"
+                  required
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={form.username}
+                  onChange={(e) => set("username", e.target.value)}
+                  disabled={saving}
+                />
+                <FieldError error={error} field="username" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="user-email">Email (optional)</Label>
+                <Input
+                  id="user-email"
+                  type="email"
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  disabled={saving}
+                />
+                <FieldError error={error} field="email" />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <h3 className="text-muted-foreground flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
+                <ShieldCheckIcon className="size-3.5" aria-hidden="true" />
+                Sign-in access
+              </h3>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="user-role">Role</Label>
+                <NativeSelect
+                  id="user-role"
+                  value={form.role}
+                  onChange={(e) => set("role", e.target.value as Role)}
+                  disabled={saving}
+                  className="w-full"
+                >
+                  {ROLE_VALUES.map((role) => (
+                    <NativeSelectOption key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+                <FieldError error={error} field="role" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="user-password">Temporary password</Label>
+                <Input
+                  id="user-password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={12}
+                  value={form.password}
+                  onChange={(e) => set("password", e.target.value)}
+                  disabled={saving}
+                />
+                <FieldError error={error} field="password" />
+                <p className="text-muted-foreground text-xs">
+                  At least 12 characters. Ask them to change it after signing in.
+                </p>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="user-phone">Phone (optional)</Label>
+                <Input
+                  id="user-phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={form.contactPhone}
+                  onChange={(e) => set("contactPhone", e.target.value)}
+                  disabled={saving}
+                />
+                <FieldError error={error} field="contactPhone" />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? <Spinner /> : null}
+              {saving ? "Adding…" : "Add member"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  ) : null;
 
   return (
-    <div className="flex flex-col gap-3">
-      {pendingUserAction ? <ConfirmSheet open onOpenChange={(next) => { if (!next) { if (pendingUserAction.kind === "role") router.refresh(); setPendingUserAction(null); } }} title={pendingUserAction.kind === "role" ? `Change ${pendingUserAction.user.displayName}'s role?` : `Deactivate ${pendingUserAction.user.displayName}?`} description={pendingUserAction.kind === "role" ? "This changes the account's access immediately." : "Their sessions end immediately and they will no longer be able to sign in."} details={pendingUserAction.kind === "role" ? <p>{ROLE_LABELS[pendingUserAction.user.role]} → {ROLE_LABELS[pendingUserAction.role]}</p> : <p className="font-semibold">@{pendingUserAction.user.username}</p>} confirmLabel={pendingUserAction.kind === "role" ? "Change role" : "Deactivate account"} destructive={pendingUserAction.kind === "deactivate"} onConfirm={confirmUserAction} /> : null}
-      <div className="flex justify-end">
-        {canManage ? (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger
-              render={
-                <Button
-                  onClick={() => {
-                    setForm(EMPTY_FORM);
-                    setError(null);
-                  }}
-                >
-                  <Plus /> Add team member
-                </Button>
-              }
-            />
-            <DialogContent className="top-auto bottom-0 left-0 max-h-[calc(100dvh-env(safe-area-inset-top))] w-full max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-b-none rounded-t-lg p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:top-1/2 md:left-1/2 md:w-[calc(100%-3rem)] md:max-w-3xl md:max-h-[calc(100dvh-3rem)] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg">
-              <DialogHeader className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-b border-border/70 pb-4">
-                <span className="grid size-11 place-items-center rounded-lg bg-accent text-primary" aria-hidden="true"><UserRound className="size-5" /></span>
-                <div className="grid min-w-0 gap-2">
-                  <DialogTitle>Add team member</DialogTitle>
-                  <DialogDescription>Set up their profile and sign-in access.</DialogDescription>
-                </div>
-              </DialogHeader>
-              <form onSubmit={onCreate} className="grid gap-4" noValidate>
-                <FormAlert error={error} />
-                <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
-                  <section className="grid content-start gap-4">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><UserRound className="size-4 text-primary" aria-hidden="true" />Personal details</h3>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="user-name">Full name</Label>
-                      <Input id="user-name" required autoComplete="name" value={form.displayName} onChange={(e) => set("displayName", e.target.value)} disabled={saving} />
-                      <FieldError error={error} field="displayName" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="user-username">Username</Label>
-                      <Input id="user-username" required autoComplete="username" autoCapitalize="none" spellCheck={false} value={form.username} onChange={(e) => set("username", e.target.value)} disabled={saving} />
-                      <FieldError error={error} field="username" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="user-email">Email (optional)</Label>
-                      <Input id="user-email" type="email" autoComplete="email" value={form.email} onChange={(e) => set("email", e.target.value)} disabled={saving} />
-                      <FieldError error={error} field="email" />
-                    </div>
-                  </section>
-                  <section className="grid content-start gap-4 border-t border-border/70 pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><ShieldCheck className="size-4 text-primary" aria-hidden="true" />Sign-in access</h3>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="user-role">Role</Label>
-                      <Select value={form.role} onValueChange={(value) => set("role", value as Role)}>
-                        <SelectTrigger id="user-role" className="min-h-12 w-full text-base" disabled={saving}><SelectValue>{ROLE_LABELS[form.role]}</SelectValue></SelectTrigger>
-                        <SelectContent>{ROLE_VALUES.map((role) => <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>)}</SelectContent>
-                      </Select>
-                      <FieldError error={error} field="role" />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="user-password">Temporary password</Label>
-                      <Input id="user-password" type="password" autoComplete="new-password" required minLength={12} value={form.password} onChange={(e) => set("password", e.target.value)} disabled={saving} />
-                      <FieldError error={error} field="password" />
-                      <p className="text-sm leading-relaxed text-muted-foreground">At least 12 characters. Ask them to change it after their first sign-in.</p>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="user-phone">Phone (optional)</Label>
-                      <Input id="user-phone" type="tel" inputMode="tel" autoComplete="tel" value={form.contactPhone} onChange={(e) => set("contactPhone", e.target.value)} disabled={saving} />
-                      <FieldError error={error} field="contactPhone" />
-                    </div>
-                  </section>
-                </div>
-                  <DialogFooter className="sticky bottom-0 gap-2 border-t bg-popover pt-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                    onClick={() => setOpen(false)}
-                    disabled={saving}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="w-full sm:w-auto" disabled={saving}>
-                    {saving ? <Loader2 className="animate-spin" /> : null}
-                    {saving ? "Adding…" : "Add member"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        ) : null}
-      </div>
+    <div className="flex flex-col gap-4">
+      {pendingUserAction ? (
+        <ConfirmSheet
+          open
+          onOpenChange={(next) => {
+            if (!next) {
+              if (pendingUserAction.kind === "role") router.refresh();
+              setPendingUserAction(null);
+            }
+          }}
+          title={
+            pendingUserAction.kind === "role"
+              ? `Change ${pendingUserAction.user.displayName}'s role?`
+              : `Deactivate ${pendingUserAction.user.displayName}?`
+          }
+          description={
+            pendingUserAction.kind === "role"
+              ? "This changes the account's access immediately."
+              : "Their sessions end immediately and they will no longer be able to sign in."
+          }
+          details={
+            pendingUserAction.kind === "role" ? (
+              <p>
+                {ROLE_LABELS[pendingUserAction.user.role]} → {ROLE_LABELS[pendingUserAction.role]}
+              </p>
+            ) : (
+              <p className="font-mono text-sm">@{pendingUserAction.user.username}</p>
+            )
+          }
+          confirmLabel={
+            pendingUserAction.kind === "role" ? "Change role" : "Deactivate account"
+          }
+          destructive={pendingUserAction.kind === "deactivate"}
+          onConfirm={confirmUserAction}
+        />
+      ) : null}
 
-      <ResponsiveList cards={users.length === 0 ? <Card><CardContent className="p-6 text-base text-muted-foreground">No team members yet. Add a member to get started.</CardContent></Card> : users.map((user) => {
-        const isSelf = user.id === currentUserId;
-        const isSuperAdmin = user.role === "SUPER_ADMIN";
-        return <article key={user.id} className="rounded-2xl border border-border/70 bg-card p-4">
-          <div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-base font-semibold">{user.displayName}{isSelf ? " (you)" : ""}</p><p className="truncate text-sm text-muted-foreground">@{user.username}</p>{user.email && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}</div><Badge variant="outline" className={user.active ? "border-success/40 bg-success/10 text-success" : "border-border bg-muted text-muted-foreground"}>{user.active ? "Active" : "Deactivated"}</Badge></div>
-          <div className="mt-3 flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">Role</span>{canManage && !isSelf && !isSuperAdmin ? <Select value={user.role} onValueChange={(value) => void onChangeRole(user, value as Role)} disabled={busyUserId === user.id}><SelectTrigger className="min-h-11 w-40" aria-label={`Role for ${user.displayName}`}><SelectValue>{ROLE_LABELS[user.role]}</SelectValue></SelectTrigger><SelectContent>{ROLE_VALUES.map((role) => <SelectItem key={role} value={role}>{ROLE_LABELS[role]}</SelectItem>)}</SelectContent></Select> : <span className="text-base">{ROLE_LABELS[user.role]}{isSuperAdmin ? " · protected" : ""}</span>}</div>
-          {canManage && user.active && !isSelf && !isSuperAdmin && <Button className="mt-3 min-h-11 w-full" variant="outline" disabled={busyUserId === user.id} onClick={() => void onDeactivate(user)}>{busyUserId === user.id ? <Loader2 className="animate-spin" /> : <UserMinus />}Deactivate</Button>}
-        </article>;
-      })} table={<Card>
-        <CardContent className="overflow-x-auto p-0">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="p-3 font-medium">Name</th>
-                <th className="p-3 font-medium">Username</th>
-                <th className="p-3 font-medium">Role</th>
-                <th className="p-3 font-medium">Status</th>
-                <th className="p-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {users.map((user) => {
-                const isSelf = user.id === currentUserId;
-                const isSuperAdmin = user.role === "SUPER_ADMIN";
-                return (
-                  <tr key={user.id} className={user.active ? "" : "opacity-60"}>
-                    <td className="p-3">
-                      <p className="font-medium">{user.displayName}</p>
-                      {user.email ? (
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                      ) : null}
-                    </td>
-                    <td className="p-3">@{user.username}</td>
-                    <td className="p-3">
-                      {canManage && !isSelf && !isSuperAdmin ? (
-                        <Select
-                          value={user.role}
-                          onValueChange={(value) =>
-                            void onChangeRole(user, value as Role)
-                          }
-                          disabled={busyUserId === user.id}
-                        >
-                          <SelectTrigger className="w-40" aria-label="Role">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROLE_VALUES.map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {ROLE_LABELS[role]}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <span>{ROLE_LABELS[user.role]}{isSuperAdmin ? " · protected" : ""}</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <Badge
-                        variant="outline"
-                        className={
-                          user.active
-                            ? "border-transparent bg-success/10 text-success"
-                            : "border-border bg-muted text-muted-foreground"
-                        }
-                      >
-                        {user.active ? "Active" : "Deactivated"}
-                      </Badge>
-                      {isSelf ? (
-                        <span className="ml-2 text-xs text-muted-foreground">you</span>
-                      ) : null}
-                    </td>
-                    <td className="p-3 text-right">
-                      {canManage && user.active && !isSelf && !isSuperAdmin ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={busyUserId === user.id}
-                          onClick={() => void onDeactivate(user)}
-                        >
-                          {busyUserId === user.id ? (
-                            <Loader2 className="animate-spin" />
-                          ) : (
-                            <UserMinus />
-                          )}
-                          Deactivate
-                        </Button>
-                      ) : null}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>} />
+      {users.length === 0 ? (
+        <Frame spacing="default">
+          <FramePanel>
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <UsersIcon aria-hidden="true" />
+                </EmptyMedia>
+                <EmptyTitle>No team members yet</EmptyTitle>
+                <EmptyDescription>Add staff accounts for sellers, verifiers and supervisors.</EmptyDescription>
+              </EmptyHeader>
+              {addDialog ? <EmptyContent>{addDialog}</EmptyContent> : null}
+            </Empty>
+          </FramePanel>
+        </Frame>
+      ) : (
+        <DataGrid
+          table={table}
+          recordCount={users.length}
+          tableLayout={{ dense: true, rowBorder: true, headerBackground: true }}
+          tableClassNames={{ base: "min-w-[680px]" }}
+        >
+          <Frame spacing="default">
+            <FrameHeader>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-col gap-0.5">
+                  <FrameTitle>Staff accounts</FrameTitle>
+                  <FrameDescription>
+                    {users.length} {users.length === 1 ? "member" : "members"}
+                  </FrameDescription>
+                </div>
+                {addDialog}
+              </div>
+            </FrameHeader>
+            <FramePanel className="p-0">
+              <DataGridScrollArea orientation="horizontal">
+                <DataGridTable />
+              </DataGridScrollArea>
+            </FramePanel>
+            <FrameFooter>
+              <DataGridPagination />
+            </FrameFooter>
+          </Frame>
+        </DataGrid>
+      )}
     </div>
   );
 }

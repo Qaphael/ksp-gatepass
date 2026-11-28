@@ -2,20 +2,64 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Minus, Plus } from "lucide-react";
+import { AlertCircleIcon, ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/reui/alert";
+import {
+  Frame,
+  FrameDescription,
+  FrameFooter,
+  FrameHeader,
+  FramePanel,
+  FrameTitle,
+} from "@/components/reui/frame";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/reui/number-field";
+import { PhoneInput } from "@/components/reui/phone-input";
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperNav,
+  StepperSeparator,
+  StepperTitle,
+  StepperTrigger,
+} from "@/components/reui/stepper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
 import { formatUGX } from "@/components/ui/money";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Spinner } from "@/components/ui/spinner";
 import type { EventDto } from "@/server/services/events.service";
 import type { TicketTypeDto } from "@/server/services/ticket-types.service";
 
-interface Props { events: EventDto[]; initialEventId?: string; initialTypes: TicketTypeDto[]; canDiscount: boolean; }
-const STEPS = ["Customer", "Tickets", "Review", "Payment", "Confirm"] as const;
-type Step = (typeof STEPS)[number];
+interface Props {
+  events: EventDto[];
+  initialEventId?: string;
+  initialTypes: TicketTypeDto[];
+  canDiscount: boolean;
+}
 
-export function SaleCreateForm({ events, initialEventId, initialTypes, canDiscount }: Props) {
+const STEPS = ["Customer", "Tickets", "Review", "Payment", "Confirm"] as const;
+
+export function SaleCreateForm({
+  events,
+  initialEventId,
+  initialTypes,
+  canDiscount,
+}: Props) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("Customer");
+  const [stepNum, setStepNum] = useState(1);
   const [eventId, setEventId] = useState(initialEventId ?? events[0]?.id ?? "");
   const [ticketTypes, setTicketTypes] = useState(initialTypes);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -30,34 +74,58 @@ export function SaleCreateForm({ events, initialEventId, initialTypes, canDiscou
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  // Retain this key across retries exactly as the existing sale flow does.
   const [idempotencyKey] = useState(() => crypto.randomUUID());
-  const subtotal = useMemo(() => ticketTypes.reduce((sum, type) => sum + (quantities[type.id] ?? 0) * type.priceUgx, 0), [ticketTypes, quantities]);
+
+  const subtotal = useMemo(
+    () =>
+      ticketTypes.reduce(
+        (sum, type) => sum + (quantities[type.id] ?? 0) * type.priceUgx,
+        0,
+      ),
+    [ticketTypes, quantities],
+  );
   const discount = Number(discountUgx) || 0;
   const total = Math.max(0, subtotal - discount);
   const paid = Number(paymentAmount) || 0;
   const balance = Math.max(0, total - paid);
-  const stepIndex = STEPS.indexOf(step);
   const activeTypes = ticketTypes.filter((type) => type.status === "ACTIVE");
+  const currentStepLabel = STEPS[stepNum - 1] ?? "Customer";
 
   async function changeEvent(id: string) {
-    setEventId(id); setQuantities({}); setTicketTypes([]); setError(""); setFieldErrors({});
+    setEventId(id);
+    setQuantities({});
+    setTicketTypes([]);
+    setError("");
+    setFieldErrors({});
     if (!id) return;
     try {
       const response = await fetch(`/api/v1/events/${encodeURIComponent(id)}/ticket-types`);
       const data = await response.json();
-      if (!response.ok) { setError(data.error?.message ?? "Could not load ticket categories."); return; }
+      if (!response.ok) {
+        setError(data.error?.message ?? "Could not load ticket categories.");
+        return;
+      }
       setTicketTypes(data.ticketTypes ?? []);
-    } catch { setError("Could not load ticket categories. Check your connection and retry."); }
+    } catch {
+      setError("Could not load ticket categories. Check your connection and retry.");
+    }
   }
 
   function setQuantity(typeId: string, value: number) {
-    setQuantities((current) => ({ ...current, [typeId]: Math.max(0, Math.min(500, Math.trunc(value) || 0)) }));
+    setQuantities((current) => ({
+      ...current,
+      [typeId]: Math.max(0, Math.min(500, Math.trunc(value) || 0)),
+    }));
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError(""); setFieldErrors({});
-    const items = activeTypes.filter((type) => (quantities[type.id] ?? 0) > 0).map((type) => ({ ticketTypeId: type.id, quantity: quantities[type.id] }));
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setFieldErrors({});
+    const items = activeTypes
+      .filter((type) => (quantities[type.id] ?? 0) > 0)
+      .map((type) => ({ ticketTypeId: type.id, quantity: quantities[type.id] }));
     const amount = paymentAmount === "" ? undefined : Number(paymentAmount);
     const body = {
       eventId,
@@ -66,62 +134,425 @@ export function SaleCreateForm({ events, initialEventId, initialTypes, canDiscou
       notes: notes || undefined,
       items,
       ...(discount ? { discountUgx: discount, discountReason } : {}),
-      ...(amount === undefined ? {} : { initialPayment: { amountUgx: amount, method: paymentMethod, externalRef: externalRef || undefined } }),
+      ...(amount === undefined
+        ? {}
+        : {
+            initialPayment: {
+              amountUgx: amount,
+              method: paymentMethod,
+              externalRef: externalRef || undefined,
+            },
+          }),
     };
     try {
       const response = await fetch("/api/v1/sales", {
-        method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey }, body: JSON.stringify(body),
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify(body),
       });
       const data = await response.json();
       if (!response.ok) {
         setError(data.error?.message ?? "Sale could not be confirmed.");
-        if (Array.isArray(data.error?.details)) setFieldErrors(Object.fromEntries(data.error.details.map((detail: { path: string; message: string }) => [detail.path, detail.message])));
-        setBusy(false); return;
+        if (Array.isArray(data.error?.details)) {
+          setFieldErrors(
+            Object.fromEntries(
+              data.error.details.map((detail: { path: string; message: string }) => [
+                detail.path,
+                detail.message,
+              ]),
+            ),
+          );
+        }
+        setBusy(false);
+        return;
       }
       router.push(`/sales/${data.sale.id}`);
-    } catch { setError("Connection failed. Retry to safely submit this sale."); setBusy(false); }
+    } catch {
+      setError("Connection failed. Retry to safely submit this sale.");
+      setBusy(false);
+    }
   }
 
-  function advance() {
-    setError(""); setStep(STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]);
-  }
-  function back() { setError(""); setStep(STEPS[Math.max(stepIndex - 1, 0)]); }
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-4">
+      <Frame spacing="default">
+        <FramePanel>
+          <Stepper
+            value={stepNum}
+            onValueChange={(next) => {
+              setError("");
+              setStepNum(next);
+            }}
+            indicators={{
+              completed: <CheckIcon className="size-3.5" aria-hidden="true" />,
+            }}
+          >
+            <StepperNav className="gap-2">
+              {STEPS.map((name, index) => {
+                const step = index + 1;
+                const disabled =
+                  (step > 1 && !eventId) || (step > 2 && subtotal <= 0);
+                return (
+                  <StepperItem
+                    key={name}
+                    step={step}
+                    completed={step < stepNum}
+                    disabled={disabled}
+                  >
+                    <StepperTrigger className="flex flex-col items-center gap-1 sm:flex-row sm:gap-2">
+                      <StepperIndicator>{step}</StepperIndicator>
+                      <StepperTitle className="hidden text-xs sm:inline">
+                        {name}
+                      </StepperTitle>
+                    </StepperTrigger>
+                    {index < STEPS.length - 1 ? <StepperSeparator /> : null}
+                  </StepperItem>
+                );
+              })}
+            </StepperNav>
+          </Stepper>
+          <p className="text-muted-foreground mt-2 text-center text-xs sm:hidden">
+            Step {stepNum} of {STEPS.length}: {currentStepLabel}
+          </p>
+        </FramePanel>
+      </Frame>
 
-  const fieldClass = "min-h-12 w-full rounded-md border border-input bg-background px-3 text-base";
-  return <form onSubmit={submit} className="flex min-h-[min(640px,calc(100dvh-12rem))] flex-col gap-3">
-    <nav aria-label="Sale progress" className="rounded-2xl border border-border/70 bg-card p-3">
-      <ol className="grid grid-cols-5 gap-1">{STEPS.map((name, index) => <li key={name} aria-label={name} aria-current={step === name ? "step" : undefined} className={`min-w-0 text-center ${index <= stepIndex ? "text-foreground" : "text-muted-foreground"}`}><span aria-hidden="true" className="mx-auto flex size-8 items-center justify-center rounded-full border text-base">{index + 1}</span></li>)}</ol>
-      <p className="mt-2 text-center text-base font-medium">Step {stepIndex + 1} of {STEPS.length}: {step}</p>
-    </nav>
-    <p className="sr-only" aria-live="polite">Step {stepIndex + 1} of {STEPS.length}: {step}</p>
-    {error && <p role="alert" className="rounded-lg border border-danger/40 bg-danger/5 p-3 text-base text-danger">{error}</p>}
+      {error ? (
+        <Alert variant="destructive">
+          <AlertCircleIcon aria-hidden="true" />
+          <AlertTitle>Could not continue</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
 
-    <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border bg-card p-4">
-      {step === "Customer" && <section className="grid gap-3"><div><h2 className="text-lg font-semibold">Customer and event</h2><p className="text-base text-muted-foreground">Customer details are optional.</p></div>
-        <label className="grid gap-1 text-base">Event<select className={fieldClass} required value={eventId} onChange={(e) => void changeEvent(e.target.value)} aria-describedby={fieldErrors.eventId ? "sale-event-error" : undefined}><option value="">Select an event</option>{events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select>{fieldErrors.eventId && <span id="sale-event-error" className="text-base text-danger">{fieldErrors.eventId}</span>}</label>
-        <label className="grid gap-1 text-base">Customer name (optional)<Input autoComplete="name" maxLength={120} value={customerName} aria-describedby={fieldErrors.customerName ? "sale-customer-name-error" : undefined} onChange={(e) => setCustomerName(e.target.value)} />{fieldErrors.customerName && <span id="sale-customer-name-error" className="text-base text-danger">{fieldErrors.customerName}</span>}</label>
-        <label className="grid gap-1 text-base">Phone (optional)<Input type="tel" inputMode="tel" autoComplete="tel" maxLength={40} value={customerPhone} aria-describedby={fieldErrors.customerPhone ? "sale-customer-phone-error" : undefined} onChange={(e) => setCustomerPhone(e.target.value)} />{fieldErrors.customerPhone && <span id="sale-customer-phone-error" className="text-base text-danger">{fieldErrors.customerPhone}</span>}</label>
-      </section>}
+      <Frame spacing="default">
+        <FrameHeader>
+          <FrameTitle>
+            {stepNum === 1
+              ? "Customer & event"
+              : stepNum === 2
+                ? "Choose tickets"
+                : stepNum === 3
+                  ? "Review sale"
+                  : stepNum === 4
+                    ? "Record payment"
+                    : "Confirm sale"}
+          </FrameTitle>
+          <FrameDescription>
+            {stepNum === 1
+              ? "Select the event and optional buyer details."
+              : stepNum === 2
+                ? "Set ticket quantities for this order."
+                : stepNum === 3
+                  ? "Verify line items and customer details."
+                  : stepNum === 4
+                    ? "Only record funds staff have confirmed as received."
+                    : "The server recalculates prices, checks inventory, and records the sale."}
+          </FrameDescription>
+        </FrameHeader>
 
-      {step === "Tickets" && <section><h2 className="text-lg font-semibold">Choose tickets</h2><div className="mt-2 divide-y divide-border">{activeTypes.map((type) => {
-        const quantity = quantities[type.id] ?? 0;
-        return <div key={type.id} className="flex min-h-16 items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="truncate text-base font-medium">{type.name}</p><p className="text-base text-muted-foreground">{formatUGX(type.priceUgx)} each</p></div><div className="flex shrink-0 items-center gap-2"><Button type="button" variant="outline" size="icon" aria-label={`Remove one ${type.name}`} className="size-11" disabled={quantity === 0} onClick={() => setQuantity(type.id, quantity - 1)}><Minus /></Button><Input aria-label={`${type.name} quantity`} type="number" inputMode="numeric" min={0} max={500} className="h-12 w-16 text-center text-base tabular-nums" value={quantity} onChange={(e) => setQuantity(type.id, Number(e.target.value))} /><Button type="button" variant="outline" size="icon" aria-label={`Add one ${type.name}`} className="size-11" disabled={quantity >= 500} onClick={() => setQuantity(type.id, quantity + 1)}><Plus /></Button></div></div>;
-      })}{activeTypes.length === 0 && <p className="py-4 text-base text-muted-foreground">Select an event with active ticket categories.</p>}</div>
-        {canDiscount && <div className="mt-3 grid gap-3 border-t pt-3"><label className="grid gap-1 text-base">Administrator discount (UGX)<Input type="number" inputMode="numeric" min={1} max={subtotal} step={1} value={discountUgx} onChange={(e) => setDiscountUgx(e.target.value)} /></label><label className="grid gap-1 text-base">Reason (required with discount)<Input maxLength={500} value={discountReason} onChange={(e) => setDiscountReason(e.target.value)} /></label></div>}
-      </section>}
+        <FramePanel className="flex flex-col gap-4">
+          {stepNum === 1 ? (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="sale-event">Event</Label>
+                <NativeSelect
+                  id="sale-event"
+                  required
+                  value={eventId}
+                  onChange={(e) => void changeEvent(e.target.value)}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="">Select an event</NativeSelectOption>
+                  {events.map((event) => (
+                    <NativeSelectOption key={event.id} value={event.id}>
+                      {event.name}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+                {fieldErrors.eventId ? (
+                  <p className="text-destructive text-xs">{fieldErrors.eventId}</p>
+                ) : null}
+              </div>
 
-      {step === "Review" && <section className="grid gap-3"><h2 className="text-lg font-semibold">Review sale</h2><p className="text-base">{events.find((event) => event.id === eventId)?.name}</p><ul className="divide-y">{activeTypes.filter((type) => quantities[type.id]).map((type) => <li key={type.id} className="flex justify-between gap-3 py-2 text-base"><span>{quantities[type.id]} × {type.name}</span><span className="tabular-nums">{formatUGX(quantities[type.id] * type.priceUgx)}</span></li>)}</ul>{discount > 0 && <p className="text-base">Discount: −{formatUGX(discount)} · {discountReason}</p>}<p className="border-t pt-3 text-base font-semibold">Customer: {customerName || "Not provided"}{customerPhone ? ` · ${customerPhone}` : ""}</p><label className="grid gap-1 text-base">Notes (optional)<Input maxLength={1000} value={notes} aria-describedby={fieldErrors.notes ? "sale-notes-error" : undefined} onChange={(e) => setNotes(e.target.value)} />{fieldErrors.notes && <span id="sale-notes-error" className="text-base text-danger">{fieldErrors.notes}</span>}</label></section>}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="sale-customer-name">Customer name (optional)</Label>
+                  <Input
+                    id="sale-customer-name"
+                    autoComplete="name"
+                    maxLength={120}
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                  />
+                  {fieldErrors.customerName ? (
+                    <p className="text-destructive text-xs">{fieldErrors.customerName}</p>
+                  ) : null}
+                </div>
 
-      {step === "Payment" && <section className="grid gap-3"><h2 className="text-lg font-semibold">Record payment received</h2><p className="text-base text-muted-foreground">Only record funds staff have confirmed as received. A reference alone does not verify payment.</p><label className="grid gap-1 text-base">Amount in UGX (optional)<Input inputMode="numeric" type="number" min={1} step={1} max={2_000_000_000} value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} /></label><label className="grid gap-1 text-base">Method<select className={fieldClass} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}><option value="CASH">Cash</option><option value="MOBILE_MONEY">Mobile money</option><option value="BANK_TRANSFER">Bank transfer</option><option value="CARD">Card</option><option value="OTHER">Other</option></select></label><label className="grid gap-1 text-base">Transaction reference (optional)<Input maxLength={120} value={externalRef} onChange={(e) => setExternalRef(e.target.value)} /></label></section>}
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="sale-customer-phone">Phone (optional)</Label>
+                  <PhoneInput
+                    id="sale-customer-phone"
+                    defaultCountry="UG"
+                    placeholder="772 000 000"
+                    value={customerPhone}
+                    onChange={(val) => setCustomerPhone(val ?? "")}
+                  />
+                  {fieldErrors.customerPhone ? (
+                    <p className="text-destructive text-xs">{fieldErrors.customerPhone}</p>
+                  ) : null}
+                </div>
+              </div>
+            </>
+          ) : null}
 
-      {step === "Confirm" && <section className="grid gap-3"><h2 className="text-lg font-semibold">Confirm sale</h2><dl className="grid gap-2 text-base"><div className="flex justify-between gap-4"><dt>Total</dt><dd className="font-semibold tabular-nums">{formatUGX(total)}</dd></div><div className="flex justify-between gap-4"><dt>Recorded payment</dt><dd className="tabular-nums">{formatUGX(paid)}</dd></div><div className="flex justify-between gap-4 border-t pt-2 font-semibold"><dt>Balance due</dt><dd className="tabular-nums">{formatUGX(balance)}</dd></div></dl><p className="text-base text-muted-foreground">The server recalculates prices, checks inventory, and records the sale.</p></section>}
-    </div>
+          {stepNum === 2 ? (
+            <>
+              {activeTypes.length > 0 ? (
+                <div className="divide-y">
+                  {activeTypes.map((type) => {
+                    const quantity = quantities[type.id] ?? 0;
+                    return (
+                      <div
+                        key={type.id}
+                        className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{type.name}</p>
+                          <p className="text-muted-foreground text-xs tabular-nums">
+                            {formatUGX(type.priceUgx)} each
+                          </p>
+                        </div>
+                        <div className="w-36 shrink-0">
+                          <NumberField
+                            min={0}
+                            max={500}
+                            value={quantity}
+                            onValueChange={(val) => setQuantity(type.id, val ?? 0)}
+                          >
+                            <NumberFieldGroup>
+                              <NumberFieldDecrement aria-label={`Remove one ${type.name}`} />
+                              <NumberFieldInput aria-label={`${type.name} quantity`} />
+                              <NumberFieldIncrement aria-label={`Add one ${type.name}`} />
+                            </NumberFieldGroup>
+                          </NumberField>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Select an event with active ticket categories.
+                </p>
+              )}
 
-    <footer className="sticky bottom-16 z-10 rounded-xl border bg-background/95 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur md:bottom-0">
-      <div className="mb-3 flex items-center justify-between gap-3 text-base"><span>Total <strong className="tabular-nums">{formatUGX(total)}</strong></span><span>Balance <strong className="tabular-nums">{formatUGX(balance)}</strong></span></div>
-      <div className="flex justify-between gap-2">{stepIndex > 0 ? <Button type="button" variant="outline" className="min-h-12" onClick={back}><ArrowLeft /> Back</Button> : <Button type="button" variant="outline" className="min-h-12" onClick={() => router.back()}>Cancel</Button>}
-        {step === "Confirm" ? <Button type="submit" className="min-h-14 flex-1" disabled={busy || subtotal <= 0}>{busy ? "Confirming…" : "Confirm sale"}</Button> : <Button type="button" className="min-h-14 flex-1" disabled={(step === "Customer" && !eventId) || (step === "Tickets" && subtotal <= 0)} onClick={advance}>Continue <ArrowRight /></Button>}
-      </div>
-    </footer>
-  </form>;
+              {canDiscount ? (
+                <div className="grid gap-4 border-t pt-4 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="sale-discount">Administrator discount</Label>
+                    <InputGroup>
+                      <InputGroupAddon>UGX</InputGroupAddon>
+                      <InputGroupInput
+                        id="sale-discount"
+                        type="number"
+                        inputMode="numeric"
+                        min={1}
+                        max={subtotal}
+                        step={1}
+                        value={discountUgx}
+                        onChange={(e) => setDiscountUgx(e.target.value)}
+                      />
+                    </InputGroup>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="sale-discount-reason">Reason (required with discount)</Label>
+                    <Input
+                      id="sale-discount-reason"
+                      maxLength={500}
+                      value={discountReason}
+                      onChange={(e) => setDiscountReason(e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          {stepNum === 3 ? (
+            <>
+              <div className="flex flex-col gap-1">
+                <span className="text-muted-foreground text-xs font-medium">Event</span>
+                <span className="text-sm font-medium">
+                  {events.find((event) => event.id === eventId)?.name}
+                </span>
+              </div>
+
+              <div className="divide-y border-y">
+                {activeTypes
+                  .filter((type) => quantities[type.id])
+                  .map((type) => (
+                    <div key={type.id} className="flex justify-between gap-3 py-2 text-sm">
+                      <span>
+                        {quantities[type.id]} × {type.name}
+                      </span>
+                      <span className="font-mono font-medium tabular-nums">
+                        {formatUGX(quantities[type.id] * type.priceUgx)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+
+              {discount > 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  Discount: −{formatUGX(discount)} · {discountReason}
+                </p>
+              ) : null}
+
+              <div className="flex flex-col gap-1">
+                <span className="text-muted-foreground text-xs font-medium">Customer</span>
+                <span className="text-sm font-medium">
+                  {customerName || "Not provided"}
+                  {customerPhone ? ` · ${customerPhone}` : ""}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="sale-notes">Notes (optional)</Label>
+                <Input
+                  id="sale-notes"
+                  maxLength={1000}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+                {fieldErrors.notes ? (
+                  <p className="text-destructive text-xs">{fieldErrors.notes}</p>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
+          {stepNum === 4 ? (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="sale-pay-amount">Amount received (optional)</Label>
+                <InputGroup>
+                  <InputGroupAddon>UGX</InputGroupAddon>
+                  <InputGroupInput
+                    id="sale-pay-amount"
+                    inputMode="numeric"
+                    type="number"
+                    min={1}
+                    step={1}
+                    max={2_000_000_000}
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                  />
+                </InputGroup>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="sale-pay-method">Method</Label>
+                <NativeSelect
+                  id="sale-pay-method"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full"
+                >
+                  <NativeSelectOption value="CASH">Cash</NativeSelectOption>
+                  <NativeSelectOption value="MOBILE_MONEY">Mobile money</NativeSelectOption>
+                  <NativeSelectOption value="BANK_TRANSFER">Bank transfer</NativeSelectOption>
+                  <NativeSelectOption value="CARD">Card</NativeSelectOption>
+                  <NativeSelectOption value="OTHER">Other</NativeSelectOption>
+                </NativeSelect>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="sale-pay-ref">Transaction reference (optional)</Label>
+                <Input
+                  id="sale-pay-ref"
+                  maxLength={120}
+                  value={externalRef}
+                  onChange={(e) => setExternalRef(e.target.value)}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          {stepNum === 5 ? (
+            <dl className="flex flex-col gap-2 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Total</dt>
+                <dd className="font-mono font-semibold tabular-nums">{formatUGX(total)}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">Recorded payment</dt>
+                <dd className="font-mono tabular-nums">{formatUGX(paid)}</dd>
+              </div>
+              <div className="flex justify-between gap-4 border-t pt-2 font-semibold">
+                <dt>Balance due</dt>
+                <dd className="font-mono tabular-nums">{formatUGX(balance)}</dd>
+              </div>
+            </dl>
+          ) : null}
+        </FramePanel>
+
+        <FrameFooter>
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4 text-sm">
+              <span>
+                Total <strong className="font-mono tabular-nums">{formatUGX(total)}</strong>
+              </span>
+              <span className="text-muted-foreground">
+                Balance <strong className="text-foreground font-mono tabular-nums">{formatUGX(balance)}</strong>
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {stepNum > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setError("");
+                    setStepNum((s) => Math.max(1, s - 1));
+                  }}
+                >
+                  <ArrowLeftIcon aria-hidden="true" />
+                  Back
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" onClick={() => router.back()}>
+                  Cancel
+                </Button>
+              )}
+
+              {stepNum === STEPS.length ? (
+                <Button type="submit" disabled={busy || subtotal <= 0}>
+                  {busy ? <Spinner /> : null}
+                  {busy ? "Confirming…" : "Confirm sale"}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  disabled={(stepNum === 1 && !eventId) || (stepNum === 2 && subtotal <= 0)}
+                  onClick={() => {
+                    setError("");
+                    setStepNum((s) => Math.min(STEPS.length, s + 1));
+                  }}
+                >
+                  Continue
+                  <ArrowRightIcon aria-hidden="true" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </FrameFooter>
+      </Frame>
+    </form>
+  );
 }

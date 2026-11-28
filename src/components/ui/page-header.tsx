@@ -12,13 +12,13 @@ export function PageHeader({
   badge?: ReactNode;
 }) {
   return (
-    <header className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-start sm:justify-between">
+    <header className="flex flex-col gap-4 pb-1 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-medium text-foreground">{title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
           {badge}
         </div>
-        {description && <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>

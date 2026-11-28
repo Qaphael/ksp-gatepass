@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 import type { EventBrandingAssetDto, EventBrandingKindValue } from "@/server/services/event-branding.service";
 
 type Assets = { poster: EventBrandingAssetDto | null; logo: EventBrandingAssetDto | null };
@@ -75,14 +76,23 @@ export function BrandingManager({ eventId, initialAssets }: { eventId: string; i
         <BrandingKindCard kind="LOGO" asset={assets.logo} altText={altTexts.logo} onAltText={(value) => setAltTexts((current) => ({ ...current, logo: value }))} onUpload={(file) => upload("LOGO", file)} onRemove={() => setRemoveKind("LOGO")} busy={busyKind === "LOGO"} progress={busyKind === "LOGO" ? progress : 0} error={errors.logo} />
       </CardContent>
     </Card>
-    {removeKind && <div className="fixed inset-0 z-50 grid place-items-end bg-black/50 p-3 sm:place-items-center" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setRemoveKind(null); }}>
-      <section role="alertdialog" aria-modal="true" aria-labelledby="remove-branding-title" className="w-full max-w-md rounded-2xl border bg-background p-5 shadow-2xl sm:p-6">
-        <h2 id="remove-branding-title" className="text-lg font-semibold">Remove {removeKind === "POSTER" ? "event poster" : "event logo"}?</h2>
-        <p className="mt-2 text-base text-muted-foreground">This image will stop appearing on event pages and dashboards. The action will be recorded in the audit history.</p>
-        {activeAsset && <p className="mt-3 break-words rounded-lg bg-muted p-3 text-sm">Alt text: {activeAsset.altText}</p>}
-        <div className="mt-5 flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setRemoveKind(null)} disabled={busyKind !== null}>Keep image</Button><Button type="button" variant="destructive" onClick={() => void remove(removeKind)} disabled={busyKind !== null}><Trash2 aria-hidden="true" />Remove image</Button></div>
-      </section>
-    </div>}
+    {removeKind ? (
+      <ConfirmSheet
+        open
+        onOpenChange={(next) => {
+          if (!next && busyKind === null) setRemoveKind(null);
+        }}
+        title={`Remove ${removeKind === "POSTER" ? "event poster" : "event logo"}?`}
+        description="This image will stop appearing on event pages and dashboards. The action will be recorded in the audit history."
+        details={activeAsset ? <p>Alt text: {activeAsset.altText}</p> : undefined}
+        confirmLabel="Remove image"
+        destructive
+        onConfirm={async () => {
+          await remove(removeKind);
+          return true;
+        }}
+      />
+    ) : null}
   </>;
 }
 

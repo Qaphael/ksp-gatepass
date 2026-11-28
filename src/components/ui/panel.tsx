@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
+import { Frame, FramePanel } from "@/components/reui/frame";
 import { cn } from "cn";
 
 /**
- * Panel: a bordered container with three variants.
- * default: rounded-lg border bg-card p-4 (uses --card-padding)
- * well: nested container rounded-sm bg-muted/40 p-2
- * dim: inactive state bg-card/60
+ * Panel: a ReUI Frame (or FramePanel) container with three variants.
+ * default: Frame > FramePanel (uses --frame-* tokens)
+ * well: nested container rounded-sm bg-muted/40 p-2 (no border, inset)
+ * dim: inactive state bg-card/60 (no border)
  *
  * Usage:
  *   <Panel>Content</Panel>
@@ -21,17 +22,21 @@ export function Panel({
   variant?: "default" | "well" | "dim";
   className?: string;
 }) {
+  if (variant === "well") {
+    return (
+      <div className={cn("min-w-0 rounded-sm bg-muted/40 p-2", className)}>
+        {children}
+      </div>
+    );
+  }
+  if (variant === "dim") {
+    return (
+      <div className={cn("min-w-0 bg-card/60", className)}>{children}</div>
+    );
+  }
   return (
-    <div
-      className={cn(
-        "min-w-0",
-        variant === "default" && "rounded-lg border border-border bg-card p-4",
-        variant === "well" && "rounded-sm bg-muted/40 p-2",
-        variant === "dim" && "bg-card/60",
-        className,
-      )}
-    >
-      {children}
-    </div>
+    <Frame className={cn("min-w-0 [--frame-radius:var(--radius-lg)]", className)}>
+      <FramePanel>{children}</FramePanel>
+    </Frame>
   );
 }

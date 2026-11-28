@@ -1,5 +1,18 @@
 # Tasks
 
+## ReUI component migration (this session)
+
+- [x] Shared primitives now resolve to the installed ReUI/shadcn layers: `Badge` re-exports ReUI `Badge` (`success-light | warning-light | destructive-light | info-light | secondary`); `Timeline` wraps the ReUI timeline (`TimelineItem step` / `TimelinePanel` / `TimelineContent`); `ContentStates` uses shadcn `Empty`/`Skeleton` + ReUI `Alert`; `ConfirmSheet` uses shadcn `AlertDialog`; `FilterSheet` uses shadcn `Sheet` (bottom on mobile); `StatTile` uses ReUI `Frame`/`FramePanel`; `MetricTile` meta size `text-[11px]` -> `text-xs`; `DefList` value size `text-base` -> `text-sm`.
+- [x] Replaced raw hand-rolled tables with the ReUI TanStack data-grid: `src/components/events/events-table.tsx` (desktop table now `<DataGrid>` over `useTable({ features: dataGridFeatures })`, mobile cards kept); `src/components/tickets/tickets-table.tsx` (desktop table now `<DataGrid>`, columns built as `ColumnDef<DataGridFeatures, TicketDto>[]`, bulk-remove checkbox column preserved); new `src/components/sales/sales-table.tsx` (`<SalesTable sales={...}>` over the same data-grid, wired into `/sales`).
+- [x] Replaced raw native `<select>` form controls with the installed `NativeSelect` in sale-create, scan-to-sell, sale-detail payment, and sales list filter surfaces; kept `name`, `required` and controlled value behaviour.
+- [x] Replaced raw `rounded-* border bg-card` panel markup with the ReUI `Frame`/`FramePanel` (sale payment form) where a panel wrapper was added.
+- [x] Replaced the mobile "More" nav menu (Dialog) with the shadcn `Sheet` (bottom sheet on mobile, centered sheet on `sm+`).
+- [x] Replaced `size="xl"` buttons with `size="lg"` in design-preview, check-in result-takeover, scanner, scan-to-sell and QR-camera surfaces.
+
+Verification this session: `pnpm typecheck` passes; focused ESLint on all changed files passes clean; the full-repo ESLint run reports only pre-existing issues inside installed `src/components/reui/*` and `src/hooks/use-mobile.ts` primitives (53 errors / 25 warnings, none in changed app code).
+
+Remaining (next batch, not started): audit-logs / reports / team / check-in / dashboard / stock / scanner raw tables and panels still hand-rolled; full `pnpm lint` / `pnpm test` re-run after those conversions.
+
 ## Post-pull verification at `d1f6627`
 
 - [x] Fast-forwarded `master` from `98074e9` to `d1f6627` (15 commits: reports/inventory/sale-detail UI batches, BATCH 4 reports summary strip and payment channel breakdown, lint caching, Super Admin and migration inspection dev scripts).

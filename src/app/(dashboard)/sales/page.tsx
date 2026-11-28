@@ -8,16 +8,16 @@ import { can } from "@/lib/permissions";
 import { saleListQuerySchema } from "@/lib/validation/sales";
 import { listEvents } from "@/server/services/events.service";
 import { listSales, getSalesTotals } from "@/server/services/sales.service";
-import { FilterSheet } from "@/components/ui/filter-sheet";
 import { ResponsiveList } from "@/components/ui/responsive-list";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Money, formatUGX } from "@/components/ui/money";
 import { PageHeader } from "@/components/ui/page-header";
+import { Frame, FrameFooter } from "@/components/reui/frame";
 import { StatTile } from "@/components/ui/stat-tile";
+import { UrlFiltersBar } from "@/components/ui/url-filters-bar";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/time";
-import { SearchBox } from "@/components/sales/search-box";
+import { SalesTable } from "@/components/sales/sales-table";
 
 export const instant = false;
 
@@ -106,31 +106,37 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
         })}
       </section>
 
-      {/* Search box + event filter sheet */}
-      <div className="flex flex-col lg:flex-row lg:items-end lg:gap-4">
-        <SearchBox currentSearch={query.search} eventId={query.eventId} status={query.status} />
-        <FilterSheet activeCount={[query.eventId, query.status].filter(Boolean).length}>
-          <form className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row">
-            <label className="grid flex-1 gap-1 text-base">
-              Event
-              <Select defaultValue={query.eventId ?? ""}>
-                <SelectTrigger className="h-12 min-h-12 w-full min-w-0 truncate rounded-control border border-input bg-card px-3 text-base font-normal shadow-sm">
-                  <SelectValue placeholder="All events" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All events</SelectItem>
-                  {events.map((event) => (
-                    <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <Button size="sm" variant="outline" className="min-h-12 text-base" type="submit">
-              Filter
-            </Button>
-          </form>
-        </FilterSheet>
-      </div>
+      {/* ReUI Filters bar */}
+      <UrlFiltersBar
+        basePath="/sales"
+        resetPage
+        fields={[
+          { id: "search", label: "Search", type: "text", placeholder: "Reference, name, or phone" },
+          {
+            id: "eventId",
+            label: "Event",
+            type: "select",
+            options: events.map((event) => ({ value: event.id, label: event.name })),
+          },
+          {
+            id: "status",
+            label: "Status",
+            type: "select",
+            options: [
+              { value: "PAID", label: "Paid" },
+              { value: "PARTIALLY_PAID", label: "Partially paid" },
+              { value: "PENDING_PAYMENT", label: "Pending" },
+              { value: "CANCELLED", label: "Cancelled" },
+              { value: "REFUNDED", label: "Refunded" },
+            ],
+          },
+        ]}
+        initialValues={{
+          search: query.search,
+          eventId: query.eventId,
+          status: query.status,
+        }}
+      />
 
       <ResponsiveList
         cards={result.sales.map((sale) => {
@@ -166,49 +172,13 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
               </div>
               <div className="mt-2 flex items-center gap-3">
                 <span className="text-xs text-muted-foreground">{sale.seller.displayName} · {ticketCount} ticket{ticketCount !== 1 ? "s" : ""}</span>
+                <span className="text-xs font-medium text-primary">View sale</span>
               </div>
             </Link>
           );
         })}
         table={
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-muted/50 text-muted-foreground">
-                <tr>
-                  {["Reference / event", "Seller", "Tickets", "Total", "Paid", "Balance", "Status"].map((label) => (
-                    <th key={label} className="px-3 py-2 font-medium uppercase text-[10px] tracking-wider">
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {result.sales.map((sale) => (
-                  <tr key={sale.id} className="border-t border-border hover:bg-muted/30">
-                    <td className="px-3 py-2">
-                      <Link className="font-medium underline-offset-2 hover:underline" href={`/sales/${sale.id}`}>
-                        {sale.reference}
-                      </Link>
-                      <div className="text-xs text-muted-foreground">{sale.eventName}</div>
-                    </td>
-                    <td className="px-3 py-2">{sale.seller.displayName}</td>
-                    <td className="px-3 py-2">{sale.items.reduce((sum, item) => sum + item.quantity, 0)}</td>
-                    <td className="px-3 py-2"><Money amount={sale.totalUgx} /></td>
-                    <td className="px-3 py-2"><Money amount={sale.amountPaidUgx} /></td>
-                    <td className="px-3 py-2"><Money amount={sale.balanceUgx} /></td>
-                    <td className="px-3 py-2"><StatusBadge domain="sale" status={sale.status} /></td>
-                  </tr>
-                ))}
-                {result.sales.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                      No sales found.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
+          <SalesTable sales={result.sales} />
         }
       />
 
@@ -221,25 +191,28 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-        <span>
-          {result.total} {result.total === 1 ? "sale" : "sales"} · page {result.page} of{" "}
-          {Math.max(1, Math.ceil(result.total / result.pageSize))}
-        </span>
-        <div className="flex gap-2">
-          {result.page > 1 && (
-            <Link className="inline-flex min-h-11 items-center rounded border px-3 md:hidden" href={pageHref(result.page - 1)}>
-              Previous
-            </Link>
-          )}
-          {result.page < Math.ceil(result.total / result.pageSize) && (
-            <Link className="inline-flex min-h-11 items-center rounded border px-3" href={pageHref(result.page + 1)}>
-              <span className="md:hidden">Load more</span>
-              <span className="hidden md:inline">Next</span>
-            </Link>
-          )}
-        </div>
-      </div>
+      <Frame spacing="default">
+        <FrameFooter>
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+            <span className="tabular-nums">
+              {result.total} {result.total === 1 ? "sale" : "sales"} · page {result.page} of{" "}
+              {Math.max(1, Math.ceil(result.total / result.pageSize))}
+            </span>
+            <div className="flex items-center gap-2">
+              {result.page > 1 ? (
+                <Button nativeButton={false} variant="outline" size="sm" render={<Link href={pageHref(result.page - 1)} />}>
+                  Previous
+                </Button>
+              ) : null}
+              {result.page < Math.ceil(result.total / result.pageSize) ? (
+                <Button nativeButton={false} variant="outline" size="sm" render={<Link href={pageHref(result.page + 1)} />}>
+                  Next
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </FrameFooter>
+      </Frame>
     </div>
   );
 }

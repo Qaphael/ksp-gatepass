@@ -1,15 +1,10 @@
-import { cn } from "cn";
+import { Badge } from "@/components/reui/badge";
+import type { ReactNode } from "react";
 
 /**
- * Chip: a small state/info label.
- * - Classes: inline-flex items-center gap-1.5 rounded-sm px-2.5 py-0.5 text-[12px] font-mono
- * - Icon or dot + label
- * - Tones: success | warning | destructive | info | neutral
- *
- * Usage:
- *   <Chip tone="success">Paid</Chip>
- *   <Chip tone="warning" icon={<Alert />}>Pending</Chip>
- *   <Chip tone="neutral">VIP Access</Chip>
+ * Chip: a small state label, rendered as a ReUI Badge.
+ * - Variants: success | warning | destructive | info | neutral
+ * - Icon or label + text
  */
 export function Chip({
   children,
@@ -17,29 +12,23 @@ export function Chip({
   icon,
   className,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   tone?: "success" | "warning" | "destructive" | "info" | "neutral";
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   className?: string;
 }) {
-  const toneClasses = {
-    success: "bg-success/10 text-success",
-    warning: "bg-warning/10 text-warning",
-    destructive: "bg-destructive/10 text-destructive",
-    info: "bg-info/10 text-info",
-    neutral: "bg-muted text-muted-foreground",
-  };
+  const variant = {
+    success: "success-light",
+    warning: "warning-light",
+    destructive: "destructive-light",
+    info: "info-light",
+    neutral: "secondary",
+  } as const;
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-sm px-2.5 py-0.5 text-[12px] font-mono",
-        toneClasses[tone],
-        className,
-      )}
-    >
-      {icon && <span aria-hidden="true">{icon}</span>}
+    <Badge variant={variant[tone]} className={className}>
+      {icon}
       {children}
-    </span>
+    </Badge>
   );
 }

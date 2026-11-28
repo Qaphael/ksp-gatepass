@@ -116,8 +116,8 @@ export function QrCamera({
       </div>}
     </div>
     <div className="flex flex-wrap gap-3 p-3 sm:p-4">
-      {displayCamera === "active" ? <Button type="button" size="xl" variant="outline" onClick={stopCamera} className="min-w-40 flex-1"><CameraOff aria-hidden="true" />Stop camera</Button> : <Button type="button" size="xl" onClick={() => { setRequested(true); void startCamera(); }} disabled={disabled || paused || camera === "starting"} className="min-w-40 flex-1"> <Camera aria-hidden="true" />{camera === "starting" ? "Starting camera…" : "Start camera"}</Button>}
-      {torchSupported && <Button type="button" size="xl" variant="outline" onClick={() => { const next = !displayTorchOn; void controlsRef.current?.switchTorch?.(next); setTorchOn(next); }} disabled={displayCamera !== "active"}><Flashlight aria-hidden="true" />{displayTorchOn ? "Light on" : "Flashlight"}</Button>}
+      {displayCamera === "active" ? <Button type="button" size="lg" variant="outline" onClick={stopCamera} className="min-w-40 flex-1"><CameraOff aria-hidden="true" />Stop camera</Button> : <Button type="button" size="lg" onClick={() => { setRequested(true); void startCamera(); }} disabled={disabled || paused || camera === "starting"} className="min-w-40 flex-1"> <Camera aria-hidden="true" />{camera === "starting" ? "Starting camera…" : "Start camera"}</Button>}
+      {torchSupported && <Button type="button" size="lg" variant="outline" onClick={() => { const next = !displayTorchOn; void controlsRef.current?.switchTorch?.(next); setTorchOn(next); }} disabled={displayCamera !== "active"}><Flashlight aria-hidden="true" />{displayTorchOn ? "Light on" : "Flashlight"}</Button>}
     </div>
   </section>;
 }

@@ -533,3 +533,18 @@ This layering strategy ensures predictable stacking behavior while reserving hea
 9. **Verify focus & hover states:** Every interactive element requires a focus state (visible indicator for keyboard navigation) and hover state (opacity, color, or shadow change). Test with keyboard and screen readers.
 
 10. **Validate accessibility:** Minimum touch target `44px × 44px`, minimum line-height `1.4x` font size, minimum contrast `4.5:1` for text. Use opacity + shape/weight for meaning, never color alone.
+
+## 11. ReUI ownership (supersedes the component rules above)
+
+ReUI is the component layer. Where this document and ReUI disagree about a component's height, padding, radius, shadow or overlay motion, ReUI wins; the brand tokens in section 2 still own colour.
+
+- **Components:** import from `@/components/reui/*` wherever a ReUI component exists; `@/components/ui/*` only for shadcn primitives ReUI does not ship. Never hand-roll a table, modal, tabs or toast.
+- **Panels:** a panel is a ReUI `Frame` or a shadcn `Card`, never a `div` with `rounded-lg border`.
+- **State:** `<Badge variant="success-light | warning-light | destructive-light | info-light | secondary">` from `@/components/reui/badge`, always with an icon or label, never colour alone.
+- **Owners:** tables `data-grid`, filtering `filters`, boards `kanban`, modals `Dialog`, destructive confirms `AlertDialog`, toasts `sonner`.
+- **Spacing:** `gap-*` on the parent: `gap-1` to `gap-2` in a row, `gap-3` to `gap-4` between groups, `gap-6` to `gap-8` between sections. No `space-y-*`.
+- **Type:** `text-sm` body, `text-xs` meta, nothing smaller; headings `tracking-tight`, numbers `tabular-nums`.
+- **Motion:** installed components keep their own motion. Ours: `transition-colors` for hover, `duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]` for reveals, transform and opacity only, never `transition-all`, at most 1 entrance per view.
+- **Tokens:** semantic only (`bg-card`, `text-muted-foreground`, `border-border`). Brand gold, ivory and ink stay print-only.
+- **States:** every data region has an empty state with an action, a `Skeleton` loading state and an inline error with Retry.
+- The 8px scale, 24-32px component padding and 40-96px section spacing in sections 3 and 10 apply to marketing and print layout only, never to operational screens at 360px.

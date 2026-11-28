@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
+import { ThemeProvider } from "next-themes";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { PwaInstallProvider } from "@/components/pwa/install-provider";
 import "./globals.css";
 
@@ -14,15 +16,22 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#08090a",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#171717" },
+  ],
   viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`h-full antialiased ${inter.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`h-full antialiased ${inter.variable}`}>
       <body className="min-h-full flex flex-col">
-        <PwaInstallProvider>{children}</PwaInstallProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <TooltipProvider>
+            <PwaInstallProvider>{children}</PwaInstallProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,18 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
 
-/**
- * PanelHeader: flexible header for panels.
- * Default: flex items-center justify-between pb-2
- *   - Left: optional icon + h2 (text-base font-semibold)
- *   - Right: children slot (meta, link) in text-[11px] font-mono
- * "outside" variant: px-1, no card (for section labels above Panel)
- *
- * Usage:
- *   <PanelHeader icon={<Check />} title="Stats" />
- *   <PanelHeader title="Stats"><Chip status="ok" /></PanelHeader>
- *   <PanelHeader variant="outside">Ticket categories · 3</PanelHeader>
- */
 export function PanelHeader({
   icon,
   title,
@@ -30,55 +18,36 @@ export function PanelHeader({
     return (
       <div
         className={cn(
-          "flex items-center justify-between px-1 text-sm font-semibold text-foreground",
+          "text-foreground flex items-center justify-between px-1 text-sm font-semibold",
           className,
         )}
       >
         <span className="truncate">{title}</span>
-        {children && (
-          <span className="ml-2 font-mono text-[11px] text-muted-foreground">
-            {children}
-          </span>
-        )}
+        {children ? (
+          <span className="text-muted-foreground ml-2 font-mono text-xs">{children}</span>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "flex items-center justify-between pb-2",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-2 min-w-0">
-        {icon && (
+    <div className={cn("flex items-center justify-between gap-2 pb-2", className)}>
+      <div className="flex min-w-0 items-center gap-2">
+        {icon ? (
           <span
-            className="flex size-5 items-center justify-center text-muted-foreground"
+            className="text-muted-foreground flex size-5 items-center justify-center"
             aria-hidden="true"
           >
             {icon}
           </span>
-        )}
-        <h2 className="truncate text-base font-semibold text-foreground">
-          {title}
-        </h2>
+        ) : null}
+        <h2 className="text-foreground truncate text-base font-semibold">{title}</h2>
       </div>
-      {children && (
-        <span
-          className={cn(
-            "flex items-center gap-1 whitespace-nowrap font-mono text-[11px] text-muted-foreground",
-            // Check for link-like React elements (Link, <a>, or string with arrow)
-            (typeof children === "object" && children !== null && "type" in children &&
-              (children.type === "a" || (typeof children.type === "object" && children.type !== null && (children.type as { displayName?: string; name?: string }).displayName === "Link") || (typeof children.type === "object" && children.type !== null && (children.type as { displayName?: string; name?: string }).name === "Link"))) ||
-              (typeof children === "string" && children.includes("→"))
-              ? "min-h-11 px-1.5 py-0.5"
-              : "",
-          )}
-        >
+      {children ? (
+        <span className="text-muted-foreground flex items-center gap-1 whitespace-nowrap font-mono text-xs">
           {children}
         </span>
-      )}
+      ) : null}
     </div>
   );
 }
