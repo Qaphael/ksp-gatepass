@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated Prisma client — do not lint generated code.
     "src/generated/**",
+    // Installed ReUI / shadcn registry primitives — do not modify or lint upstream code.
+    "src/components/reui/**",
+    "src/hooks/use-mobile.ts",
   ]),
 ]);
 
